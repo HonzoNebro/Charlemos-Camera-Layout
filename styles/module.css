@@ -1,0 +1,241 @@
+.charlemos-hide-controls #navigation,
+.charlemos-hide-controls #controls,
+.charlemos-hide-controls #sidebar,
+.charlemos-hide-controls #players,
+.charlemos-hide-controls #hotbar {
+  display: none !important;
+}
+
+.charlemos-config-shell {
+  padding: 0.75rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.charlemos-config-form {
+  display: grid;
+  gap: 0.6rem;
+  min-height: 0;
+  flex: 1;
+}
+
+.charlemos-config-scroll {
+  overflow-y: auto;
+  padding-right: 0.25rem;
+  min-height: 0;
+}
+
+.charlemos-section {
+  border: 1px solid var(--color-border-light-primary);
+  border-radius: 6px;
+  padding: 0.5rem;
+}
+
+.charlemos-section h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.charlemos-section-desc {
+  margin: 0 0 0.6rem 0;
+  font-size: 0.78rem;
+  opacity: 0.9;
+}
+
+.charlemos-field {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.charlemos-field-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.85rem;
+}
+
+.charlemos-field-help {
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.charlemos-inline-action {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.35rem;
+}
+
+.charlemos-effect-editor {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.charlemos-effect-controls {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.25rem;
+}
+
+.charlemos-image-field {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.25rem;
+}
+
+.charlemos-overlay-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.35rem;
+}
+
+.charlemos-overlay-card {
+  display: grid;
+  gap: 0.25rem;
+  border: 1px solid var(--color-border-light-primary);
+  border-radius: 6px;
+  padding: 0.3rem;
+  background: transparent;
+}
+
+.charlemos-overlay-card-active {
+  outline: 2px solid var(--color-warm-2);
+}
+
+.charlemos-overlay-thumb {
+  height: 56px;
+  border-radius: 4px;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--color-border-light-primary);
+}
+
+.charlemos-overlay-thumb-empty {
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.charlemos-overlay-label {
+  font-size: 0.72rem;
+  text-align: left;
+}
+
+.charlemos-pill-list {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.charlemos-pill {
+  font-size: 0.72rem;
+  padding: 0.15rem 0.35rem;
+}
+
+.charlemos-border-radius-box {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.charlemos-border-radius-box input {
+  width: 70px;
+}
+
+.charlemos-aspect-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.charlemos-aspect-btn {
+  font-size: 0.72rem;
+  padding: 0.15rem 0.35rem;
+}
+
+.charlemos-aspect-active {
+  outline: 1px solid var(--color-warm-2);
+}
+
+.charlemos-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--color-border-light-primary);
+}
+
+.charlemos-camera-view {
+  overflow: hidden;
+}
+
+.charlemos-camera-view .window-resizable-handle,
+.charlemos-camera-view .window-resize-handle,
+.charlemos-camera-view .ui-resizable-handle {
+  z-index: 12;
+  pointer-events: auto;
+}
+
+.charlemos-camera-view.charlemos-direct-edit {
+  outline: 1px dashed rgba(255, 180, 80, 0.85);
+  cursor: move;
+}
+
+.charlemos-resize-handle {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  right: 2px;
+  bottom: 2px;
+  border-radius: 2px;
+  background: rgba(255, 180, 80, 0.9);
+  cursor: nwse-resize;
+  z-index: 6;
+}
+
+.charlemos-aspect-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 7;
+  font-size: 0.72rem;
+  padding: 0.12rem 0.35rem;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #f2f2f2;
+}
+
+.charlemos-crop-mask {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.charlemos-camera-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  z-index: 3;
+}
+
+.charlemos-camera-name {
+  position: absolute;
+  left: 0.25rem;
+  right: 0.25rem;
+  padding: 0.2rem 0.4rem;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 6;
+  font-size: 0.85rem;
+  line-height: 1.2;
+  pointer-events: none;
+}

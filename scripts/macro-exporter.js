@@ -1,0 +1,46 @@
+import { MODULE_ID } from "./constants.js";
+
+function buildCommand(layout, playerId) {
+  const payload = JSON.stringify(layout, null, 2);
+  return [
+    `const moduleApi = game.modules.get("${MODULE_ID}")?.api;`,
+    "if (!moduleApi) return;",
+    `await moduleApi.updatePlayerLayout("${playerId}", ${payload});`
+  ].join("\n");
+}
+
+function buildSceneCommand(sceneId, layouts) {
+  const payload = JSON.stringify(layouts, null, 2);
+  return [
+    `const moduleApi = game.modules.get("${MODULE_ID}")?.api;`,
+    "if (!moduleApi) return;",
+    `await moduleApi.loadSceneProfileDraft("${sceneId}", ${payload});`
+  ].join("\n");
+}
+
+function buildMacroData(name, command) {
+  return {
+    name,
+    type: "script",
+    scope: "global",
+    command
+  };
+}
+
+export async function exportLayoutToMacro(playerId, layout, macroName) {
+  const name = macroName || game.i18n.localize(`${MODULE_ID}.macro.defaultName`);
+  const command = buildCommand(layout, playerId);
+  const macroData = buildMacroData(name, command);
+  const macro = await Macro.create(macroData);
+  console.debug(`${MODULE_ID} | macro exported`, { playerId, macroId: macro.id });
+  return macro;
+}
+
+export async function exportSceneProfileToMacro(sceneId, layouts, macroName) {
+  const name = macroName || game.i18n.localize(`${MODULE_ID}.macro.sceneDefaultName`);
+  const command = buildSceneCommand(sceneId, layouts);
+  const macroData = buildMacroData(name, command);
+  const macro = await Macro.create(macroData);
+  console.debug(`${MODULE_ID} | scene macro exported`, { sceneId, macroId: macro.id });
+  return macro;
+}

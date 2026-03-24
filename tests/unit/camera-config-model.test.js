@@ -1,0 +1,145 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { buildFormData, buildLayoutPatch } from "../../scripts/camera-config-model.js";
+
+test("buildFormData maps stored layout to UI fields", () => {
+  const formData = buildFormData({
+    preset: "topLeft",
+    snap: { enabled: true, size: 16 },
+    resize: { aspectMode: "16:9" },
+    position: "relative",
+    top: "1rem",
+    left: "2rem",
+    width: "280px",
+    height: "160px",
+    crop: { top: "5%", right: "10px", bottom: "0", left: "2%" },
+    transform: "rotate(3deg)",
+    filter: "contrast(1.2)",
+    clipPath: "circle(50%)",
+    overlay: {
+      enabled: true,
+      imageUrl: "/a.png",
+      opacity: 0.75,
+      offset: { x: "20px", y: "-10%" },
+      scale: 1.2,
+      rotate: 15,
+      tint: { enabled: true, color: "#112233", opacity: 0.35, blendMode: "multiply" }
+    },
+    nameStyle: { visible: false, source: "custom", text: "Ana", colorFromUser: true, color: "#00ff00", fontFamily: "Lora", position: "top" },
+    geometry: { borderRadius: "8px", skewX: 4, skewY: -2 }
+  });
+
+  assert.deepEqual(formData, {
+    preset: "topLeft",
+    snapEnabled: true,
+    snapSize: 16,
+    resizeAspect: "16:9",
+    position: "relative",
+    top: "1rem",
+    left: "2rem",
+    width: "280px",
+    height: "160px",
+    cropTop: "5%",
+    cropRight: "10px",
+    cropBottom: "0",
+    cropLeft: "2%",
+    transform: "rotate(3deg)",
+    filter: "contrast(1.2)",
+    clipPath: "circle(50%)",
+    overlayEnabled: true,
+    overlayImage: "/a.png",
+    overlayOpacity: 0.75,
+    overlayOffsetX: "20px",
+    overlayOffsetY: "-10%",
+    overlayScale: 1.2,
+    overlayRotate: 15,
+    overlayTintEnabled: true,
+    overlayTintColor: "#112233",
+    overlayTintOpacity: 0.35,
+    overlayTintBlendMode: "multiply",
+    nameVisible: false,
+    nameSource: "custom",
+    nameText: "Ana",
+    nameColorFromUser: true,
+    nameColor: "#00ff00",
+    nameFont: "Lora",
+    namePosition: "top",
+    geometryBorderRadius: "8px",
+    geometrySkewX: 4,
+    geometrySkewY: -2
+  });
+});
+
+test("buildLayoutPatch normalizes empty form values", () => {
+  const patch = buildLayoutPatch({
+    cropTop: "",
+    cropRight: "20",
+    cropBottom: "5%",
+    cropLeft: "0",
+    transform: "",
+    filter: "blur(1px)",
+    clipPath: " circle(40%) ",
+    overlayEnabled: true,
+    overlayImage: "",
+    overlayOpacity: "",
+    overlayOffsetX: "12",
+    overlayOffsetY: "-5%",
+    overlayScale: "",
+    overlayRotate: "",
+    overlayTintEnabled: true,
+    overlayTintColor: "#ff0000",
+    overlayTintOpacity: "0.5",
+    overlayTintBlendMode: "screen",
+    nameVisible: false,
+    nameSource: "character",
+    nameText: "",
+    nameColorFromUser: true,
+    nameColor: "#ffffff",
+    nameFont: "",
+    namePosition: "bottom",
+    geometryBorderRadius: " 10px ",
+    geometrySkewX: "",
+    geometrySkewY: "-6"
+  });
+
+  assert.deepEqual(patch, {
+    crop: {
+      top: null,
+      right: "20px",
+      bottom: "5%",
+      left: "0px"
+    },
+    transform: null,
+    filter: "blur(1px)",
+    clipPath: "circle(40%)",
+    overlay: {
+      enabled: true,
+      imageUrl: null,
+      opacity: 1,
+      offset: {
+        x: "12px",
+        y: "-5%"
+      },
+      scale: 1,
+      rotate: 0,
+      tint: {
+        enabled: true,
+        color: "#ff0000",
+        opacity: 0.5,
+        blendMode: "screen"
+      }
+    },
+    nameStyle: {
+      visible: false,
+      source: "character",
+      text: null,
+      colorFromUser: true,
+      color: "#ffffff",
+      fontFamily: null,
+      position: "bottom"
+    },
+    geometry: {
+      borderRadius: "10px"
+    }
+  });
+});
