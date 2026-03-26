@@ -6,6 +6,7 @@ import { EffectsConfigApp } from "./effects-config-app.js";
 import { LayoutConfigApp } from "./layout-config-app.js";
 import { NameConfigApp } from "./name-config-app.js";
 import { OverlayConfigApp } from "./overlay-config-app.js";
+import { applyCameraLayoutsNow } from "./live-camera-renderer.js";
 import {
   appId,
   helpText,
@@ -260,6 +261,7 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
       const sceneId = currentSceneId();
       if (!sceneId) return;
       await setSceneCameraControlMode(sceneId, event.currentTarget.value);
+      applyCameraLayoutsNow();
       await this.render(true);
     });
   }
