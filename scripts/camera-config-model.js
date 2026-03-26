@@ -109,7 +109,25 @@ function nameColorFromUser(layout) {
 const NAME_TEXT_ALIGN_VALUES = new Set(["left", "center", "right", "justify"]);
 const NAME_FONT_WEIGHT_VALUES = new Set(["400", "500", "600", "700"]);
 const NAME_FONT_STYLE_VALUES = new Set(["normal", "italic"]);
-const RELATIVE_PLACEMENT_VALUES = new Set(["none", "above", "below", "left-of", "right-of"]);
+const RELATIVE_PLACEMENT_VALUES = new Set([
+  "none",
+  "above",
+  "below",
+  "left-of",
+  "right-of",
+  "above-left",
+  "above-center",
+  "above-right",
+  "below-left",
+  "below-center",
+  "below-right",
+  "left-top",
+  "left-center",
+  "left-bottom",
+  "right-top",
+  "right-center",
+  "right-bottom"
+]);
 
 function normalizedNameTextAlign(value) {
   const text = nullableText(value);

@@ -657,24 +657,52 @@ export function resolveRelativeLayout(layout, targetViewElement, selfViewElement
 
   const next = foundry.utils.deepClone(layout ?? {});
   next.position = "absolute";
-  if (placement === "below") {
-    next.top = `${targetTop + targetHeight + gap}px`;
-    next.left = `${targetLeft}px`;
+
+  const alignedLeft = (mode) => {
+    if (mode === "center" && selfWidth !== null) return targetLeft + (targetWidth - selfWidth) / 2;
+    if (mode === "right" && selfWidth !== null) return targetLeft + targetWidth - selfWidth;
+    return targetLeft;
+  };
+
+  const alignedTop = (mode) => {
+    if (mode === "center" && selfHeight !== null) return targetTop + (targetHeight - selfHeight) / 2;
+    if (mode === "bottom" && selfHeight !== null) return targetTop + targetHeight - selfHeight;
+    return targetTop;
+  };
+
+  const verticalPlacements = {
+    above: "left",
+    below: "left",
+    "above-left": "left",
+    "above-center": "center",
+    "above-right": "right",
+    "below-left": "left",
+    "below-center": "center",
+    "below-right": "right"
+  };
+  const horizontalPlacements = {
+    "left-of": "top",
+    "right-of": "top",
+    "left-top": "top",
+    "left-center": "center",
+    "left-bottom": "bottom",
+    "right-top": "top",
+    "right-center": "center",
+    "right-bottom": "bottom"
+  };
+
+  if (placement in verticalPlacements) {
+    const topValue =
+      placement.startsWith("above") && selfHeight !== null ? targetTop - selfHeight - gap : targetTop + targetHeight + gap;
+    next.top = `${topValue}px`;
+    next.left = `${alignedLeft(verticalPlacements[placement])}px`;
     return next;
   }
-  if (placement === "above" && selfHeight !== null) {
-    next.top = `${targetTop - selfHeight - gap}px`;
-    next.left = `${targetLeft}px`;
-    return next;
-  }
-  if (placement === "right-of") {
-    next.top = `${targetTop}px`;
-    next.left = `${targetLeft + targetWidth + gap}px`;
-    return next;
-  }
-  if (placement === "left-of" && selfWidth !== null) {
-    next.top = `${targetTop}px`;
-    next.left = `${targetLeft - selfWidth - gap}px`;
+  if (placement in horizontalPlacements) {
+    const leftValue =
+      placement.startsWith("left") && selfWidth !== null ? targetLeft - selfWidth - gap : targetLeft + targetWidth + gap;
+    next.top = `${alignedTop(horizontalPlacements[placement])}px`;
+    next.left = `${leftValue}px`;
     return next;
   }
   return layout;

@@ -303,3 +303,41 @@ test("resolveRelativeLayout places a camera below its target", () => {
   assert.equal(resolved.left, "100px");
   assert.equal(resolved.width, "300px");
 });
+
+test("resolveRelativeLayout places a camera below-center its target", () => {
+  globalThis.foundry = {
+    utils: {
+      deepClone: (value) => JSON.parse(JSON.stringify(value))
+    }
+  };
+
+  const layout = {
+    position: "absolute",
+    top: "0px",
+    left: "0px",
+    width: "200px",
+    height: "120px",
+    relative: {
+      targetUserId: "u2",
+      placement: "below-center",
+      gap: "10px"
+    }
+  };
+  const targetView = {
+    offsetTop: 40,
+    offsetLeft: 100,
+    offsetWidth: 320,
+    offsetHeight: 180,
+    style: {}
+  };
+  const selfView = {
+    offsetWidth: 200,
+    offsetHeight: 120,
+    style: {}
+  };
+
+  const resolved = resolveRelativeLayout(layout, targetView, selfView);
+
+  assert.equal(resolved.top, "230px");
+  assert.equal(resolved.left, "160px");
+});

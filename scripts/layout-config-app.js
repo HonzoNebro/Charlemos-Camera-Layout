@@ -62,10 +62,18 @@ function relationPlacementSelect(value, disabled) {
   const disabledAttr = disabled ? " disabled" : "";
   const items = [
     { id: "none", label: localize("ui.config.relativePlacement.none") },
-    { id: "above", label: localize("ui.config.relativePlacement.above") },
-    { id: "below", label: localize("ui.config.relativePlacement.below") },
-    { id: "left-of", label: localize("ui.config.relativePlacement.leftOf") },
-    { id: "right-of", label: localize("ui.config.relativePlacement.rightOf") }
+    { id: "above-left", label: localize("ui.config.relativePlacement.aboveLeft") },
+    { id: "above-center", label: localize("ui.config.relativePlacement.aboveCenter") },
+    { id: "above-right", label: localize("ui.config.relativePlacement.aboveRight") },
+    { id: "below-left", label: localize("ui.config.relativePlacement.belowLeft") },
+    { id: "below-center", label: localize("ui.config.relativePlacement.belowCenter") },
+    { id: "below-right", label: localize("ui.config.relativePlacement.belowRight") },
+    { id: "left-top", label: localize("ui.config.relativePlacement.leftTop") },
+    { id: "left-center", label: localize("ui.config.relativePlacement.leftCenter") },
+    { id: "left-bottom", label: localize("ui.config.relativePlacement.leftBottom") },
+    { id: "right-top", label: localize("ui.config.relativePlacement.rightTop") },
+    { id: "right-center", label: localize("ui.config.relativePlacement.rightCenter") },
+    { id: "right-bottom", label: localize("ui.config.relativePlacement.rightBottom") }
   ];
   const options = items
     .map((item) => {
