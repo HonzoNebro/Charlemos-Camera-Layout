@@ -5,6 +5,7 @@ import {
   dumpRendererDebugSnapshot,
   isFrameOverlayPath,
   isRendererDebugEnabled,
+  syncGeometryInteractionMode,
   syncManagedViewGeometry,
   syncFoundryAvatarVisibility,
   videoStyle
@@ -240,4 +241,24 @@ test("syncManagedViewGeometry only clears geometry previously managed by module"
   assert.equal(moduleView.style.left, "");
   assert.equal(moduleView.style.width, "");
   assert.equal(moduleView.style.height, "");
+});
+
+test("syncGeometryInteractionMode toggles module ownership classes", () => {
+  const classes = new Set();
+  const viewElement = {
+    classList: {
+      toggle: (name, active) => {
+        if (active) classes.add(name);
+        else classes.delete(name);
+      }
+    }
+  };
+
+  syncGeometryInteractionMode(viewElement, true);
+  assert.equal(classes.has("charlemos-geometry-module"), true);
+  assert.equal(classes.has("charlemos-geometry-native"), false);
+
+  syncGeometryInteractionMode(viewElement, false);
+  assert.equal(classes.has("charlemos-geometry-module"), false);
+  assert.equal(classes.has("charlemos-geometry-native"), true);
 });
