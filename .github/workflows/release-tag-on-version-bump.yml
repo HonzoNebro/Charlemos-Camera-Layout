@@ -22,7 +22,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          current_version="$(node -e "console.log(require('./module.json').version)")"
+          current_version="$(node -e "const fs=require('fs'); console.log(JSON.parse(fs.readFileSync('module.json','utf8')).version)")"
           previous_version=""
           if git cat-file -e HEAD^:module.json 2>/dev/null; then
             previous_version="$(git show HEAD^:module.json | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d).version));")"
