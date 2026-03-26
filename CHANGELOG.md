@@ -5,6 +5,30 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-03-26
+
+### Added
+- Dedicated configuration hub with separate windows for Layout, Effects, Overlay, and Name Style.
+- Shared config helpers to keep per-player editing consistent across all dedicated windows.
+- Player-reset action with confirmation to clear both global and current-scene camera overrides for the selected user.
+
+### Changed
+- Main camera config window now focuses on player selection, section summaries, and entry points to dedicated editors.
+- Name Style configuration now follows the same selected-player workflow as the other dedicated windows.
+- Scene macro export is labeled explicitly as a scene-level action.
+- Release metadata restored to stable production identity in manifest:
+  - module id: `charlemos-camera-layout`
+  - manifest URL on `main`
+  - download URL on tag archive `v1.3.0`
+
+### Fixed
+- Removed misleading scene-wide reset action from the player-focused config hub.
+- Prevented branch-testing module identifiers from leaking into the stable release build.
+
+### Quality
+- Updated localization strings (`en`, `es`, `gl`) for the new config hub workflow.
+- Added unit coverage for removing a single player layout without affecting other players.
+
 ## [1.2.0] - 2026-03-26
 
 ### Added

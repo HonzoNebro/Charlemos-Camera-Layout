@@ -1,6 +1,6 @@
 {
-  "name": "charlemos-camera-layout-config-hub-split-windows",
-  "version": "1.2.0-confighub.1",
+  "name": "charlemos-camera-layout",
+  "version": "1.3.0",
   "private": true,
   "type": "module",
   "scripts": {
