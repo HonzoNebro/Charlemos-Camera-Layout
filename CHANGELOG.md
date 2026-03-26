@@ -5,6 +5,33 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-03-26
+
+### Added
+- New overlay frame fitting controls in camera config:
+  - **Overlay Fit Mode**: `auto`, `cover`, `contain`, `fill`
+  - **Overlay Anchor**: center, edges and corners
+- Updated localization strings (`en`, `es`, `gl`) for the new overlay controls.
+- New and expanded unit tests for overlay fit/anchor normalization and renderer behavior.
+
+### Changed
+- Overlay rendering now applies explicit `background-size` and `background-position` from configuration.
+- Legacy frame fallback behavior is preserved in `auto` mode for backward compatibility.
+- Release metadata restored to stable production identity in manifest:
+  - module `id`: `charlemos-camera-layout`
+  - manifest URL on `main`
+  - download URL on tag archive `v1.2.0`
+
+### Fixed
+- Avoided unexpected cropping with non-4:3 frame overlays by allowing `contain` fit mode.
+- Prevented frame fallback logic from overriding explicit fit/anchor choices.
+
+### Quality
+- `npm test` passing with updated coverage for:
+  - `tests/unit/camera-config-model.test.js`
+  - `tests/unit/camera-layout-style.test.js`
+  - `tests/unit/live-camera-renderer.test.js`
+
 ## [1.1.0] - 2026-03-26
 
 ### Added
