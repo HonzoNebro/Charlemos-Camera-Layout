@@ -63,6 +63,33 @@ function overlayTintBlendModeFrom(layout) {
   return nullableText(layout?.overlay?.tint?.blendMode) ?? "normal";
 }
 
+const OVERLAY_FIT_MODE_VALUES = new Set(["auto", "cover", "contain", "fill"]);
+const OVERLAY_ANCHOR_VALUES = new Set([
+  "center",
+  "top",
+  "bottom",
+  "left",
+  "right",
+  "top-left",
+  "top-right",
+  "bottom-left",
+  "bottom-right"
+]);
+
+function normalizedOverlayFitMode(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "auto";
+  if (OVERLAY_FIT_MODE_VALUES.has(text)) return text;
+  return "auto";
+}
+
+function normalizedOverlayAnchor(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "center";
+  if (OVERLAY_ANCHOR_VALUES.has(text)) return text;
+  return "center";
+}
+
 function snapEnabledFrom(layout) {
   return Boolean(layout?.snap?.enabled);
 }
@@ -137,6 +164,8 @@ export function buildFormData(layout) {
     overlayOffsetY: overlayOffsetValue(layout, "y"),
     overlayScale: overlayScaleFrom(layout),
     overlayRotate: overlayRotateFrom(layout),
+    overlayFitMode: normalizedOverlayFitMode(layout?.overlay?.fitMode),
+    overlayAnchor: normalizedOverlayAnchor(layout?.overlay?.anchor),
     overlayTintEnabled: overlayTintEnabledFrom(layout),
     overlayTintColor: overlayTintColorFrom(layout),
     overlayTintOpacity: overlayTintOpacityFrom(layout),
@@ -168,6 +197,8 @@ function buildOverlayPayload(formData) {
     },
     scale: parseFloatNumber(formData.overlayScale) ?? 1,
     rotate: parseFloatNumber(formData.overlayRotate) ?? 0,
+    fitMode: normalizedOverlayFitMode(formData.overlayFitMode),
+    anchor: normalizedOverlayAnchor(formData.overlayAnchor),
     tint: {
       enabled: Boolean(formData.overlayTintEnabled),
       color: nullableText(formData.overlayTintColor) ?? "#000000",

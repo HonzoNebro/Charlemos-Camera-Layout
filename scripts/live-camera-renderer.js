@@ -243,9 +243,21 @@ export function isFrameOverlayPath(imageUrl) {
   return text.includes("/frame") || text.includes("/frames/");
 }
 
-export function applyFrameOverlayFallbackStyle(element, imageUrl) {
+export function applyFrameOverlayFallbackStyle(element, overlay) {
   if (!element?.style) return;
+  const overlayConfig =
+    overlay && typeof overlay === "object"
+      ? overlay
+      : {
+          imageUrl: overlay
+        };
+  const imageUrl = overlayConfig?.imageUrl;
   if (!isFrameOverlayPath(imageUrl)) return;
+  const fitMode = String(overlayConfig?.fitMode ?? "auto").trim();
+  const anchor = String(overlayConfig?.anchor ?? "center").trim();
+  const hasExplicitFitMode = fitMode !== "" && fitMode !== "auto";
+  const hasExplicitAnchor = anchor !== "" && anchor !== "center";
+  if (hasExplicitFitMode || hasExplicitAnchor) return;
   element.style.backgroundSize = "100% 100%";
   element.style.backgroundPosition = "center";
   element.style.backgroundRepeat = "no-repeat";
@@ -328,6 +340,8 @@ function layoutDebugState(layout) {
     overlayEnabled: Boolean(layout.overlay?.enabled),
     overlayImage: layout.overlay?.imageUrl ?? null,
     overlayOpacity: layout.overlay?.opacity ?? null,
+    overlayFitMode: layout.overlay?.fitMode ?? "auto",
+    overlayAnchor: layout.overlay?.anchor ?? "center",
     crop: layout.crop ?? null
   };
 }
@@ -584,7 +598,7 @@ function applyOverlay(viewElement, layout) {
   const element = getOrCreateOverlay(viewElement);
   const style = overlayStyle(layout);
   assignStyle(element, style);
-  applyFrameOverlayFallbackStyle(element, layout?.overlay?.imageUrl);
+  applyFrameOverlayFallbackStyle(element, layout?.overlay);
 }
 
 function applyViewStyle(viewElement, layout) {

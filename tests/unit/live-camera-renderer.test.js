@@ -161,6 +161,27 @@ test("applyFrameOverlayFallbackStyle enforces frame-safe background sizing", () 
   assert.equal(element.style.mixBlendMode, "screen");
 });
 
+test("applyFrameOverlayFallbackStyle respects explicit fit mode and anchor", () => {
+  const element = {
+    style: {
+      backgroundSize: "contain",
+      backgroundPosition: "right bottom",
+      backgroundRepeat: "no-repeat",
+      mixBlendMode: ""
+    }
+  };
+
+  applyFrameOverlayFallbackStyle(element, {
+    imageUrl: "modules/falemos/assets/img/frames/elegant.png",
+    fitMode: "contain",
+    anchor: "bottom-right"
+  });
+
+  assert.equal(element.style.backgroundSize, "contain");
+  assert.equal(element.style.backgroundPosition, "right bottom");
+  assert.equal(element.style.backgroundRepeat, "no-repeat");
+});
+
 test("isRendererDebugEnabled reads module setting", () => {
   globalThis.game = {
     settings: {

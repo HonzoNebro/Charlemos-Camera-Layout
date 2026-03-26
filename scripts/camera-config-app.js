@@ -93,6 +93,8 @@ function readFormData(form) {
     overlayOffsetY: readText(form, "overlayOffsetY"),
     overlayScale: readText(form, "overlayScale"),
     overlayRotate: readText(form, "overlayRotate"),
+    overlayFitMode: readText(form, "overlayFitMode"),
+    overlayAnchor: readText(form, "overlayAnchor"),
     overlayTintEnabled: readChecked(form, "overlayTintEnabled"),
     overlayTintColor: readText(form, "overlayTintColor"),
     overlayTintOpacity: readText(form, "overlayTintOpacity"),
@@ -219,6 +221,42 @@ function overlayTintBlendModeSelect(value) {
   return `<select name="overlayTintBlendMode">${options}</select>`;
 }
 
+function selectFromItems(name, value, items) {
+  const selectedValue = String(value ?? "");
+  const options = items
+    .map((item) => {
+      const selectedAttr = selectedValue === item.id ? " selected" : "";
+      return `<option value="${item.id}"${selectedAttr}>${item.label}</option>`;
+    })
+    .join("");
+  return `<select name="${name}">${options}</select>`;
+}
+
+function overlayFitModeSelect(value) {
+  const items = [
+    { id: "auto", label: localize("ui.config.overlayFit.auto") },
+    { id: "cover", label: localize("ui.config.overlayFit.cover") },
+    { id: "contain", label: localize("ui.config.overlayFit.contain") },
+    { id: "fill", label: localize("ui.config.overlayFit.fill") }
+  ];
+  return selectFromItems("overlayFitMode", value, items);
+}
+
+function overlayAnchorSelect(value) {
+  const items = [
+    { id: "center", label: localize("ui.config.overlayAnchor.center") },
+    { id: "top", label: localize("ui.config.overlayAnchor.top") },
+    { id: "bottom", label: localize("ui.config.overlayAnchor.bottom") },
+    { id: "left", label: localize("ui.config.overlayAnchor.left") },
+    { id: "right", label: localize("ui.config.overlayAnchor.right") },
+    { id: "top-left", label: localize("ui.config.overlayAnchor.topLeft") },
+    { id: "top-right", label: localize("ui.config.overlayAnchor.topRight") },
+    { id: "bottom-left", label: localize("ui.config.overlayAnchor.bottomLeft") },
+    { id: "bottom-right", label: localize("ui.config.overlayAnchor.bottomRight") }
+  ];
+  return selectFromItems("overlayAnchor", value, items);
+}
+
 function optionHtml(value, label) {
   return `<option value="${value}">${label}</option>`;
 }
@@ -317,6 +355,8 @@ function overlaySection(formData) {
     rowWithHelp("overlayOffsetY", textInput("overlayOffsetY", formData.overlayOffsetY), "overlayOffsetY"),
     rowWithHelp("overlayScale", numberInput("overlayScale", formData.overlayScale, 0.01, null, 0.01), "overlayScale"),
     rowWithHelp("overlayRotate", numberInput("overlayRotate", formData.overlayRotate, null, null, 0.1), "overlayRotate"),
+    rowWithHelp("overlayFitMode", overlayFitModeSelect(formData.overlayFitMode), "overlayFitMode"),
+    rowWithHelp("overlayAnchor", overlayAnchorSelect(formData.overlayAnchor), "overlayAnchor"),
     rowWithHelp("overlayTintEnabled", checkboxInput("overlayTintEnabled", formData.overlayTintEnabled), "overlayTintEnabled"),
     rowWithHelp("overlayTintColor", colorInput("overlayTintColor", formData.overlayTintColor), "overlayTintColor"),
     rowWithHelp("overlayTintOpacity", numberInput("overlayTintOpacity", formData.overlayTintOpacity, 0, 1, 0.05), "overlayTintOpacity"),

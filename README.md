@@ -5,7 +5,7 @@ FoundryVTT module for advanced A/V camera styling and per-scene camera profiles.
 ## Current capabilities
 
 - Per-player camera overlay with URL/path + file picker
-- Overlay controls: opacity, move, scale, rotate, tint, blend mode
+- Overlay controls: opacity, move, scale, rotate, fit mode, anchor, tint, blend mode
 - Video effects: transform, filter, clip-path, border radius
 - Camera crop masks (top/right/bottom/left)
 - Name styles: source, color, font family (Foundry fonts), position, alignment, weight and italic

@@ -23,6 +23,8 @@ test("buildFormData maps stored layout to UI fields", () => {
       offset: { x: "20px", y: "-10%" },
       scale: 1.2,
       rotate: 15,
+      fitMode: "contain",
+      anchor: "top-right",
       tint: { enabled: true, color: "#112233", opacity: 0.35, blendMode: "multiply" }
     },
     nameStyle: {
@@ -64,6 +66,8 @@ test("buildFormData maps stored layout to UI fields", () => {
     overlayOffsetY: "-10%",
     overlayScale: 1.2,
     overlayRotate: 15,
+    overlayFitMode: "contain",
+    overlayAnchor: "top-right",
     overlayTintEnabled: true,
     overlayTintColor: "#112233",
     overlayTintOpacity: 0.35,
@@ -100,6 +104,8 @@ test("buildLayoutPatch normalizes empty form values", () => {
     overlayOffsetY: "-5%",
     overlayScale: "",
     overlayRotate: "",
+    overlayFitMode: "fill",
+    overlayAnchor: "bottom-left",
     overlayTintEnabled: true,
     overlayTintColor: "#ff0000",
     overlayTintOpacity: "0.5",
@@ -139,6 +145,8 @@ test("buildLayoutPatch normalizes empty form values", () => {
       },
       scale: 1,
       rotate: 0,
+      fitMode: "fill",
+      anchor: "bottom-left",
       tint: {
         enabled: true,
         color: "#ff0000",
@@ -180,6 +188,8 @@ test("buildLayoutPatch applies safe defaults for invalid name typography values"
     overlayOffsetY: "",
     overlayScale: "",
     overlayRotate: "",
+    overlayFitMode: "invalid-fit",
+    overlayAnchor: "invalid-anchor",
     overlayTintEnabled: false,
     overlayTintColor: "",
     overlayTintOpacity: "",
@@ -202,13 +212,17 @@ test("buildLayoutPatch applies safe defaults for invalid name typography values"
       position: patch.nameStyle.position,
       align: patch.nameStyle.textAlign,
       weight: patch.nameStyle.fontWeight,
-      style: patch.nameStyle.fontStyle
+      style: patch.nameStyle.fontStyle,
+      overlayFitMode: patch.overlay.fitMode,
+      overlayAnchor: patch.overlay.anchor
     },
     {
       position: "sideways",
       align: "center",
       weight: "600",
-      style: "normal"
+      style: "normal",
+      overlayFitMode: "auto",
+      overlayAnchor: "center"
     }
   );
 });
