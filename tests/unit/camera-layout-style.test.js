@@ -40,6 +40,7 @@ test("overlayStyle applies transform and tint layer", () => {
   assert.equal(style.display, "block");
   assert.equal(style.backgroundImage, 'linear-gradient(rgba(18, 52, 86, 0.4), rgba(18, 52, 86, 0.4)), url("/x.png")');
   assert.equal(style.backgroundSize, "cover");
+  assert.equal(style.backgroundPosition, "center center");
   assert.equal(style.backgroundBlendMode, "multiply");
   assert.equal(style.mixBlendMode, "normal");
   assert.equal(style.opacity, "0.6");
@@ -56,7 +57,21 @@ test("overlayStyle uses screen blend mode for frame overlays", () => {
     }
   });
   assert.equal(style.backgroundSize, "100% 100%");
+  assert.equal(style.backgroundPosition, "center center");
   assert.equal(style.mixBlendMode, "screen");
+});
+
+test("overlayStyle honors explicit fit mode and anchor", () => {
+  const style = overlayStyle({
+    overlay: {
+      enabled: true,
+      imageUrl: "modules/falemos/assets/img/frames/elegant.png",
+      fitMode: "contain",
+      anchor: "bottom-right"
+    }
+  });
+  assert.equal(style.backgroundSize, "contain");
+  assert.equal(style.backgroundPosition, "right bottom");
 });
 
 test("nameStyle resolves text and position", () => {

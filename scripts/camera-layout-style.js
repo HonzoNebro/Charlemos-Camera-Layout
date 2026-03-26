@@ -59,11 +59,59 @@ function overlayMixBlendMode(imageUrl) {
   return "normal";
 }
 
-function overlayBackgroundSize(imageUrl) {
+const OVERLAY_FIT_MODE_VALUES = new Set(["auto", "cover", "contain", "fill"]);
+const OVERLAY_ANCHOR_VALUES = new Set([
+  "center",
+  "top",
+  "bottom",
+  "left",
+  "right",
+  "top-left",
+  "top-right",
+  "bottom-left",
+  "bottom-right"
+]);
+
+function normalizedOverlayFitMode(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "auto";
+  if (OVERLAY_FIT_MODE_VALUES.has(text)) return text;
+  return "auto";
+}
+
+function normalizedOverlayAnchor(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "center";
+  if (OVERLAY_ANCHOR_VALUES.has(text)) return text;
+  return "center";
+}
+
+function anchorToBackgroundPosition(anchor) {
+  if (anchor === "top") return "center top";
+  if (anchor === "bottom") return "center bottom";
+  if (anchor === "left") return "left center";
+  if (anchor === "right") return "right center";
+  if (anchor === "top-left") return "left top";
+  if (anchor === "top-right") return "right top";
+  if (anchor === "bottom-left") return "left bottom";
+  if (anchor === "bottom-right") return "right bottom";
+  return "center center";
+}
+
+function overlayBackgroundSize(layout, imageUrl) {
+  const fitMode = normalizedOverlayFitMode(layout?.overlay?.fitMode);
+  if (fitMode === "cover") return "cover";
+  if (fitMode === "contain") return "contain";
+  if (fitMode === "fill") return "100% 100%";
+  // Legacy auto mode keeps previous frame-path behavior for compatibility.
   const text = String(imageUrl ?? "").toLowerCase();
   if (!text) return "cover";
   if (text.includes("/frame") || text.includes("/frames/")) return "100% 100%";
   return "cover";
+}
+
+function overlayBackgroundPosition(layout) {
+  return anchorToBackgroundPosition(normalizedOverlayAnchor(layout?.overlay?.anchor));
 }
 
 const ALTERNATE_NAME_INTERVAL_MS = 4000;
@@ -146,7 +194,8 @@ export function overlayStyle(layout) {
   return {
     display: "block",
     backgroundImage: layers.join(", "),
-    backgroundSize: overlayBackgroundSize(image),
+    backgroundSize: overlayBackgroundSize(layout, image),
+    backgroundPosition: overlayBackgroundPosition(layout),
     backgroundBlendMode: layout?.overlay?.tint?.blendMode ?? "normal",
     mixBlendMode: overlayMixBlendMode(image),
     opacity: String(clamp(opacityValue, 0, 1)),
