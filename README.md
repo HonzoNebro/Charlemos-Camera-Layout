@@ -16,6 +16,7 @@ FoundryVTT module for advanced A/V camera styling and per-scene camera profiles.
 ## Structure
 
 - `module.json`: Foundry module manifest
+- `CHANGELOG.md`: release notes and version history
 - `scripts/`: module runtime code
 - `styles/`: module styles
 - `lang/`: i18n dictionaries

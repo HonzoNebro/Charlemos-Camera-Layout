@@ -1,6 +1,6 @@
 {
-  "name": "charlemos-camera-layout-improvements-for-nameplate",
-  "version": "1.0.0",
+  "name": "charlemos-camera-layout",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {

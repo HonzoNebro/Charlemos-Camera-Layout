@@ -1,4 +1,4 @@
-export const MODULE_ID = "charlemos-camera-layout-improvements-for-nameplate";
+export const MODULE_ID = "charlemos-camera-layout";
 
 export const SETTINGS_KEYS = {
   PLAYER_LAYOUTS: "playerLayouts",
