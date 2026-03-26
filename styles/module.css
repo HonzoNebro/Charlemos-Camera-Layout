@@ -231,7 +231,11 @@
 
 .charlemos-camera-view.charlemos-geometry-module .video-container,
 .charlemos-camera-view.charlemos-geometry-module .camera-container-popout,
-.charlemos-camera-view.charlemos-geometry-module .camera-container,
+.charlemos-camera-view.charlemos-geometry-module .camera-container {
+  pointer-events: none;
+  cursor: default;
+}
+
 .charlemos-camera-view.charlemos-geometry-module .window-resizable-handle,
 .charlemos-camera-view.charlemos-geometry-module .window-resize-handle,
 .charlemos-camera-view.charlemos-geometry-module .ui-resizable-handle {
