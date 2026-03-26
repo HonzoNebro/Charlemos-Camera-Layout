@@ -1,4 +1,4 @@
-export const MODULE_ID = "charlemos-camera-layout";
+export const MODULE_ID = "charlemos-camera-layout-config-hub-split-windows";
 
 export const SETTINGS_KEYS = {
   PLAYER_LAYOUTS: "playerLayouts",
