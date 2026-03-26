@@ -17,12 +17,14 @@ FoundryVTT module for advanced A/V camera styling and per-scene camera profiles.
 
 - `module.json`: Foundry module manifest
 - `CHANGELOG.md`: release notes and version history
+- `AGENTS.md`: permanent instructions for coding agents
 - `scripts/`: module runtime code
 - `styles/`: module styles
 - `lang/`: i18n dictionaries
 - `tests/unit/`: unit tests only
 - `docs/ROADMAP.md`: short and long term roadmap
 - `docs/DEVELOPMENT_RULES.md`: mandatory coding rules
+- `.github/workflows/release-tag-on-version-bump.yml`: auto-tag when `module.json` version changes on `main`
 
 ## Run tests
 
