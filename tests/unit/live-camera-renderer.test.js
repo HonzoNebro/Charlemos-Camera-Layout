@@ -5,6 +5,7 @@ import {
   dumpRendererDebugSnapshot,
   isFrameOverlayPath,
   isRendererDebugEnabled,
+  syncManagedViewGeometry,
   syncFoundryAvatarVisibility,
   videoStyle
 } from "../../scripts/live-camera-renderer.js";
@@ -195,4 +196,48 @@ test("dumpRendererDebugSnapshot returns null when no camera app exists", () => {
   globalThis.ui = { webrtc: null };
   const snapshot = dumpRendererDebugSnapshot("u1");
   assert.equal(snapshot, null);
+});
+
+test("syncManagedViewGeometry only clears geometry previously managed by module", () => {
+  const nativeView = {
+    style: {
+      position: "absolute",
+      top: "10px",
+      left: "20px",
+      width: "320px",
+      height: "180px"
+    },
+    dataset: {}
+  };
+
+  syncManagedViewGeometry(nativeView, {}, false);
+
+  assert.equal(nativeView.style.position, "absolute");
+  assert.equal(nativeView.style.top, "10px");
+  assert.equal(nativeView.style.left, "20px");
+  assert.equal(nativeView.style.width, "320px");
+  assert.equal(nativeView.style.height, "180px");
+
+  const moduleView = {
+    style: {
+      position: "",
+      top: "",
+      left: "",
+      width: "",
+      height: ""
+    },
+    dataset: {}
+  };
+
+  syncManagedViewGeometry(moduleView, { position: "absolute", top: "8px", left: "12px", width: "300px", height: "160px" }, true);
+  assert.equal(moduleView.dataset.charlemosGeometryManaged, "1");
+  assert.equal(moduleView.style.top, "8px");
+
+  syncManagedViewGeometry(moduleView, {}, false);
+  assert.equal(moduleView.dataset.charlemosGeometryManaged, undefined);
+  assert.equal(moduleView.style.position, "");
+  assert.equal(moduleView.style.top, "");
+  assert.equal(moduleView.style.left, "");
+  assert.equal(moduleView.style.width, "");
+  assert.equal(moduleView.style.height, "");
 });

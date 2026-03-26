@@ -602,6 +602,28 @@ function applyOverlay(viewElement, layout) {
   applyFrameOverlayFallbackStyle(element, layout?.overlay);
 }
 
+function clearManagedViewGeometry(viewElement) {
+  if (!viewElement?.dataset || viewElement.dataset.charlemosGeometryManaged !== "1") return;
+  assignStyle(viewElement, {
+    position: "",
+    top: "",
+    left: "",
+    width: "",
+    height: ""
+  });
+  delete viewElement.dataset.charlemosGeometryManaged;
+}
+
+export function syncManagedViewGeometry(viewElement, layout, applyGeometry) {
+  if (!viewElement?.style) return;
+  if (!applyGeometry) {
+    clearManagedViewGeometry(viewElement);
+    return;
+  }
+  assignStyle(viewElement, buildCameraViewStyle(layout));
+  if (viewElement.dataset) viewElement.dataset.charlemosGeometryManaged = "1";
+}
+
 function applyViewStyle(viewElement, layout, applyGeometry) {
   viewElement.classList.add("charlemos-camera-view");
   viewElement.classList.remove("charlemos-direct-edit");
@@ -610,14 +632,9 @@ function applyViewStyle(viewElement, layout, applyGeometry) {
     background: "transparent",
     backgroundColor: "transparent",
     outline: "",
-    cursor: "",
-    position: "",
-    top: "",
-    left: "",
-    width: "",
-    height: ""
+    cursor: ""
   });
-  if (applyGeometry) assignStyle(viewElement, buildCameraViewStyle(layout));
+  syncManagedViewGeometry(viewElement, layout, applyGeometry);
 }
 
 function applyVideoStyle(videoElement, layout) {
@@ -633,13 +650,9 @@ function resetViewStyle(viewElement, videoElement) {
     background: "",
     backgroundColor: "",
     outline: "",
-    cursor: "",
-    position: "",
-    top: "",
-    left: "",
-    width: "",
-    height: ""
+    cursor: ""
   });
+  clearManagedViewGeometry(viewElement);
   assignStyle(videoElement, {
     transform: "",
     filter: "",
