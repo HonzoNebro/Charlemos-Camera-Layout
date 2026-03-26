@@ -36,9 +36,9 @@ export async function exportLayoutToMacro(playerId, layout, macroName) {
   return macro;
 }
 
-export async function exportSceneProfileToMacro(sceneId, layouts, macroName) {
+export async function exportSceneProfileToMacro(sceneId, profile, macroName) {
   const name = macroName || game.i18n.localize(`${MODULE_ID}.macro.sceneDefaultName`);
-  const command = buildSceneCommand(sceneId, layouts);
+  const command = buildSceneCommand(sceneId, profile);
   const macroData = buildMacroData(name, command);
   const macro = await Macro.create(macroData);
   console.debug(`${MODULE_ID} | scene macro exported`, { sceneId, macroId: macro.id });

@@ -17,11 +17,16 @@ function cloneValue(value) {
   return JSON.parse(JSON.stringify(value ?? {}));
 }
 
-export function setLoadedSceneProfileDraft(sceneId, layouts) {
+export function setLoadedSceneProfileDraft(sceneId, draftLike) {
   if (!sceneId) return null;
+  const source =
+    draftLike && typeof draftLike === "object" && !Array.isArray(draftLike) && ("layouts" in draftLike || "cameraControlMode" in draftLike)
+      ? draftLike
+      : { layouts: draftLike };
   const draft = {
     sceneId,
-    layouts: cloneValue(layouts ?? {})
+    cameraControlMode: source.cameraControlMode ?? "native",
+    layouts: cloneValue(source.layouts ?? {})
   };
   state.loadedSceneDrafts[sceneId] = draft;
   return draft;

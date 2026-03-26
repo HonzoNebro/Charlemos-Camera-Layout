@@ -19,6 +19,7 @@ import {
   importJsonConfigFile,
   loadLayoutForUser,
   localize,
+  loadedDraftCameraControlMode,
   loadedDraftLayouts,
   resetLayoutForUser,
   sanitizeLayouts,
@@ -339,9 +340,18 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
     if (entered === null) return;
     const macroName = entered.trim() || defaultName;
     const draftLayouts = loadedDraftLayouts(sceneId);
+    const draftCameraControlMode = loadedDraftCameraControlMode(sceneId);
     const currentSceneLayouts = getSceneProfile()?.layouts;
-    const layouts = sanitizeLayouts(draftLayouts ?? currentSceneLayouts ?? getAllPlayerLayouts());
-    const macro = await exportSceneProfileToMacro(sceneId, layouts, macroName);
+    const cameraControlMode = draftCameraControlMode ?? getSceneCameraControlMode();
+    const layouts = sanitizeLayouts(draftLayouts ?? currentSceneLayouts ?? getAllPlayerLayouts(), cameraControlMode);
+    const macro = await exportSceneProfileToMacro(
+      sceneId,
+      {
+        cameraControlMode,
+        layouts
+      },
+      macroName
+    );
     ui.notifications.info(localize("ui.config.notifications.exported"));
     console.debug(`${MODULE_ID} | scene config exported`, { sceneId, macroId: macro.id });
   }

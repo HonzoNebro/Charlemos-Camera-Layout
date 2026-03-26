@@ -13,8 +13,8 @@ function openConfig() {
   app.render(true);
 }
 
-function loadSceneProfileDraft(sceneId, layouts) {
-  setLoadedSceneProfileDraft(sceneId, layouts);
+function loadSceneProfileDraft(sceneId, payload) {
+  setLoadedSceneProfileDraft(sceneId, payload);
   openConfig();
   ui.notifications.info(game.i18n.localize(`${MODULE_ID}.ui.config.notifications.macroLoaded`));
 }

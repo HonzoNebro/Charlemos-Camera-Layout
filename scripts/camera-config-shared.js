@@ -1,7 +1,7 @@
 import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
 import { getAllPlayerLayouts, getPlayerLayout, removePlayerLayout, replacePlayerLayout, setAllPlayerLayouts } from "./camera-style-service.js";
 import { applyCameraLayoutsNow } from "./live-camera-renderer.js";
-import { applySceneProfile, getSceneProfile, getSceneProfileLayout, resetSceneProfile, sceneProfileEnabled } from "./scene-camera.js";
+import { applySceneProfile, getSceneCameraControlMode, getSceneProfile, getSceneProfileLayout, resetSceneProfile, sceneProfileEnabled } from "./scene-camera.js";
 import { clearLoadedSceneProfileDraft, getLoadedSceneProfileDraft } from "./state.js";
 
 export const LEGACY_LAYOUT_KEYS = ["preset", "snap", "resize"];
@@ -31,8 +31,16 @@ export function loadedDraftLayouts(sceneId) {
   return draft.layouts ?? null;
 }
 
+export function loadedDraftCameraControlMode(sceneId) {
+  const draft = getLoadedSceneProfileDraft(sceneId);
+  if (!draft) return null;
+  return draft.cameraControlMode ?? "native";
+}
+
 function cloneValue(value) {
-  return foundry.utils.deepClone(value ?? {});
+  if (typeof foundry !== "undefined" && foundry?.utils?.deepClone) return foundry.utils.deepClone(value ?? {});
+  if (typeof structuredClone === "function") return structuredClone(value ?? {});
+  return JSON.parse(JSON.stringify(value ?? {}));
 }
 
 export function sanitizeLayout(layout) {
@@ -48,10 +56,21 @@ export function sanitizeLayout(layout) {
   return next;
 }
 
-export function sanitizeLayouts(layouts) {
+export function sanitizeLayoutForCameraControlMode(layout, cameraControlMode) {
+  const next = sanitizeLayout(layout);
+  if (cameraControlMode === "module") return next;
+  delete next.position;
+  delete next.top;
+  delete next.left;
+  delete next.width;
+  delete next.height;
+  return next;
+}
+
+export function sanitizeLayouts(layouts, cameraControlMode = "module") {
   const next = {};
   Object.entries(layouts ?? {}).forEach(([playerId, layout]) => {
-    next[playerId] = sanitizeLayout(layout);
+    next[playerId] = sanitizeLayoutForCameraControlMode(layout, cameraControlMode);
   });
   return next;
 }
@@ -84,21 +103,22 @@ export async function saveLayoutPatchForUser(selectedUserId, patch) {
   const sceneId = currentSceneId();
   const draftLayouts = loadedDraftLayouts(sceneId);
   if (sceneId && draftLayouts) {
-    const layouts = sanitizeLayouts(draftLayouts);
+    const layouts = sanitizeLayouts(draftLayouts, loadedDraftCameraControlMode(sceneId) ?? getSceneCameraControlMode());
     const current = layouts[selectedUserId] ?? {};
     layouts[selectedUserId] = foundry.utils.mergeObject(current, patch, { inplace: false });
     await setAllPlayerLayouts(layouts);
-    await applySceneProfile(sceneId, layouts);
+    await applySceneProfile(sceneId, layouts, { cameraControlMode: loadedDraftCameraControlMode(sceneId) ?? getSceneCameraControlMode() });
     clearLoadedSceneProfileDraft(sceneId);
   } else {
     const currentGlobalLayout = sanitizeLayout(getPlayerLayout(selectedUserId));
     const nextGlobalLayout = foundry.utils.mergeObject(currentGlobalLayout, patch, { inplace: false });
     await replacePlayerLayout(selectedUserId, nextGlobalLayout);
     if (sceneId) {
-      const sceneLayouts = sanitizeLayouts(getSceneProfile()?.layouts ?? getAllPlayerLayouts());
+      const sceneControlMode = getSceneCameraControlMode();
+      const sceneLayouts = sanitizeLayouts(getSceneProfile()?.layouts ?? getAllPlayerLayouts(), sceneControlMode);
       const currentSceneLayout = sceneLayouts[selectedUserId] ?? nextGlobalLayout;
       sceneLayouts[selectedUserId] = foundry.utils.mergeObject(currentSceneLayout, patch, { inplace: false });
-      await applySceneProfile(sceneId, sceneLayouts);
+      await applySceneProfile(sceneId, sceneLayouts, { cameraControlMode: sceneControlMode });
     }
   }
   applyCameraLayoutsNow();
@@ -107,8 +127,23 @@ export async function saveLayoutPatchForUser(selectedUserId, patch) {
 export function normalizeImportPayload(json) {
   if (!json || typeof json !== "object") return null;
   const settings = json.settings ?? json;
-  const playerLayouts = sanitizeLayouts(settings.playerLayouts ?? {});
-  const sceneProfiles = settings.sceneProfiles && typeof settings.sceneProfiles === "object" ? settings.sceneProfiles : {};
+  const playerLayouts = sanitizeLayouts(settings.playerLayouts ?? {}, "module");
+  const sceneProfiles =
+    settings.sceneProfiles && typeof settings.sceneProfiles === "object"
+      ? Object.fromEntries(
+          Object.entries(settings.sceneProfiles).map(([sceneId, profile]) => {
+            const cameraControlMode = profile?.cameraControlMode ?? "native";
+            return [
+              sceneId,
+              {
+                enabled: profile?.enabled !== false,
+                cameraControlMode,
+                layouts: sanitizeLayouts(profile?.layouts ?? {}, cameraControlMode)
+              }
+            ];
+          })
+        )
+      : {};
   const sceneCamera = settings.sceneCamera && typeof settings.sceneCamera === "object" ? settings.sceneCamera : {};
   return {
     playerLayouts,
@@ -118,13 +153,27 @@ export function normalizeImportPayload(json) {
 }
 
 export function configExportPayload() {
+  const rawSceneProfiles = foundry.utils.deepClone(game.settings.get(MODULE_ID, SETTINGS_KEYS.SCENE_PROFILES) ?? {});
+  const sceneProfiles = Object.fromEntries(
+    Object.entries(rawSceneProfiles).map(([sceneId, profile]) => {
+      const cameraControlMode = profile?.cameraControlMode ?? "native";
+      return [
+        sceneId,
+        {
+          enabled: profile?.enabled !== false,
+          cameraControlMode,
+          layouts: sanitizeLayouts(profile?.layouts ?? {}, cameraControlMode)
+        }
+      ];
+    })
+  );
   return {
     moduleId: MODULE_ID,
     version: CONFIG_EXPORT_VERSION,
     exportedAt: new Date().toISOString(),
     settings: {
-      playerLayouts: sanitizeLayouts(getAllPlayerLayouts()),
-      sceneProfiles: foundry.utils.deepClone(game.settings.get(MODULE_ID, SETTINGS_KEYS.SCENE_PROFILES) ?? {}),
+      playerLayouts: sanitizeLayouts(getAllPlayerLayouts(), "module"),
+      sceneProfiles,
       sceneCamera: foundry.utils.deepClone(game.settings.get(MODULE_ID, SETTINGS_KEYS.SCENE_CAMERA) ?? {})
     }
   };
@@ -154,12 +203,13 @@ export async function resetLayoutForUser(selectedUserId) {
   let changed = await removePlayerLayout(selectedUserId);
   if (sceneId) {
     const draftLayouts = loadedDraftLayouts(sceneId);
-    const sceneLayouts = sanitizeLayouts(draftLayouts ?? getSceneProfile()?.layouts ?? {});
+    const sceneControlMode = loadedDraftCameraControlMode(sceneId) ?? getSceneCameraControlMode();
+    const sceneLayouts = sanitizeLayouts(draftLayouts ?? getSceneProfile()?.layouts ?? {}, sceneControlMode);
     if (selectedUserId in sceneLayouts) {
       delete sceneLayouts[selectedUserId];
       changed = true;
       if (Object.keys(sceneLayouts).length === 0) await resetSceneProfile(sceneId);
-      else await applySceneProfile(sceneId, sceneLayouts);
+      else await applySceneProfile(sceneId, sceneLayouts, { cameraControlMode: sceneControlMode });
     }
     clearLoadedSceneProfileDraft(sceneId);
   }
