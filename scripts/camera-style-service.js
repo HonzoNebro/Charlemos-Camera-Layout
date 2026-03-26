@@ -38,6 +38,15 @@ export async function replacePlayerLayout(playerId, nextLayout) {
   return layouts[playerId];
 }
 
+export async function removePlayerLayout(playerId) {
+  const layouts = readLayouts();
+  if (!(playerId in layouts)) return false;
+  delete layouts[playerId];
+  await writeLayouts(layouts);
+  console.debug(`${MODULE_ID} | player layout removed`, { playerId });
+  return true;
+}
+
 export async function updatePlayerLayout(playerId, patch) {
   const layouts = readLayouts();
   const current = ensurePlayerLayout(layouts, playerId);

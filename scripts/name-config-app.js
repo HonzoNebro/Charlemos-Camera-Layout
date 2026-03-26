@@ -1,72 +1,11 @@
 import { MODULE_ID } from "./constants.js";
-import { getAllPlayerLayouts, getPlayerLayout, replacePlayerLayout, setAllPlayerLayouts } from "./camera-style-service.js";
 import { buildFormData, buildNameStylePatch } from "./camera-config-model.js";
-import { applyCameraLayoutsNow } from "./live-camera-renderer.js";
 import { replaceAppContent } from "./dom-replace.js";
-import { applySceneProfile, getSceneProfile, getSceneProfileLayout, sceneProfileEnabled } from "./scene-camera.js";
-import { clearLoadedSceneProfileDraft, getLoadedSceneProfileDraft } from "./state.js";
-
-function localize(key) {
-  return game.i18n.localize(`${MODULE_ID}.${key}`);
-}
+import { appId, checkboxInput, colorInput, rowWithHelp, sectionHtml, selectFromItems, textInput } from "./camera-config-ui.js";
+import { loadLayoutForUser, localize, readChecked, readText, saveLayoutPatchForUser, selectedUser, usersForConfig } from "./camera-config-shared.js";
 
 function titleKey() {
   return `${MODULE_ID}.ui.name.title`;
-}
-
-function usersForConfig() {
-  return game.users.filter((user) => user.active);
-}
-
-function selectedUser(users, selectedUserId) {
-  const selected = users.find((user) => user.id === selectedUserId);
-  if (selected) return selected;
-  return users[0] ?? null;
-}
-
-function currentSceneId() {
-  return canvas.scene?.id ?? null;
-}
-
-function loadedDraftLayouts(sceneId) {
-  const draft = getLoadedSceneProfileDraft(sceneId);
-  if (!draft) return null;
-  return draft.layouts ?? null;
-}
-
-const LEGACY_LAYOUT_KEYS = ["preset", "snap", "resize", "position", "top", "left", "width", "height"];
-
-function cloneValue(value) {
-  return foundry.utils.deepClone(value ?? {});
-}
-
-function sanitizeLayout(layout) {
-  const next = cloneValue(layout);
-  LEGACY_LAYOUT_KEYS.forEach((key) => {
-    delete next[key];
-  });
-  if (next.geometry) {
-    next.geometry = {
-      borderRadius: next.geometry.borderRadius ?? null
-    };
-  }
-  return next;
-}
-
-function sanitizeLayouts(layouts) {
-  const next = {};
-  Object.entries(layouts ?? {}).forEach(([playerId, layout]) => {
-    next[playerId] = sanitizeLayout(layout);
-  });
-  return next;
-}
-
-function readText(form, name) {
-  return form.elements.namedItem(name)?.value ?? "";
-}
-
-function readChecked(form, name) {
-  return Boolean(form.elements.namedItem(name)?.checked);
 }
 
 function readFormData(form) {
@@ -84,63 +23,22 @@ function readFormData(form) {
   };
 }
 
-function optionTag(user, selectedId) {
-  const selectedAttr = user.id === selectedId ? " selected" : "";
-  return `<option value="${user.id}"${selectedAttr}>${foundry.utils.escapeHTML(user.name)}</option>`;
-}
-
-function playerSelectHtml(users, selectedId) {
-  const options = users.map((user) => optionTag(user, selectedId)).join("");
-  return `<select id="${MODULE_ID}-name-player-select" name="playerId">${options}</select>`;
-}
-
-function textInput(name, value) {
-  return `<input type="text" name="${name}" value="${foundry.utils.escapeHTML(String(value ?? ""))}">`;
-}
-
-function checkboxInput(name, checked) {
-  const checkedAttr = checked ? " checked" : "";
-  return `<input type="checkbox" name="${name}"${checkedAttr}>`;
-}
-
-function colorInput(name, value) {
-  return `<input type="color" name="${name}" value="${foundry.utils.escapeHTML(String(value ?? "#ffffff"))}">`;
-}
-
 function namePositionSelect(value) {
-  const selectedTop = value === "top" ? " selected" : "";
-  const selectedBottom = value === "bottom" ? " selected" : "";
-  return [
-    `<select name="namePosition">`,
-    `<option value="top"${selectedTop}>${localize("ui.config.namePosition.top")}</option>`,
-    `<option value="bottom"${selectedBottom}>${localize("ui.config.namePosition.bottom")}</option>`,
-    `</select>`
-  ].join("");
+  const items = [
+    { id: "top", label: localize("ui.config.namePosition.top") },
+    { id: "bottom", label: localize("ui.config.namePosition.bottom") }
+  ];
+  return selectFromItems("namePosition", value, items);
 }
 
 function nameSourceSelect(value) {
-  const selectedUser = value === "user" ? " selected" : "";
-  const selectedCharacter = value === "character" ? " selected" : "";
-  const selectedAlternate = value === "alternate" ? " selected" : "";
-  const selectedCustom = value === "custom" ? " selected" : "";
-  return [
-    `<select name="nameSource">`,
-    `<option value="user"${selectedUser}>${localize("ui.config.nameSource.user")}</option>`,
-    `<option value="character"${selectedCharacter}>${localize("ui.config.nameSource.character")}</option>`,
-    `<option value="alternate"${selectedAlternate}>${localize("ui.config.nameSource.alternate")}</option>`,
-    `<option value="custom"${selectedCustom}>${localize("ui.config.nameSource.custom")}</option>`,
-    `</select>`
-  ].join("");
-}
-
-function selectFromItems(name, value, items) {
-  const options = items
-    .map((item) => {
-      const selectedAttr = String(value ?? "") === item.id ? " selected" : "";
-      return `<option value="${item.id}"${selectedAttr}>${item.label}</option>`;
-    })
-    .join("");
-  return `<select name="${name}">${options}</select>`;
+  const items = [
+    { id: "user", label: localize("ui.config.nameSource.user") },
+    { id: "character", label: localize("ui.config.nameSource.character") },
+    { id: "alternate", label: localize("ui.config.nameSource.alternate") },
+    { id: "custom", label: localize("ui.config.nameSource.custom") }
+  ];
+  return selectFromItems("nameSource", value, items);
 }
 
 function nameTextAlignSelect(value) {
@@ -261,23 +159,6 @@ function nameFontSelect(value) {
   return `<select name="nameFont">${optionTags}</select>`;
 }
 
-function rowHtml(label, field) {
-  return `<label class="charlemos-field"><span class="charlemos-field-label">${label}</span>${field}</label>`;
-}
-
-function helpText(helpKey) {
-  return `<small class="charlemos-field-help">${localize(`ui.config.help.${helpKey}`)}</small>`;
-}
-
-function rowWithHelp(labelKey, field, helpKey) {
-  const label = localize(`ui.config.fields.${labelKey}`);
-  return rowHtml(`${label}${helpText(helpKey)}`, field);
-}
-
-function sectionHtml(title, description, rows) {
-  return `<section class="charlemos-section"><h3>${title}</h3><p class="charlemos-section-desc">${description}</p>${rows.join("")}</section>`;
-}
-
 function nameSection(formData) {
   return sectionHtml(localize("ui.config.sections.name"), localize("ui.config.sections.nameDesc"), [
     rowWithHelp("nameVisible", checkboxInput("nameVisible", formData.nameVisible), "nameVisible"),
@@ -293,31 +174,16 @@ function nameSection(formData) {
   ]);
 }
 
-function appId() {
-  return `${MODULE_ID}-name-form`;
-}
-
-function actionsHtml() {
-  return [
-    `<div class="charlemos-actions">`,
-    `<button type="submit">${localize("ui.config.actions.save")}</button>`,
-    `</div>`
-  ].join("");
-}
-
 function buildHtml(context) {
   return [
     `<div class="charlemos-config-shell">`,
     `<h2>${context.title}</h2>`,
-    `<label class="charlemos-field">`,
-    `<span class="charlemos-field-label">${localize("ui.config.fields.player")}${helpText("player")}</span>`,
-    playerSelectHtml(context.users, context.selectedUserId),
-    `</label>`,
-    `<form id="${appId()}" class="charlemos-config-form">`,
+    `<p class="charlemos-section-desc">${foundry.utils.escapeHTML(context.playerName)}</p>`,
+    `<form id="${appId("name-form")}" class="charlemos-config-form">`,
     `<div class="charlemos-config-scroll">`,
     nameSection(context.formData),
     `</div>`,
-    actionsHtml(),
+    `<div class="charlemos-actions"><button type="submit">${localize("ui.config.actions.save")}</button></div>`,
     `</form>`,
     `</div>`
   ].join("");
@@ -346,116 +212,61 @@ export class NameConfigApp extends foundry.applications.api.ApplicationV2 {
     const users = usersForConfig();
     const selected = selectedUser(users, this.selectedUserId);
     this.selectedUserId = selected?.id ?? null;
-    const sceneId = currentSceneId();
-    const draftLayouts = loadedDraftLayouts(sceneId);
-    let layout = null;
-    if (this.selectedUserId) {
-      if (draftLayouts?.[this.selectedUserId]) layout = draftLayouts[this.selectedUserId];
-      else if (sceneProfileEnabled()) layout = getSceneProfileLayout(this.selectedUserId) ?? getPlayerLayout(this.selectedUserId);
-      else layout = getPlayerLayout(this.selectedUserId);
-    }
+    const layout = loadLayoutForUser(this.selectedUserId);
     return {
       title: game.i18n.localize(titleKey()),
-      users,
-      selectedUserId: this.selectedUserId,
+      playerName: selected?.name ?? "",
       formData: buildFormData(layout)
     };
   }
 
-  async _renderHTML(context, _options) {
+  async _renderHTML(context) {
     return buildHtml(context);
   }
 
-  _replaceHTML(result, content, _options) {
+  _replaceHTML(result, content) {
     replaceAppContent(content, result);
   }
 
   async _onRender() {
-    this.bindPlayerChange();
-    this.bindSubmit();
-    this.bindNameSourceMode();
-    this.bindNameColorMode();
-  }
-
-  bindPlayerChange() {
-    const select = document.getElementById(`${MODULE_ID}-name-player-select`);
-    if (!select) return;
-    select.addEventListener("change", (event) => {
-      this.selectedUserId = event.currentTarget.value;
-      this.render(true);
-    });
-  }
-
-  bindSubmit() {
-    const form = document.getElementById(appId());
+    const form = document.getElementById(appId("name-form"));
     if (!form) return;
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       await this.saveForm(form);
     });
+    this.bindNameSourceMode(form);
+    this.bindNameColorMode(form);
   }
 
-  bindNameSourceMode() {
-    const form = document.getElementById(appId());
-    if (!form) return;
+  bindNameSourceMode(form) {
     const source = form.elements.namedItem("nameSource");
     if (!source) return;
-    source.addEventListener("change", () => {
-      this.syncNameSourceMode(form);
-    });
-    this.syncNameSourceMode(form);
+    const sync = () => {
+      const customInput = form.elements.namedItem("nameText");
+      if (!customInput) return;
+      customInput.disabled = readText(form, "nameSource") !== "custom";
+    };
+    source.addEventListener("change", sync);
+    sync();
   }
 
-  bindNameColorMode() {
-    const form = document.getElementById(appId());
-    if (!form) return;
+  bindNameColorMode(form) {
     const source = form.elements.namedItem("nameColorFromUser");
     if (!source) return;
-    source.addEventListener("change", () => {
-      this.syncNameColorMode(form);
-    });
-    this.syncNameColorMode(form);
-  }
-
-  syncNameSourceMode(form) {
-    const nameSource = readText(form, "nameSource");
-    const customInput = form.elements.namedItem("nameText");
-    if (!customInput) return;
-    customInput.disabled = nameSource !== "custom";
-  }
-
-  syncNameColorMode(form) {
-    const colorFromUser = readChecked(form, "nameColorFromUser");
-    const colorInput = form.elements.namedItem("nameColor");
-    if (!colorInput) return;
-    colorInput.disabled = colorFromUser;
+    const sync = () => {
+      const colorInput = form.elements.namedItem("nameColor");
+      if (!colorInput) return;
+      colorInput.disabled = readChecked(form, "nameColorFromUser");
+    };
+    source.addEventListener("change", sync);
+    sync();
   }
 
   async saveForm(form) {
     if (!this.selectedUserId) return;
-    const sceneId = currentSceneId();
-    const formData = readFormData(form);
-    const patch = buildNameStylePatch(formData);
-    const draftLayouts = loadedDraftLayouts(sceneId);
-    if (sceneId && draftLayouts) {
-      const layouts = sanitizeLayouts(draftLayouts);
-      const current = layouts[this.selectedUserId] ?? {};
-      layouts[this.selectedUserId] = foundry.utils.mergeObject(current, patch, { inplace: false });
-      await setAllPlayerLayouts(layouts);
-      await applySceneProfile(sceneId, layouts);
-      clearLoadedSceneProfileDraft(sceneId);
-    } else {
-      const currentGlobalLayout = sanitizeLayout(getPlayerLayout(this.selectedUserId));
-      const nextGlobalLayout = foundry.utils.mergeObject(currentGlobalLayout, patch, { inplace: false });
-      await replacePlayerLayout(this.selectedUserId, nextGlobalLayout);
-      if (sceneId) {
-        const sceneLayouts = sanitizeLayouts(getSceneProfile()?.layouts ?? getAllPlayerLayouts());
-        const currentSceneLayout = sceneLayouts[this.selectedUserId] ?? nextGlobalLayout;
-        sceneLayouts[this.selectedUserId] = foundry.utils.mergeObject(currentSceneLayout, patch, { inplace: false });
-        await applySceneProfile(sceneId, sceneLayouts);
-      }
-    }
-    applyCameraLayoutsNow();
+    const patch = buildNameStylePatch(readFormData(form));
+    await saveLayoutPatchForUser(this.selectedUserId, patch);
     if (this.onSaved) this.onSaved();
     ui.notifications.info(localize("ui.config.notifications.saved"));
     console.debug(`${MODULE_ID} | name config saved`, { playerId: this.selectedUserId, patch });
