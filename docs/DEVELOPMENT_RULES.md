@@ -13,3 +13,4 @@
 - Maintain clean and readable code.
 - If you don't know — say you don't know.
 - If an old unit test fails, do not modify the test to make it pass.
+- If `module.json` version changes, `CHANGELOG.md` must include that version and a matching GitHub tag `v<version>` must exist.

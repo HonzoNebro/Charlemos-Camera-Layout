@@ -1,0 +1,64 @@
+name: Release Tag On Version Bump
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  tag-on-version-bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect module version change
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+          current_version="$(node -e "console.log(require('./module.json').version)")"
+          previous_version=""
+          if git cat-file -e HEAD^:module.json 2>/dev/null; then
+            previous_version="$(git show HEAD^:module.json | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d).version));")"
+          fi
+          echo "current_version=$current_version" >> "$GITHUB_OUTPUT"
+          echo "previous_version=$previous_version" >> "$GITHUB_OUTPUT"
+          if [ "$current_version" = "$previous_version" ]; then
+            echo "version_changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "version_changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate changelog entry
+        if: steps.detect.outputs.version_changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ steps.detect.outputs.current_version }}"
+          if ! grep -q "^## \[$version\] - " CHANGELOG.md; then
+            echo "::error::CHANGELOG.md must include section: ## [$version] - YYYY-MM-DD"
+            exit 1
+          fi
+
+      - name: Create and push release tag
+        if: steps.detect.outputs.version_changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ steps.detect.outputs.current_version }}"
+          tag="v$version"
+          git fetch --tags origin
+          if git rev-parse --verify --quiet "refs/tags/$tag" >/dev/null; then
+            echo "Tag $tag already exists, skipping."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$tag" -m "Release $tag"
+          git push origin "refs/tags/$tag"
