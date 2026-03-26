@@ -217,6 +217,15 @@
 .charlemos-camera-view .window-resize-handle,
 .charlemos-camera-view .ui-resizable-handle {
   z-index: 12;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.charlemos-camera-view.charlemos-geometry-native:hover .window-resizable-handle,
+.charlemos-camera-view.charlemos-geometry-native:hover .window-resize-handle,
+.charlemos-camera-view.charlemos-geometry-native:hover .ui-resizable-handle {
+  opacity: 1;
   pointer-events: auto;
 }
 
@@ -228,6 +237,7 @@
 .charlemos-camera-view.charlemos-geometry-module .ui-resizable-handle {
   pointer-events: none;
   cursor: default;
+  opacity: 0;
 }
 
 .charlemos-camera-view.charlemos-direct-edit {
