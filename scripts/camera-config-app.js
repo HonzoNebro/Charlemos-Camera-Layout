@@ -6,6 +6,7 @@ import { EffectsConfigApp } from "./effects-config-app.js";
 import { LayoutConfigApp } from "./layout-config-app.js";
 import { NameConfigApp } from "./name-config-app.js";
 import { OverlayConfigApp } from "./overlay-config-app.js";
+import { SceneLayoutPresetApp } from "./scene-layout-preset-app.js";
 import { applyCameraLayoutsNow } from "./live-camera-renderer.js";
 import {
   appId,
@@ -152,6 +153,12 @@ function toolsSection(formData) {
       overlaySummary(formData)
     ),
     buttonCard(
+      "open-scene-presets",
+      localize("ui.scenePresets.actions.open"),
+      localize("ui.scenePresets.cardDesc"),
+      localize("ui.scenePresets.cardSummary")
+    ),
+    buttonCard(
       "open-name-config",
       localize("ui.config.actions.openNameConfig"),
       localize("ui.config.sections.nameDesc"),
@@ -280,6 +287,7 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
       if (action === "open-layout-config") this.openLayoutConfig();
       if (action === "open-effects-config") this.openEffectsConfig();
       if (action === "open-overlay-config") this.openOverlayConfig();
+      if (action === "open-scene-presets") this.openScenePresets();
       if (action === "open-name-config") this.openNameConfig();
       if (action === "export") await this.exportCurrentLayout();
       if (action === "export-json") await this.exportJsonConfig();
@@ -306,6 +314,10 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
   openNameConfig() {
     if (!this.selectedUserId) return;
     new NameConfigApp({ selectedUserId: this.selectedUserId, onSaved: () => this.render(true) }).render(true);
+  }
+
+  openScenePresets() {
+    new SceneLayoutPresetApp({ onSaved: () => this.render(true) }).render(true);
   }
 
   async exportJsonConfig() {
