@@ -3,9 +3,10 @@ import { getPlayerLayout, updatePlayerLayout, buildVideoStyle } from "./camera-s
 import { setPlayerOverlay, setPlayerNameStyle, setPlayerVideoFilter, setPlayerGeometry } from "./overlay-service.js";
 import { exportLayoutToMacro, exportSceneProfileToMacro } from "./macro-exporter.js";
 import { applySceneProfile, getSceneCamera, getSceneProfile, resetSceneProfile, setSceneCamera } from "./scene-camera.js";
+import { sanitizeLayouts } from "./camera-config-shared.js";
 import { setControlsVisibility } from "./ui-controls.js";
 import { getApp, setLoadedSceneProfileDraft } from "./state.js";
-import { dumpRendererDebugSnapshot } from "./live-camera-renderer.js";
+import { applyCameraLayoutsNow, dumpRendererDebugSnapshot } from "./live-camera-renderer.js";
 
 function openConfig() {
   const app = getApp();
@@ -17,6 +18,20 @@ function loadSceneProfileDraft(sceneId, payload) {
   setLoadedSceneProfileDraft(sceneId, payload);
   openConfig();
   ui.notifications.info(game.i18n.localize(`${MODULE_ID}.ui.config.notifications.macroLoaded`));
+}
+
+async function applySceneProfileDraft(sceneId, payload) {
+  const cameraControlMode = String(payload?.cameraControlMode ?? "native").trim() || "native";
+  const layouts = sanitizeLayouts(payload?.layouts ?? {}, cameraControlMode);
+  setLoadedSceneProfileDraft(sceneId, {
+    cameraControlMode,
+    layouts
+  });
+  await applySceneProfile(sceneId, layouts, { cameraControlMode });
+  applyCameraLayoutsNow();
+  const app = getApp();
+  if (app) await app.render(true);
+  ui.notifications.info(game.i18n.localize(`${MODULE_ID}.ui.config.notifications.macroApplied`));
 }
 
 export function createApi() {
@@ -31,6 +46,7 @@ export function createApi() {
     exportLayoutToMacro,
     exportSceneProfileToMacro,
     loadSceneProfileDraft,
+    applySceneProfileDraft,
     applySceneProfile,
     resetSceneProfile,
     getSceneProfile,

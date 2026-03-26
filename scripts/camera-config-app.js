@@ -33,8 +33,13 @@ function titleKey() {
   return `${MODULE_ID}.ui.config.title`;
 }
 
-function cropSummary(formData) {
+function layoutSummary(formData) {
   const values = [
+    formData.position ? `${localize("ui.config.fields.position")}: ${formData.position}` : null,
+    formData.top ? `T ${formData.top}` : null,
+    formData.left ? `L ${formData.left}` : null,
+    formData.width ? `W ${formData.width}` : null,
+    formData.height ? `H ${formData.height}` : null,
     formData.cropTop ? `T ${formData.cropTop}` : null,
     formData.cropRight ? `R ${formData.cropRight}` : null,
     formData.cropBottom ? `B ${formData.cropBottom}` : null,
@@ -128,7 +133,7 @@ function toolsSection(formData) {
       "open-layout-config",
       localize("ui.config.actions.openLayoutConfig"),
       localize("ui.config.sections.layoutDesc"),
-      cropSummary(formData)
+      layoutSummary(formData)
     ),
     buttonCard(
       "open-effects-config",

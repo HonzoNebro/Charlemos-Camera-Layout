@@ -20,7 +20,7 @@ function mockMacroEnv() {
   };
 }
 
-test("exportSceneProfileToMacro creates load-only macro command", async () => {
+test("exportSceneProfileToMacro creates apply-scene macro command", async () => {
   const env = mockMacroEnv();
 
   const macro = await exportSceneProfileToMacro(
@@ -32,7 +32,7 @@ test("exportSceneProfileToMacro creates load-only macro command", async () => {
 
   assert.equal(macro.id, "macro-1");
   assert.equal(created.name, "Scene Draft");
-  assert.equal(created.command.includes("loadSceneProfileDraft"), true);
-  assert.equal(created.command.includes("applySceneProfile"), false);
+  assert.equal(created.command.includes("applySceneProfileDraft"), true);
+  assert.equal(created.command.includes("loadSceneProfileDraft"), false);
   assert.equal(created.command.includes('"cameraControlMode": "native"'), true);
 });

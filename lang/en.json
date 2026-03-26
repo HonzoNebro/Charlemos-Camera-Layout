@@ -134,6 +134,7 @@
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.notifications.importedJson": "Module config imported from JSON",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.notifications.importFailed": "Invalid JSON config file",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.notifications.macroLoaded": "Macro config loaded into editor. Press Save to apply.",
+  "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.notifications.macroApplied": "Scene camera profile applied from macro",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.notifications.presetApplied": "Preset applied to form",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.notifications.aspectApplied": "Aspect mode applied",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.notifications.currentPlayerReset": "Current player camera settings reset",

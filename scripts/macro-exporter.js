@@ -14,7 +14,7 @@ function buildSceneCommand(sceneId, layouts) {
   return [
     `const moduleApi = game.modules.get("${MODULE_ID}")?.api;`,
     "if (!moduleApi) return;",
-    `await moduleApi.loadSceneProfileDraft("${sceneId}", ${payload});`
+    `await moduleApi.applySceneProfileDraft("${sceneId}", ${payload});`
   ].join("\n");
 }
 

@@ -134,6 +134,7 @@
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.notifications.importedJson": "Configuración del módulo importada desde JSON",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.notifications.importFailed": "Archivo JSON de configuración inválido",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.notifications.macroLoaded": "Configuración de macro cargada en el editor. Pulsa Guardar para aplicar.",
+  "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.notifications.macroApplied": "Perfil de cámaras de escena aplicado desde la macro",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.notifications.presetApplied": "Preset aplicado al formulario",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.notifications.aspectApplied": "Modo de relación aplicado",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.notifications.currentPlayerReset": "Se restablecieron los ajustes de cámara del jugador actual",
