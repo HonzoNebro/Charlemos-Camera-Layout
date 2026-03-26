@@ -1,0 +1,100 @@
+name: Release Guard PR
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/**"
+      - "CHANGELOG.md"
+      - "README.md"
+      - "lang/**"
+      - "module.json"
+      - "package.json"
+      - "scripts/**"
+      - "tests/**"
+
+permissions:
+  contents: read
+
+jobs:
+  release-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Fetch base branch and tags
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          git fetch origin --tags --depth=1
+
+      - name: Validate JSON files
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e "const fs=require('fs'); JSON.parse(fs.readFileSync('module.json','utf8')); for (const file of fs.readdirSync('lang').filter((name) => name.endsWith('.json'))) JSON.parse(fs.readFileSync(`lang/${file}`,'utf8'));"
+
+      - name: Run tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm test
+
+      - name: Validate release metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          current_version="$(node -e "const fs=require('fs'); console.log(JSON.parse(fs.readFileSync('module.json','utf8')).version)")"
+          current_id="$(node -e "const fs=require('fs'); console.log(JSON.parse(fs.readFileSync('module.json','utf8')).id)")"
+          current_manifest="$(node -e "const fs=require('fs'); console.log(JSON.parse(fs.readFileSync('module.json','utf8')).manifest)")"
+          current_download="$(node -e "const fs=require('fs'); console.log(JSON.parse(fs.readFileSync('module.json','utf8')).download)")"
+          package_version="$(node -e "const fs=require('fs'); console.log(JSON.parse(fs.readFileSync('package.json','utf8')).version)")"
+          base_version="$(git show "origin/${{ github.base_ref }}:module.json" | node -e "let d=''; process.stdin.on('data', (c) => d += c); process.stdin.on('end', () => console.log(JSON.parse(d).version));")"
+
+          if [ "$current_version" = "$base_version" ]; then
+            echo "module.json version unchanged; release-specific checks skipped."
+            exit 0
+          fi
+
+          expected_manifest="https://raw.githubusercontent.com/HonzoNebro/Charlemos-Camera-Layout/main/module.json"
+          expected_download="https://github.com/HonzoNebro/Charlemos-Camera-Layout/archive/refs/tags/v${current_version}.zip"
+
+          if ! grep -q "^## \[$current_version\] - " CHANGELOG.md; then
+            echo "::error::CHANGELOG.md must include section: ## [$current_version] - YYYY-MM-DD"
+            exit 1
+          fi
+
+          if [ "$package_version" != "$current_version" ]; then
+            echo "::error::package.json version must match module.json version"
+            exit 1
+          fi
+
+          if [ "$current_id" != "charlemos-camera-layout" ]; then
+            echo "::error::Stable releases targeting main must use id charlemos-camera-layout"
+            exit 1
+          fi
+
+          if [ "$current_manifest" != "$expected_manifest" ]; then
+            echo "::error::module.json manifest must point to main/module.json"
+            exit 1
+          fi
+
+          if [ "$current_download" != "$expected_download" ]; then
+            echo "::error::module.json download must point to the matching v${current_version} tag archive"
+            exit 1
+          fi
+
+          if git ls-remote --exit-code --tags origin "refs/tags/v${current_version}" >/dev/null 2>&1; then
+            echo "::error::Tag v${current_version} already exists on origin"
+            exit 1
+          fi

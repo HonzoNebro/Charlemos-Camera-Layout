@@ -24,6 +24,8 @@ FoundryVTT module for advanced A/V camera styling and per-scene camera profiles.
 - `tests/unit/`: unit tests only
 - `docs/ROADMAP.md`: short and long term roadmap
 - `docs/DEVELOPMENT_RULES.md`: mandatory coding rules
+- `.github/workflows/release-guard-pr.yml`: validates release metadata and tests on PRs to `main`
+- `.github/workflows/release-tag-on-version-bump.yml`: auto-tags releases after version bumps reach `main`
 - `.github/workflows/release-tag-on-version-bump.yml`: auto-tag when `module.json` version changes on `main`
 
 ## Run tests
