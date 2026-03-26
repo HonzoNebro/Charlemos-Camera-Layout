@@ -34,6 +34,8 @@
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.sections.nameDesc": "Configure displayed name style for this player's camera.",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.sections.geometry": "Geometry",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.sections.geometryDesc": "Shape and skew controls applied to camera view/video.",
+  "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.sections.geometryDescModule": "Scene profile controls camera position and size in this mode.",
+  "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.sections.geometryDescNative": "Foundry controls camera position and size in this mode. Switch to Module to persist geometry from the scene profile.",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.fields.player": "Player",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.fields.cameraControlMode": "Camera Control Mode",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.fields.preset": "Preset",

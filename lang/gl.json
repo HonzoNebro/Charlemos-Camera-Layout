@@ -34,6 +34,8 @@
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.sections.nameDesc": "Configura o estilo do nome amosado na cámara deste xogador.",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.sections.geometry": "Xeometría",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.sections.geometryDesc": "Controis de forma e sesgo aplicados á vista/vídeo da cámara.",
+  "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.sections.geometryDescModule": "Neste modo o perfil da escena controla a posición e o tamaño da cámara.",
+  "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.sections.geometryDescNative": "Neste modo Foundry controla a posición e o tamaño da cámara. Cambia a Módulo para persistir a xeometría desde o perfil da escena.",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.fields.player": "Xogador",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.fields.cameraControlMode": "Modo de control da cámara",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.fields.preset": "Preset",

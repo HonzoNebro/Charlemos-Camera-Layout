@@ -231,6 +231,11 @@ function buildGeometryPayload(formData) {
 
 export function buildLayoutPatch(formData) {
   return {
+    position: nullableText(formData.position),
+    top: normalizeLayoutLength(formData.top),
+    left: normalizeLayoutLength(formData.left),
+    width: normalizeLayoutLength(formData.width),
+    height: normalizeLayoutLength(formData.height),
     crop: {
       top: normalizeLayoutLength(formData.cropTop),
       right: normalizeLayoutLength(formData.cropRight),

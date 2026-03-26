@@ -90,6 +90,11 @@ test("buildFormData maps stored layout to UI fields", () => {
 
 test("buildLayoutPatch normalizes empty form values", () => {
   const patch = buildLayoutPatch({
+    position: "absolute",
+    top: "10",
+    left: "5%",
+    width: "320",
+    height: "180px",
     cropTop: "",
     cropRight: "20",
     cropBottom: "5%",
@@ -126,6 +131,11 @@ test("buildLayoutPatch normalizes empty form values", () => {
   });
 
   assert.deepEqual(patch, {
+    position: "absolute",
+    top: "10px",
+    left: "5%",
+    width: "320px",
+    height: "180px",
     crop: {
       top: null,
       right: "20px",

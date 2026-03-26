@@ -3,6 +3,7 @@ import { buildFormData, buildLayoutPatch } from "./camera-config-model.js";
 import { replaceAppContent } from "./dom-replace.js";
 import { appId, rowWithHelp, sectionHtml, textInput } from "./camera-config-ui.js";
 import { currentSceneId, loadLayoutForUser, localize, saveLayoutPatchForUser, selectedUser, usersForConfig } from "./camera-config-shared.js";
+import { getSceneCameraControlMode } from "./scene-camera.js";
 
 function titleKey() {
   return `${MODULE_ID}.ui.layout.title`;
@@ -10,11 +11,46 @@ function titleKey() {
 
 function readFormData(form) {
   return {
+    position: form.elements.namedItem("position")?.value ?? "",
+    top: form.elements.namedItem("top")?.value ?? "",
+    left: form.elements.namedItem("left")?.value ?? "",
+    width: form.elements.namedItem("width")?.value ?? "",
+    height: form.elements.namedItem("height")?.value ?? "",
     cropTop: form.elements.namedItem("cropTop")?.value ?? "",
     cropRight: form.elements.namedItem("cropRight")?.value ?? "",
     cropBottom: form.elements.namedItem("cropBottom")?.value ?? "",
     cropLeft: form.elements.namedItem("cropLeft")?.value ?? ""
   };
+}
+
+function positionModeSelect(value, disabled) {
+  const disabledAttr = disabled ? " disabled" : "";
+  const items = [
+    { id: "absolute", label: localize("ui.config.position.absolute") },
+    { id: "relative", label: localize("ui.config.position.relative") }
+  ];
+  const options = items
+    .map((item) => {
+      const selectedAttr = item.id === (value || "absolute") ? " selected" : "";
+      return `<option value="${item.id}"${selectedAttr}>${foundry.utils.escapeHTML(item.label)}</option>`;
+    })
+    .join("");
+  return `<select name="position"${disabledAttr}>${options}</select>`;
+}
+
+function geometrySection(formData, cameraControlMode) {
+  const moduleOwned = cameraControlMode === "module";
+  const disabledAttr = moduleOwned ? "" : " disabled";
+  const description = moduleOwned
+    ? localize("ui.config.sections.geometryDescModule")
+    : localize("ui.config.sections.geometryDescNative");
+  return sectionHtml(localize("ui.config.sections.geometry"), description, [
+    rowWithHelp("position", positionModeSelect(formData.position, !moduleOwned), "position"),
+    rowWithHelp("top", `<input type="text" name="top" value="${foundry.utils.escapeHTML(String(formData.top ?? ""))}"${disabledAttr}>`, "top"),
+    rowWithHelp("left", `<input type="text" name="left" value="${foundry.utils.escapeHTML(String(formData.left ?? ""))}"${disabledAttr}>`, "left"),
+    rowWithHelp("width", `<input type="text" name="width" value="${foundry.utils.escapeHTML(String(formData.width ?? ""))}"${disabledAttr}>`, "width"),
+    rowWithHelp("height", `<input type="text" name="height" value="${foundry.utils.escapeHTML(String(formData.height ?? ""))}"${disabledAttr}>`, "height")
+  ]);
 }
 
 function layoutSection(formData) {
@@ -33,6 +69,7 @@ function buildHtml(context) {
     `<p class="charlemos-section-desc">${foundry.utils.escapeHTML(context.playerName)}</p>`,
     `<form id="${appId("layout-form")}" class="charlemos-config-form">`,
     `<div class="charlemos-config-scroll">`,
+    geometrySection(context.formData, context.cameraControlMode),
     layoutSection(context.formData),
     `</div>`,
     `<div class="charlemos-actions"><button type="submit">${localize("ui.config.actions.save")}</button></div>`,
@@ -69,6 +106,7 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
       title: game.i18n.localize(titleKey()),
       playerName: selected?.name ?? "",
       sceneId: currentSceneId(),
+      cameraControlMode: getSceneCameraControlMode(),
       formData: buildFormData(layout)
     };
   }
@@ -93,6 +131,13 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
   async saveForm(form) {
     if (!this.selectedUserId) return;
     const patch = buildLayoutPatch(readFormData(form));
+    if (getSceneCameraControlMode() !== "module") {
+      delete patch.position;
+      delete patch.top;
+      delete patch.left;
+      delete patch.width;
+      delete patch.height;
+    }
     delete patch.transform;
     delete patch.filter;
     delete patch.clipPath;
