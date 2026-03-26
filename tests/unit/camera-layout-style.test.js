@@ -61,24 +61,69 @@ test("overlayStyle uses screen blend mode for frame overlays", () => {
 
 test("nameStyle resolves text and position", () => {
   const style = nameStyle(
-    { nameStyle: { visible: true, source: "custom", text: "GM", color: "#ffffff", fontFamily: "Lora", position: "top" } },
+    {
+      nameStyle: {
+        visible: true,
+        source: "custom",
+        text: "GM",
+        color: "#ffffff",
+        fontFamily: "Lora",
+        position: "top",
+        textAlign: "left",
+        fontWeight: "500",
+        fontStyle: "italic"
+      }
+    },
     { userName: "Player A", characterName: "Char A", userColor: "#ff00ff", nowMs: 1000 }
   );
   assert.deepEqual(style, {
     display: "block",
     color: "#ffffff",
     fontFamily: "Lora",
+    textAlign: "left",
+    fontWeight: "500",
+    fontStyle: "italic",
     text: "GM",
-    top: "0.25rem",
-    bottom: ""
+    position: "top"
   });
 });
 
 test("nameStyle can use user color and alternate source", () => {
   const style = nameStyle(
-    { nameStyle: { visible: true, source: "alternate", colorFromUser: true, color: "#ffffff", fontFamily: "", position: "bottom" } },
+    {
+      nameStyle: {
+        visible: true,
+        source: "alternate",
+        colorFromUser: true,
+        color: "#ffffff",
+        fontFamily: "",
+        position: "bottom",
+        textAlign: "center",
+        fontWeight: "600",
+        fontStyle: "normal"
+      }
+    },
     { userName: "User", characterName: "Character", userColor: "#123456", nowMs: 0 }
   );
   assert.equal(style.color, "#123456");
   assert.equal(style.text, "User");
+});
+
+test("nameStyle falls back to safe typography defaults", () => {
+  const style = nameStyle(
+    {
+      nameStyle: {
+        visible: true,
+        source: "user",
+        textAlign: "diagonal",
+        fontWeight: "1000",
+        fontStyle: "oblique"
+      }
+    },
+    { userName: "Player" }
+  );
+  assert.equal(style.textAlign, "center");
+  assert.equal(style.fontWeight, "600");
+  assert.equal(style.fontStyle, "normal");
+  assert.equal(style.position, "bottom");
 });

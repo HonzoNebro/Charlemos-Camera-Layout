@@ -7,6 +7,7 @@ import { replaceAppContent } from "./dom-replace.js";
 import { addEffect, availableEffectItems, removeEffect, usedEffectIds } from "./css-effects.js";
 import { applySceneProfile, getSceneProfile, getSceneProfileLayout, resetSceneProfile, sceneProfileEnabled } from "./scene-camera.js";
 import { clearLoadedSceneProfileDraft, getLoadedSceneProfileDraft } from "./state.js";
+import { NameConfigApp } from "./name-config-app.js";
 
 function titleKey() {
   return `${MODULE_ID}.ui.config.title`;
@@ -323,15 +324,26 @@ function overlaySection(formData) {
   ]);
 }
 
+function nameSourceLabel(value) {
+  if (value === "character") return localize("ui.config.nameSource.character");
+  if (value === "alternate") return localize("ui.config.nameSource.alternate");
+  if (value === "custom") return localize("ui.config.nameSource.custom");
+  return localize("ui.config.nameSource.user");
+}
+
+function namePositionLabel(value) {
+  if (value === "top") return localize("ui.config.namePosition.top");
+  return localize("ui.config.namePosition.bottom");
+}
+
 function nameSection(formData) {
+  const source = nameSourceLabel(formData.nameSource);
+  const position = namePositionLabel(formData.namePosition);
+  const visible = formData.nameVisible ? localize("ui.config.common.enabled") : localize("ui.config.common.disabled");
+  const summary = `${localize("ui.config.fields.nameVisible")}: ${visible} · ${localize("ui.config.fields.nameSource")}: ${source} · ${localize("ui.config.fields.namePosition")}: ${position}`;
   return sectionHtml(localize("ui.config.sections.name"), localize("ui.config.sections.nameDesc"), [
-    rowWithHelp("nameVisible", checkboxInput("nameVisible", formData.nameVisible), "nameVisible"),
-    rowWithHelp("nameSource", nameSourceSelect(formData.nameSource), "nameSource"),
-    rowWithHelp("nameText", textInput("nameText", formData.nameText), "nameText"),
-    rowWithHelp("nameColorFromUser", checkboxInput("nameColorFromUser", formData.nameColorFromUser), "nameColorFromUser"),
-    rowWithHelp("nameColor", colorInput("nameColor", formData.nameColor), "nameColor"),
-    rowWithHelp("nameFont", nameFontSelect(formData.nameFont), "nameFont"),
-    rowWithHelp("namePosition", namePositionSelect(formData.namePosition), "namePosition")
+    `<p class="charlemos-name-summary">${foundry.utils.escapeHTML(summary)}</p>`,
+    `<div class="charlemos-inline-action"><button type="button" data-action="open-name-config">${localize("ui.config.actions.openNameConfig")}</button></div>`
   ]);
 }
 
@@ -466,6 +478,9 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
       }
       if (action === "reset-scene-profile") {
         await this.resetCurrentSceneProfile();
+      }
+      if (action === "open-name-config") {
+        this.openNameConfig();
       }
     });
   }
@@ -604,6 +619,14 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
     if (blendInput) blendInput.disabled = !enabled;
   }
 
+  openNameConfig() {
+    if (!this.selectedUserId) return;
+    const app = new NameConfigApp({
+      selectedUserId: this.selectedUserId
+    });
+    app.render(true);
+  }
+
   openOverlayFilePicker(form) {
     if (typeof FilePicker === "undefined") return;
     const current = readText(form, "overlayImage");
@@ -731,6 +754,7 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
       return;
     }
     const patch = buildLayoutPatch(formData);
+    delete patch.nameStyle;
     const draftLayouts = loadedDraftLayouts(sceneId);
     if (sceneId && draftLayouts) {
       const layouts = sanitizeLayouts(draftLayouts);
@@ -760,6 +784,7 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
     if (!this.selectedUserId || !sceneId) return;
     const formData = readFormData(form);
     const basePatch = buildLayoutPatch(formData);
+    delete basePatch.nameStyle;
     const defaultName = game.i18n.localize(`${MODULE_ID}.macro.sceneDefaultName`);
     const promptMessage = localize("ui.config.prompts.macroName");
     const entered = window.prompt(promptMessage, defaultName);

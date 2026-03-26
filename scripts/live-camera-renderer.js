@@ -388,12 +388,15 @@ function applyName(viewElement, layout, user) {
     nowMs: Date.now()
   });
   element.textContent = style.text ?? "";
+  element.classList.toggle("charlemos-name-top", style.position === "top");
+  element.classList.toggle("charlemos-name-bottom", style.position !== "top");
   assignStyle(element, {
     display: style.display,
     color: style.color,
     fontFamily: style.fontFamily,
-    top: style.top,
-    bottom: style.bottom
+    textAlign: style.textAlign,
+    fontWeight: style.fontWeight,
+    fontStyle: style.fontStyle
   });
 }
 

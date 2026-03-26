@@ -67,6 +67,9 @@ function overlayBackgroundSize(imageUrl) {
 }
 
 const ALTERNATE_NAME_INTERVAL_MS = 4000;
+const NAME_TEXT_ALIGN_VALUES = new Set(["left", "center", "right", "justify"]);
+const NAME_FONT_WEIGHT_VALUES = new Set(["400", "500", "600", "700"]);
+const NAME_FONT_STYLE_VALUES = new Set(["normal", "italic"]);
 
 function alternateName(userName, characterName, nowMs) {
   const period = Math.floor(nowMs / ALTERNATE_NAME_INTERVAL_MS) % 2;
@@ -87,6 +90,27 @@ function resolvedColor(layout, context) {
   const fromUser = Boolean(layout?.nameStyle?.colorFromUser);
   if (fromUser) return context?.userColor ?? layout?.nameStyle?.color ?? "";
   return layout?.nameStyle?.color ?? "";
+}
+
+function resolvedTextAlign(layout) {
+  const value = String(layout?.nameStyle?.textAlign ?? "").trim();
+  if (!value) return "center";
+  if (!NAME_TEXT_ALIGN_VALUES.has(value)) return "center";
+  return value;
+}
+
+function resolvedFontWeight(layout) {
+  const value = String(layout?.nameStyle?.fontWeight ?? "").trim();
+  if (!value) return "600";
+  if (!NAME_FONT_WEIGHT_VALUES.has(value)) return "600";
+  return value;
+}
+
+function resolvedFontStyle(layout) {
+  const value = String(layout?.nameStyle?.fontStyle ?? "").trim();
+  if (!value) return "normal";
+  if (!NAME_FONT_STYLE_VALUES.has(value)) return "normal";
+  return value;
 }
 
 export function composeTransform(baseTransform, geometry) {
@@ -133,14 +157,15 @@ export function overlayStyle(layout) {
 
 export function nameStyle(layout, context = {}) {
   const visible = layout?.nameStyle?.visible !== false;
-  const top = layout?.nameStyle?.position === "top" ? "0.25rem" : "";
-  const bottom = layout?.nameStyle?.position === "top" ? "" : "0.25rem";
+  const position = layout?.nameStyle?.position === "top" ? "top" : "bottom";
   return {
     display: visible ? "block" : "none",
     color: resolvedColor(layout, context),
     fontFamily: layout?.nameStyle?.fontFamily ?? "",
+    textAlign: resolvedTextAlign(layout),
+    fontWeight: resolvedFontWeight(layout),
+    fontStyle: resolvedFontStyle(layout),
     text: resolvedName(layout, context),
-    top,
-    bottom
+    position
   };
 }

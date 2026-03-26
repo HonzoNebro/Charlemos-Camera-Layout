@@ -79,6 +79,31 @@ function nameColorFromUser(layout) {
   return Boolean(layout?.nameStyle?.colorFromUser);
 }
 
+const NAME_TEXT_ALIGN_VALUES = new Set(["left", "center", "right", "justify"]);
+const NAME_FONT_WEIGHT_VALUES = new Set(["400", "500", "600", "700"]);
+const NAME_FONT_STYLE_VALUES = new Set(["normal", "italic"]);
+
+function normalizedNameTextAlign(value) {
+  const text = nullableText(value);
+  if (!text) return "center";
+  if (NAME_TEXT_ALIGN_VALUES.has(text)) return text;
+  return "center";
+}
+
+function normalizedNameFontWeight(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "600";
+  if (NAME_FONT_WEIGHT_VALUES.has(text)) return text;
+  return "600";
+}
+
+function normalizedNameFontStyle(value) {
+  const text = nullableText(value);
+  if (!text) return "normal";
+  if (NAME_FONT_STYLE_VALUES.has(text)) return text;
+  return "normal";
+}
+
 function resizeAspectFrom(layout) {
   return nullableText(layout?.resize?.aspectMode) ?? "free";
 }
@@ -123,6 +148,9 @@ export function buildFormData(layout) {
     nameColor: nullableText(layout?.nameStyle?.color) ?? "#ffffff",
     nameFont: nullableText(layout?.nameStyle?.fontFamily) ?? "",
     namePosition: nullableText(layout?.nameStyle?.position) ?? "bottom",
+    nameTextAlign: normalizedNameTextAlign(layout?.nameStyle?.textAlign),
+    nameFontWeight: normalizedNameFontWeight(layout?.nameStyle?.fontWeight),
+    nameFontStyle: normalizedNameFontStyle(layout?.nameStyle?.fontStyle),
     geometryBorderRadius: nullableText(layout?.geometry?.borderRadius) ?? "",
     geometrySkewX: layout?.geometry?.skewX ?? 0,
     geometrySkewY: layout?.geometry?.skewY ?? 0
@@ -157,7 +185,10 @@ function buildNameStylePayload(formData) {
     colorFromUser: Boolean(formData.nameColorFromUser),
     color: nullableText(formData.nameColor),
     fontFamily: nullableText(formData.nameFont),
-    position: nullableText(formData.namePosition)
+    position: nullableText(formData.namePosition) ?? "bottom",
+    textAlign: normalizedNameTextAlign(formData.nameTextAlign),
+    fontWeight: normalizedNameFontWeight(formData.nameFontWeight),
+    fontStyle: normalizedNameFontStyle(formData.nameFontStyle)
   };
 }
 
@@ -181,5 +212,11 @@ export function buildLayoutPatch(formData) {
     overlay: buildOverlayPayload(formData),
     nameStyle: buildNameStylePayload(formData),
     geometry: buildGeometryPayload(formData)
+  };
+}
+
+export function buildNameStylePatch(formData) {
+  return {
+    nameStyle: buildNameStylePayload(formData)
   };
 }

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildFormData, buildLayoutPatch } from "../../scripts/camera-config-model.js";
+import { buildFormData, buildLayoutPatch, buildNameStylePatch } from "../../scripts/camera-config-model.js";
 
 test("buildFormData maps stored layout to UI fields", () => {
   const formData = buildFormData({
@@ -25,7 +25,18 @@ test("buildFormData maps stored layout to UI fields", () => {
       rotate: 15,
       tint: { enabled: true, color: "#112233", opacity: 0.35, blendMode: "multiply" }
     },
-    nameStyle: { visible: false, source: "custom", text: "Ana", colorFromUser: true, color: "#00ff00", fontFamily: "Lora", position: "top" },
+    nameStyle: {
+      visible: false,
+      source: "custom",
+      text: "Ana",
+      colorFromUser: true,
+      color: "#00ff00",
+      fontFamily: "Lora",
+      position: "top",
+      textAlign: "right",
+      fontWeight: "700",
+      fontStyle: "italic"
+    },
     geometry: { borderRadius: "8px", skewX: 4, skewY: -2 }
   });
 
@@ -64,6 +75,9 @@ test("buildFormData maps stored layout to UI fields", () => {
     nameColor: "#00ff00",
     nameFont: "Lora",
     namePosition: "top",
+    nameTextAlign: "right",
+    nameFontWeight: "700",
+    nameFontStyle: "italic",
     geometryBorderRadius: "8px",
     geometrySkewX: 4,
     geometrySkewY: -2
@@ -97,6 +111,9 @@ test("buildLayoutPatch normalizes empty form values", () => {
     nameColor: "#ffffff",
     nameFont: "",
     namePosition: "bottom",
+    nameTextAlign: "left",
+    nameFontWeight: "500",
+    nameFontStyle: "italic",
     geometryBorderRadius: " 10px ",
     geometrySkewX: "",
     geometrySkewY: "-6"
@@ -136,10 +153,80 @@ test("buildLayoutPatch normalizes empty form values", () => {
       colorFromUser: true,
       color: "#ffffff",
       fontFamily: null,
-      position: "bottom"
+      position: "bottom",
+      textAlign: "left",
+      fontWeight: "500",
+      fontStyle: "italic"
     },
     geometry: {
       borderRadius: "10px"
     }
   });
+});
+
+test("buildLayoutPatch applies safe defaults for invalid name typography values", () => {
+  const patch = buildLayoutPatch({
+    cropTop: "",
+    cropRight: "",
+    cropBottom: "",
+    cropLeft: "",
+    transform: "",
+    filter: "",
+    clipPath: "",
+    overlayEnabled: false,
+    overlayImage: "",
+    overlayOpacity: "",
+    overlayOffsetX: "",
+    overlayOffsetY: "",
+    overlayScale: "",
+    overlayRotate: "",
+    overlayTintEnabled: false,
+    overlayTintColor: "",
+    overlayTintOpacity: "",
+    overlayTintBlendMode: "",
+    nameVisible: true,
+    nameSource: "user",
+    nameText: "",
+    nameColorFromUser: false,
+    nameColor: "#ffffff",
+    nameFont: "",
+    namePosition: "sideways",
+    nameTextAlign: "diagonal",
+    nameFontWeight: "900",
+    nameFontStyle: "slanted",
+    geometryBorderRadius: ""
+  });
+
+  assert.deepEqual(
+    {
+      position: patch.nameStyle.position,
+      align: patch.nameStyle.textAlign,
+      weight: patch.nameStyle.fontWeight,
+      style: patch.nameStyle.fontStyle
+    },
+    {
+      position: "sideways",
+      align: "center",
+      weight: "600",
+      style: "normal"
+    }
+  );
+});
+
+test("buildNameStylePatch only returns nameStyle payload", () => {
+  const patch = buildNameStylePatch({
+    nameVisible: true,
+    nameSource: "user",
+    nameText: "",
+    nameColorFromUser: false,
+    nameColor: "#ffffff",
+    nameFont: "",
+    namePosition: "top",
+    nameTextAlign: "center",
+    nameFontWeight: "600",
+    nameFontStyle: "normal"
+  });
+  assert.deepEqual(Object.keys(patch), ["nameStyle"]);
+  assert.equal(patch.nameStyle.position, "top");
+  assert.equal(patch.nameStyle.textAlign, "center");
 });

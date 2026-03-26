@@ -8,7 +8,7 @@ FoundryVTT module for advanced A/V camera styling and per-scene camera profiles.
 - Overlay controls: opacity, move, scale, rotate, tint, blend mode
 - Video effects: transform, filter, clip-path, border radius
 - Camera crop masks (top/right/bottom/left)
-- Name styles: source, color, font family, position
+- Name styles: source, color, font family (Foundry fonts), position, alignment, weight and italic
 - Scene profile save/load via macros
 - JSON config export/import
 - Runtime renderer diagnostics mode
