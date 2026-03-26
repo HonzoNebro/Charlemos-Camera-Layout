@@ -1,5 +1,5 @@
 import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
-import { getAllPlayerLayouts, getPlayerLayout, replacePlayerLayout, setAllPlayerLayouts } from "./camera-style-service.js";
+import { getAllPlayerLayouts, getPlayerLayout, removePlayerLayout, replacePlayerLayout, setAllPlayerLayouts } from "./camera-style-service.js";
 import { applyCameraLayoutsNow } from "./live-camera-renderer.js";
 import { applySceneProfile, getSceneProfile, getSceneProfileLayout, resetSceneProfile, sceneProfileEnabled } from "./scene-camera.js";
 import { clearLoadedSceneProfileDraft, getLoadedSceneProfileDraft } from "./state.js";
@@ -148,11 +148,21 @@ export async function importJsonConfigFile(file) {
   return true;
 }
 
-export async function resetCurrentSceneProfileConfig() {
+export async function resetLayoutForUser(selectedUserId) {
+  if (!selectedUserId) return false;
   const sceneId = currentSceneId();
-  if (!sceneId) return false;
-  await resetSceneProfile(sceneId);
-  clearLoadedSceneProfileDraft(sceneId);
+  let changed = await removePlayerLayout(selectedUserId);
+  if (sceneId) {
+    const draftLayouts = loadedDraftLayouts(sceneId);
+    const sceneLayouts = sanitizeLayouts(draftLayouts ?? getSceneProfile()?.layouts ?? {});
+    if (selectedUserId in sceneLayouts) {
+      delete sceneLayouts[selectedUserId];
+      changed = true;
+      if (Object.keys(sceneLayouts).length === 0) await resetSceneProfile(sceneId);
+      else await applySceneProfile(sceneId, sceneLayouts);
+    }
+    clearLoadedSceneProfileDraft(sceneId);
+  }
   applyCameraLayoutsNow();
-  return true;
+  return changed;
 }

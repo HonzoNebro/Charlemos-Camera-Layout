@@ -20,7 +20,7 @@ import {
   loadLayoutForUser,
   localize,
   loadedDraftLayouts,
-  resetCurrentSceneProfileConfig,
+  resetLayoutForUser,
   sanitizeLayouts,
   selectedUser,
   usersForConfig
@@ -136,14 +136,13 @@ function toolsSection(formData) {
   ]);
 }
 
-function actionsHtml(sceneId) {
-  const resetDisabled = sceneId ? "" : " disabled";
+function actionsHtml() {
   return [
     `<div class="charlemos-actions">`,
     `<button type="button" data-action="export">${localize("ui.config.actions.export")}</button>`,
     `<button type="button" data-action="export-json">${localize("ui.config.actions.exportJson")}</button>`,
     `<button type="button" data-action="import-json">${localize("ui.config.actions.importJson")}</button>`,
-    `<button type="button" data-action="reset-scene-profile"${resetDisabled}>${localize("ui.config.actions.resetSceneProfile")}</button>`,
+    `<button type="button" data-action="reset-current-player">${localize("ui.config.actions.resetCurrentPlayer")}</button>`,
     `</div>`
   ].join("");
 }
@@ -157,7 +156,7 @@ function buildHtml(context) {
     `<div class="charlemos-config-scroll">`,
     toolsSection(context.formData),
     `</div>`,
-    actionsHtml(context.sceneId),
+    actionsHtml(),
     `</form>`,
     `</div>`
   ].join("");
@@ -232,7 +231,7 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
       if (action === "export") await this.exportCurrentLayout();
       if (action === "export-json") await this.exportJsonConfig();
       if (action === "import-json") await this.importJsonConfig();
-      if (action === "reset-scene-profile") await this.resetCurrentSceneProfile();
+      if (action === "reset-current-player") await this.resetCurrentPlayer();
     });
   }
 
@@ -280,11 +279,14 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
     input.click();
   }
 
-  async resetCurrentSceneProfile() {
-    const ok = await resetCurrentSceneProfileConfig();
+  async resetCurrentPlayer() {
+    if (!this.selectedUserId) return;
+    const confirmed = window.confirm(localize("ui.config.prompts.resetCurrentPlayer"));
+    if (!confirmed) return;
+    const ok = await resetLayoutForUser(this.selectedUserId);
     if (!ok) return;
     await this.render(true);
-    ui.notifications.info(localize("ui.config.notifications.sceneProfileReset"));
+    ui.notifications.info(localize("ui.config.notifications.currentPlayerReset"));
   }
 
   async exportCurrentLayout() {
