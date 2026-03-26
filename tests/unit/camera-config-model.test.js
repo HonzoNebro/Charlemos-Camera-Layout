@@ -12,6 +12,11 @@ test("buildFormData maps stored layout to UI fields", () => {
     left: "2rem",
     width: "280px",
     height: "160px",
+    relative: {
+      targetUserId: "u2",
+      placement: "below",
+      gap: "12px"
+    },
     crop: { top: "5%", right: "10px", bottom: "0", left: "2%" },
     transform: "rotate(3deg)",
     filter: "contrast(1.2)",
@@ -52,6 +57,9 @@ test("buildFormData maps stored layout to UI fields", () => {
     left: "2rem",
     width: "280px",
     height: "160px",
+    relativeTargetUserId: "u2",
+    relativePlacement: "below",
+    relativeGap: "12px",
     cropTop: "5%",
     cropRight: "10px",
     cropBottom: "0",
@@ -95,6 +103,9 @@ test("buildLayoutPatch normalizes empty form values", () => {
     left: "5%",
     width: "320",
     height: "180px",
+    relativeTargetUserId: "u2",
+    relativePlacement: "right-of",
+    relativeGap: "24",
     cropTop: "",
     cropRight: "20",
     cropBottom: "5%",
@@ -136,6 +147,11 @@ test("buildLayoutPatch normalizes empty form values", () => {
     left: "5%",
     width: "320px",
     height: "180px",
+    relative: {
+      targetUserId: "u2",
+      placement: "right-of",
+      gap: "24px"
+    },
     crop: {
       top: null,
       right: "20px",

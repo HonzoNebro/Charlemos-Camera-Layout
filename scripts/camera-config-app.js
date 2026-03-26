@@ -41,6 +41,9 @@ function layoutSummary(formData) {
     formData.left ? `L ${formData.left}` : null,
     formData.width ? `W ${formData.width}` : null,
     formData.height ? `H ${formData.height}` : null,
+    formData.relativePlacement && formData.relativePlacement !== "none" && formData.relativeTargetUserId
+      ? `${localize("ui.config.fields.relativePlacement")}: ${formData.relativePlacement}`
+      : null,
     formData.cropTop ? `T ${formData.cropTop}` : null,
     formData.cropRight ? `R ${formData.cropRight}` : null,
     formData.cropBottom ? `B ${formData.cropBottom}` : null,

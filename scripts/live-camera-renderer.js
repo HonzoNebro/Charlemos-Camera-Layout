@@ -624,6 +624,62 @@ export function syncManagedViewGeometry(viewElement, layout, applyGeometry) {
   if (viewElement.dataset) viewElement.dataset.charlemosGeometryManaged = "1";
 }
 
+function parsePixelLength(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return null;
+  if (/^-?\d+(\.\d+)?px$/.test(text)) return Number.parseFloat(text);
+  if (/^-?\d+(\.\d+)?$/.test(text)) return Number.parseFloat(text);
+  return null;
+}
+
+function viewMetric(viewElement, styleKey, offsetKey) {
+  if (!viewElement) return null;
+  const offsetValue = Number(viewElement[offsetKey]);
+  if (Number.isFinite(offsetValue) && offsetValue > 0) return offsetValue;
+  return parsePixelLength(viewElement.style?.[styleKey]);
+}
+
+export function resolveRelativeLayout(layout, targetViewElement, selfViewElement) {
+  const relative = layout?.relative;
+  const placement = String(relative?.placement ?? "").trim();
+  const targetUserId = String(relative?.targetUserId ?? "").trim();
+  if (!targetUserId || !placement || placement === "none" || !targetViewElement || targetViewElement === selfViewElement) return layout;
+
+  const targetTop = viewMetric(targetViewElement, "top", "offsetTop");
+  const targetLeft = viewMetric(targetViewElement, "left", "offsetLeft");
+  const targetWidth = viewMetric(targetViewElement, "width", "offsetWidth");
+  const targetHeight = viewMetric(targetViewElement, "height", "offsetHeight");
+  if (targetTop === null || targetLeft === null || targetWidth === null || targetHeight === null) return layout;
+
+  const selfWidth = parsePixelLength(layout?.width) ?? viewMetric(selfViewElement, "width", "offsetWidth");
+  const selfHeight = parsePixelLength(layout?.height) ?? viewMetric(selfViewElement, "height", "offsetHeight");
+  const gap = parsePixelLength(relative?.gap) ?? 0;
+
+  const next = foundry.utils.deepClone(layout ?? {});
+  next.position = "absolute";
+  if (placement === "below") {
+    next.top = `${targetTop + targetHeight + gap}px`;
+    next.left = `${targetLeft}px`;
+    return next;
+  }
+  if (placement === "above" && selfHeight !== null) {
+    next.top = `${targetTop - selfHeight - gap}px`;
+    next.left = `${targetLeft}px`;
+    return next;
+  }
+  if (placement === "right-of") {
+    next.top = `${targetTop}px`;
+    next.left = `${targetLeft + targetWidth + gap}px`;
+    return next;
+  }
+  if (placement === "left-of" && selfWidth !== null) {
+    next.top = `${targetTop}px`;
+    next.left = `${targetLeft - selfWidth - gap}px`;
+    return next;
+  }
+  return layout;
+}
+
 export function syncGeometryInteractionMode(viewElement, applyGeometry) {
   if (!viewElement?.classList) return;
   viewElement.classList.toggle("charlemos-geometry-module", applyGeometry);
@@ -685,7 +741,7 @@ function removeCharlemosNodes(viewElement) {
     });
 }
 
-function applyPlayerLayout(app, user) {
+function applyPlayerLayout(app, user, options = {}) {
   const userId = user.id;
   const viewElement = getViewElement(app, userId);
   if (!viewElement) {
@@ -713,13 +769,18 @@ function applyPlayerLayout(app, user) {
   }
   const cameraControlMode = getSceneCameraControlMode();
   const applyGeometry = cameraControlMode === "module";
+  const targetUserId = String(layout?.relative?.targetUserId ?? "").trim();
+  const resolvedLayout =
+    applyGeometry && options.resolveRelative !== false && targetUserId
+      ? resolveRelativeLayout(layout, getViewElement(app, targetUserId), viewElement)
+      : layout;
   logRendererDebug("before-apply", userId, enabled, viewElement, videoElement, layout);
-  applyViewStyle(viewElement, layout, applyGeometry);
-  applyVideoStyle(videoElement, layout);
+  applyViewStyle(viewElement, resolvedLayout, applyGeometry);
+  applyVideoStyle(videoElement, resolvedLayout);
   syncFoundryAvatarVisibility(viewElement, videoElement);
-  applyOverlay(viewElement, layout);
-  applyName(viewElement, layout, user);
-  applyCropMasks(viewElement, layout);
+  applyOverlay(viewElement, resolvedLayout);
+  applyName(viewElement, resolvedLayout, user);
+  applyCropMasks(viewElement, resolvedLayout);
   const overlayElement = viewElement.querySelector(".charlemos-camera-overlay");
   const videoComputed = typeof window !== "undefined" && window.getComputedStyle ? window.getComputedStyle(videoElement) : null;
   logRendererDebug("after-apply", userId, enabled, viewElement, videoElement, layout, {
@@ -734,7 +795,8 @@ function applyPlayerLayout(app, user) {
 }
 
 function applyAll(app) {
-  game.users.forEach((user) => applyPlayerLayout(app, user));
+  game.users.forEach((user) => applyPlayerLayout(app, user, { resolveRelative: false }));
+  game.users.forEach((user) => applyPlayerLayout(app, user, { resolveRelative: true }));
   if (isRendererDebugEnabled()) {
     console.debug(`${MODULE_ID} | camera layouts applied`);
   }

@@ -5,6 +5,7 @@ import {
   dumpRendererDebugSnapshot,
   isFrameOverlayPath,
   isRendererDebugEnabled,
+  resolveRelativeLayout,
   syncGeometryInteractionMode,
   syncManagedViewGeometry,
   syncFoundryAvatarVisibility,
@@ -261,4 +262,44 @@ test("syncGeometryInteractionMode toggles module ownership classes", () => {
   syncGeometryInteractionMode(viewElement, false);
   assert.equal(classes.has("charlemos-geometry-module"), false);
   assert.equal(classes.has("charlemos-geometry-native"), true);
+});
+
+test("resolveRelativeLayout places a camera below its target", () => {
+  globalThis.foundry = {
+    utils: {
+      deepClone: (value) => JSON.parse(JSON.stringify(value))
+    }
+  };
+
+  const layout = {
+    position: "absolute",
+    top: "0px",
+    left: "0px",
+    width: "300px",
+    height: "160px",
+    relative: {
+      targetUserId: "u2",
+      placement: "below",
+      gap: "12px"
+    }
+  };
+  const targetView = {
+    offsetTop: 40,
+    offsetLeft: 100,
+    offsetWidth: 320,
+    offsetHeight: 180,
+    style: {}
+  };
+  const selfView = {
+    offsetWidth: 300,
+    offsetHeight: 160,
+    style: {}
+  };
+
+  const resolved = resolveRelativeLayout(layout, targetView, selfView);
+
+  assert.equal(resolved.position, "absolute");
+  assert.equal(resolved.top, "232px");
+  assert.equal(resolved.left, "100px");
+  assert.equal(resolved.width, "300px");
 });

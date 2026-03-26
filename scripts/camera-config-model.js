@@ -109,6 +109,7 @@ function nameColorFromUser(layout) {
 const NAME_TEXT_ALIGN_VALUES = new Set(["left", "center", "right", "justify"]);
 const NAME_FONT_WEIGHT_VALUES = new Set(["400", "500", "600", "700"]);
 const NAME_FONT_STYLE_VALUES = new Set(["normal", "italic"]);
+const RELATIVE_PLACEMENT_VALUES = new Set(["none", "above", "below", "left-of", "right-of"]);
 
 function normalizedNameTextAlign(value) {
   const text = nullableText(value);
@@ -139,6 +140,17 @@ function cropValue(layout, side) {
   return nullableText(layout?.crop?.[side]) ?? "";
 }
 
+function relativeTargetFrom(layout) {
+  return nullableText(layout?.relative?.targetUserId) ?? "";
+}
+
+function normalizedRelativePlacement(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "none";
+  if (RELATIVE_PLACEMENT_VALUES.has(text)) return text;
+  return "none";
+}
+
 export function buildFormData(layout) {
   return {
     preset: nullableText(layout?.preset) ?? "manual",
@@ -150,6 +162,9 @@ export function buildFormData(layout) {
     left: nullableText(layout?.left) ?? "",
     width: nullableText(layout?.width) ?? "",
     height: nullableText(layout?.height) ?? "",
+    relativeTargetUserId: relativeTargetFrom(layout),
+    relativePlacement: normalizedRelativePlacement(layout?.relative?.placement),
+    relativeGap: nullableText(layout?.relative?.gap) ?? "",
     cropTop: cropValue(layout, "top"),
     cropRight: cropValue(layout, "right"),
     cropBottom: cropValue(layout, "bottom"),
@@ -229,6 +244,16 @@ function buildGeometryPayload(formData) {
   };
 }
 
+function buildRelativePayload(formData) {
+  const placement = normalizedRelativePlacement(formData.relativePlacement);
+  const targetUserId = nullableText(formData.relativeTargetUserId);
+  return {
+    targetUserId,
+    placement,
+    gap: normalizeLayoutLength(formData.relativeGap)
+  };
+}
+
 export function buildLayoutPatch(formData) {
   return {
     position: nullableText(formData.position),
@@ -236,6 +261,7 @@ export function buildLayoutPatch(formData) {
     left: normalizeLayoutLength(formData.left),
     width: normalizeLayoutLength(formData.width),
     height: normalizeLayoutLength(formData.height),
+    relative: buildRelativePayload(formData),
     crop: {
       top: normalizeLayoutLength(formData.cropTop),
       right: normalizeLayoutLength(formData.cropRight),

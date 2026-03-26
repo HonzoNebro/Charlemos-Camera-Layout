@@ -10,6 +10,11 @@ test("sanitizeLayoutForCameraControlMode strips geometry ownership fields in nat
       left: "20px",
       width: "320px",
       height: "180px",
+      relative: {
+        targetUserId: "u2",
+        placement: "below",
+        gap: "12px"
+      },
       filter: "blur(1px)",
       crop: { top: "5px" }
     },
@@ -31,6 +36,11 @@ test("sanitizeLayouts preserves geometry ownership fields in module mode", () =>
         left: "20px",
         width: "320px",
         height: "180px",
+        relative: {
+          targetUserId: "u2",
+          placement: "below",
+          gap: "12px"
+        },
         filter: "blur(1px)"
       }
     },
@@ -44,6 +54,11 @@ test("sanitizeLayouts preserves geometry ownership fields in module mode", () =>
       left: "20px",
       width: "320px",
       height: "180px",
+      relative: {
+        targetUserId: "u2",
+        placement: "below",
+        gap: "12px"
+      },
       filter: "blur(1px)"
     }
   });

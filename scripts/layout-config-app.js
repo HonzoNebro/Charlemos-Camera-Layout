@@ -16,6 +16,9 @@ function readFormData(form) {
     left: form.elements.namedItem("left")?.value ?? "",
     width: form.elements.namedItem("width")?.value ?? "",
     height: form.elements.namedItem("height")?.value ?? "",
+    relativeTargetUserId: form.elements.namedItem("relativeTargetUserId")?.value ?? "",
+    relativePlacement: form.elements.namedItem("relativePlacement")?.value ?? "",
+    relativeGap: form.elements.namedItem("relativeGap")?.value ?? "",
     cropTop: form.elements.namedItem("cropTop")?.value ?? "",
     cropRight: form.elements.namedItem("cropRight")?.value ?? "",
     cropBottom: form.elements.namedItem("cropBottom")?.value ?? "",
@@ -38,7 +41,42 @@ function positionModeSelect(value, disabled) {
   return `<select name="position"${disabledAttr}>${options}</select>`;
 }
 
-function geometrySection(formData, cameraControlMode) {
+function relationTargetSelect(users, selectedUserId, value, disabled) {
+  const disabledAttr = disabled ? " disabled" : "";
+  const items = [
+    { id: "", label: localize("ui.config.relativeTarget.none") },
+    ...users
+      .filter((user) => user.id !== selectedUserId)
+      .map((user) => ({ id: user.id, label: user.name }))
+  ];
+  const options = items
+    .map((item) => {
+      const selectedAttr = item.id === String(value ?? "") ? " selected" : "";
+      return `<option value="${item.id}"${selectedAttr}>${foundry.utils.escapeHTML(item.label)}</option>`;
+    })
+    .join("");
+  return `<select name="relativeTargetUserId"${disabledAttr}>${options}</select>`;
+}
+
+function relationPlacementSelect(value, disabled) {
+  const disabledAttr = disabled ? " disabled" : "";
+  const items = [
+    { id: "none", label: localize("ui.config.relativePlacement.none") },
+    { id: "above", label: localize("ui.config.relativePlacement.above") },
+    { id: "below", label: localize("ui.config.relativePlacement.below") },
+    { id: "left-of", label: localize("ui.config.relativePlacement.leftOf") },
+    { id: "right-of", label: localize("ui.config.relativePlacement.rightOf") }
+  ];
+  const options = items
+    .map((item) => {
+      const selectedAttr = item.id === (value || "none") ? " selected" : "";
+      return `<option value="${item.id}"${selectedAttr}>${foundry.utils.escapeHTML(item.label)}</option>`;
+    })
+    .join("");
+  return `<select name="relativePlacement"${disabledAttr}>${options}</select>`;
+}
+
+function geometrySection(formData, cameraControlMode, users, selectedUserId) {
   const moduleOwned = cameraControlMode === "module";
   const disabledAttr = moduleOwned ? "" : " disabled";
   const description = moduleOwned
@@ -49,7 +87,10 @@ function geometrySection(formData, cameraControlMode) {
     rowWithHelp("top", `<input type="text" name="top" value="${foundry.utils.escapeHTML(String(formData.top ?? ""))}"${disabledAttr}>`, "top"),
     rowWithHelp("left", `<input type="text" name="left" value="${foundry.utils.escapeHTML(String(formData.left ?? ""))}"${disabledAttr}>`, "left"),
     rowWithHelp("width", `<input type="text" name="width" value="${foundry.utils.escapeHTML(String(formData.width ?? ""))}"${disabledAttr}>`, "width"),
-    rowWithHelp("height", `<input type="text" name="height" value="${foundry.utils.escapeHTML(String(formData.height ?? ""))}"${disabledAttr}>`, "height")
+    rowWithHelp("height", `<input type="text" name="height" value="${foundry.utils.escapeHTML(String(formData.height ?? ""))}"${disabledAttr}>`, "height"),
+    rowWithHelp("relativeTargetUserId", relationTargetSelect(users, selectedUserId, formData.relativeTargetUserId, !moduleOwned), "relativeTargetUserId"),
+    rowWithHelp("relativePlacement", relationPlacementSelect(formData.relativePlacement, !moduleOwned), "relativePlacement"),
+    rowWithHelp("relativeGap", `<input type="text" name="relativeGap" value="${foundry.utils.escapeHTML(String(formData.relativeGap ?? ""))}"${disabledAttr}>`, "relativeGap")
   ]);
 }
 
@@ -69,7 +110,7 @@ function buildHtml(context) {
     `<p class="charlemos-section-desc">${foundry.utils.escapeHTML(context.playerName)}</p>`,
     `<form id="${appId("layout-form")}" class="charlemos-config-form">`,
     `<div class="charlemos-config-scroll">`,
-    geometrySection(context.formData, context.cameraControlMode),
+    geometrySection(context.formData, context.cameraControlMode, context.users, context.selectedUserId),
     layoutSection(context.formData),
     `</div>`,
     `<div class="charlemos-actions"><button type="submit">${localize("ui.config.actions.save")}</button></div>`,
@@ -105,6 +146,7 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
     return {
       title: game.i18n.localize(titleKey()),
       playerName: selected?.name ?? "",
+      users,
       sceneId: currentSceneId(),
       cameraControlMode: getSceneCameraControlMode(),
       formData: buildFormData(layout)
@@ -137,6 +179,7 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
       delete patch.left;
       delete patch.width;
       delete patch.height;
+      delete patch.relative;
     }
     delete patch.transform;
     delete patch.filter;

@@ -64,6 +64,7 @@ export function sanitizeLayoutForCameraControlMode(layout, cameraControlMode) {
   delete next.left;
   delete next.width;
   delete next.height;
+  delete next.relative;
   return next;
 }
 
