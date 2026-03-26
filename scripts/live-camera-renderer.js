@@ -113,6 +113,24 @@ function setControlShift(target, direction, shiftPx) {
   target.style.marginTop = baseTop;
 }
 
+function setControlTranslateY(target, shiftPx) {
+  if (!target?.style || !target?.dataset) return;
+  if (target.dataset.charlemosNameTranslateApplied !== "1") {
+    target.dataset.charlemosNameTranslateApplied = "1";
+    target.dataset.charlemosNameTranslateBase = target.style.transform ?? "";
+  }
+  const base = target.dataset.charlemosNameTranslateBase ?? "";
+  const translate = `translateY(-${shiftPx}px)`;
+  target.style.transform = base ? `${base} ${translate}` : translate;
+}
+
+function visibleRect(element) {
+  if (!element?.getBoundingClientRect) return null;
+  const rect = element.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return null;
+  return rect;
+}
+
 function resetNameplateControlAvoidance(viewElement) {
   viewElement.querySelectorAll("[data-charlemos-name-shifted='1']").forEach((element) => {
     if (!element?.style || !element?.dataset) return;
@@ -121,6 +139,12 @@ function resetNameplateControlAvoidance(viewElement) {
     delete element.dataset.charlemosNameShifted;
     delete element.dataset.charlemosNameShiftMarginTop;
     delete element.dataset.charlemosNameShiftMarginBottom;
+  });
+  viewElement.querySelectorAll("[data-charlemos-name-translate-applied='1']").forEach((element) => {
+    if (!element?.style || !element?.dataset) return;
+    element.style.transform = element.dataset.charlemosNameTranslateBase ?? "";
+    delete element.dataset.charlemosNameTranslateApplied;
+    delete element.dataset.charlemosNameTranslateBase;
   });
 }
 
@@ -155,14 +179,52 @@ function controlShiftTargets(viewElement, nameElement) {
   return Array.from(targets);
 }
 
+function edgeControlTargets(viewElement, position) {
+  if (position === "top") {
+    const topTargets = viewElement.querySelectorAll(
+      [
+        ".control-bar.left",
+        ".control-bar",
+        ".notification-bar.right",
+        ".notification-bar",
+        ".camera-view-header"
+      ].join(", ")
+    );
+    return Array.from(topTargets).filter((target) => target !== viewElement);
+  }
+  const bottomContainer = viewElement.querySelector(".bottom");
+  if (bottomContainer) return [bottomContainer];
+  const bottomControls = viewElement.querySelectorAll([".user-controls", ".camera-view-control-bar", ".camera-view-controls"].join(", "));
+  return Array.from(bottomControls).filter((target) => target !== viewElement);
+}
+
+function applyNativeNameControlAvoidance(viewElement) {
+  const bottom = viewElement.querySelector(".bottom");
+  if (!bottom) return;
+  const nativeName = bottom.querySelector(".player-name");
+  const userControls = bottom.querySelector(".user-controls");
+  const nameRect = visibleRect(nativeName);
+  const controlsRect = visibleRect(userControls);
+  if (!nameRect || !controlsRect) return;
+  const overlap = controlsRect.bottom - nameRect.top;
+  if (overlap <= 0) return;
+  const shiftPx = Math.ceil(overlap + 4);
+  setControlTranslateY(userControls, shiftPx);
+}
+
 function applyNameplateControlAvoidance(viewElement, nameElement, position) {
   resetNameplateControlAvoidance(viewElement);
-  if (!nameElement || nameElement.style.display === "none") return;
-  const nameRect = nameElement.getBoundingClientRect();
+  if (!nameElement || nameElement.style.display === "none") {
+    applyNativeNameControlAvoidance(viewElement);
+    return;
+  }
+  const nameRect = visibleRect(nameElement);
   if (!nameRect || nameRect.height <= 0) return;
   const shiftPx = Math.ceil(nameRect.height + 4);
   const direction = position === "top" ? "down" : "up";
-  controlShiftTargets(viewElement, nameElement).forEach((target) => {
+  const directTargets = edgeControlTargets(viewElement, position);
+  const targets = directTargets.length ? directTargets : controlShiftTargets(viewElement, nameElement);
+  targets.forEach((target) => {
     setControlShift(target, direction, shiftPx);
   });
 }
