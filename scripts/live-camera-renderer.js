@@ -67,6 +67,106 @@ function assignStyle(element, style) {
   });
 }
 
+function rectsOverlap(a, b) {
+  if (!a || !b) return false;
+  return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+
+function nearestShiftContainer(element, viewElement) {
+  if (!element) return null;
+  const container = element.closest(
+    [
+      ".camera-view-control-bar",
+      ".camera-view-controls",
+      ".camera-controls",
+      ".video-controls",
+      ".webrtc-controls",
+      ".control-bar",
+      ".controls",
+      ".dock-control",
+      ".dock-controls",
+      ".toolbar",
+      ".hud",
+      ".camera-view-header"
+    ].join(", ")
+  );
+  if (container && container !== viewElement && viewElement.contains(container)) return container;
+  if (element.parentElement && element.parentElement !== viewElement) return element.parentElement;
+  return element;
+}
+
+function setControlShift(target, direction, shiftPx) {
+  if (!target?.style || !target?.dataset) return;
+  if (target.dataset.charlemosNameShifted !== "1") {
+    target.dataset.charlemosNameShifted = "1";
+    target.dataset.charlemosNameShiftMarginTop = target.style.marginTop ?? "";
+    target.dataset.charlemosNameShiftMarginBottom = target.style.marginBottom ?? "";
+  }
+  const baseTop = target.dataset.charlemosNameShiftMarginTop ?? "";
+  const baseBottom = target.dataset.charlemosNameShiftMarginBottom ?? "";
+  if (direction === "down") {
+    target.style.marginTop = baseTop ? `calc(${baseTop} + ${shiftPx}px)` : `${shiftPx}px`;
+    target.style.marginBottom = baseBottom;
+    return;
+  }
+  target.style.marginBottom = baseBottom ? `calc(${baseBottom} + ${shiftPx}px)` : `${shiftPx}px`;
+  target.style.marginTop = baseTop;
+}
+
+function resetNameplateControlAvoidance(viewElement) {
+  viewElement.querySelectorAll("[data-charlemos-name-shifted='1']").forEach((element) => {
+    if (!element?.style || !element?.dataset) return;
+    element.style.marginTop = element.dataset.charlemosNameShiftMarginTop ?? "";
+    element.style.marginBottom = element.dataset.charlemosNameShiftMarginBottom ?? "";
+    delete element.dataset.charlemosNameShifted;
+    delete element.dataset.charlemosNameShiftMarginTop;
+    delete element.dataset.charlemosNameShiftMarginBottom;
+  });
+}
+
+function controlShiftTargets(viewElement, nameElement) {
+  const selectors = [
+    "button",
+    "[role='button']",
+    "a[data-action]",
+    "[data-action]",
+    "[data-tooltip]",
+    "[aria-label]",
+    "[class*='control']",
+    "[class*='controls']",
+    "[class*='dock']"
+  ];
+  const nameRect = nameElement?.getBoundingClientRect?.();
+  if (!nameRect) return [];
+  const targets = new Set();
+  viewElement.querySelectorAll(selectors.join(", ")).forEach((candidate) => {
+    if (!(candidate instanceof Element)) return;
+    if (candidate === nameElement) return;
+    if (candidate === viewElement) return;
+    if (candidate.closest(".charlemos-camera-name, .charlemos-camera-overlay, .charlemos-crop-mask")) return;
+    const rect = candidate.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    if (!rectsOverlap(rect, nameRect)) return;
+    const target = nearestShiftContainer(candidate, viewElement);
+    if (!target || target === viewElement || target === nameElement) return;
+    if (target.closest(".charlemos-camera-name, .charlemos-camera-overlay, .charlemos-crop-mask")) return;
+    targets.add(target);
+  });
+  return Array.from(targets);
+}
+
+function applyNameplateControlAvoidance(viewElement, nameElement, position) {
+  resetNameplateControlAvoidance(viewElement);
+  if (!nameElement || nameElement.style.display === "none") return;
+  const nameRect = nameElement.getBoundingClientRect();
+  if (!nameRect || nameRect.height <= 0) return;
+  const shiftPx = Math.ceil(nameRect.height + 4);
+  const direction = position === "top" ? "down" : "up";
+  controlShiftTargets(viewElement, nameElement).forEach((target) => {
+    setControlShift(target, direction, shiftPx);
+  });
+}
+
 export function isRendererDebugEnabled() {
   try {
     return Boolean(game?.settings?.get(MODULE_ID, SETTINGS_KEYS.DEBUG_RENDERER));
@@ -398,6 +498,7 @@ function applyName(viewElement, layout, user) {
     fontWeight: style.fontWeight,
     fontStyle: style.fontStyle
   });
+  applyNameplateControlAvoidance(viewElement, element, style.position);
 }
 
 function applyCropMasks(viewElement, layout) {
@@ -441,6 +542,7 @@ function applyVideoStyle(videoElement, layout) {
 }
 
 function resetViewStyle(viewElement, videoElement) {
+  resetNameplateControlAvoidance(viewElement);
   viewElement.classList.remove("charlemos-camera-view");
   viewElement.classList.remove("charlemos-direct-edit");
   assignStyle(viewElement, {
