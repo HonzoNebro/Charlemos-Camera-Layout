@@ -56,7 +56,7 @@ export async function updatePlayerLayout(playerId, patch) {
   return layouts[playerId];
 }
 
-export function buildVideoStyle(layout) {
+export function buildCameraViewStyle(layout) {
   if (!layout) return {};
   const style = {};
   if (layout.position) style.position = layout.position;
@@ -64,6 +64,12 @@ export function buildVideoStyle(layout) {
   if (layout.left) style.left = layout.left;
   if (layout.width) style.width = layout.width;
   if (layout.height) style.height = layout.height;
+  return style;
+}
+
+export function buildVideoStyle(layout) {
+  if (!layout) return {};
+  const style = {};
   if (layout.transform) style.transform = layout.transform;
   if (layout.filter) style.filter = layout.filter;
   if (layout.clipPath) style.clipPath = layout.clipPath;

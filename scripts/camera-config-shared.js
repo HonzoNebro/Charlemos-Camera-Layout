@@ -4,7 +4,7 @@ import { applyCameraLayoutsNow } from "./live-camera-renderer.js";
 import { applySceneProfile, getSceneProfile, getSceneProfileLayout, resetSceneProfile, sceneProfileEnabled } from "./scene-camera.js";
 import { clearLoadedSceneProfileDraft, getLoadedSceneProfileDraft } from "./state.js";
 
-export const LEGACY_LAYOUT_KEYS = ["preset", "snap", "resize", "position", "top", "left", "width", "height"];
+export const LEGACY_LAYOUT_KEYS = ["preset", "snap", "resize"];
 export const CONFIG_EXPORT_VERSION = 1;
 
 export function localize(key) {

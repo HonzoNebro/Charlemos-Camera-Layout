@@ -1,5 +1,13 @@
 import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
 
+const CAMERA_CONTROL_MODE_VALUES = new Set(["native", "module"]);
+
+function normalizeCameraControlMode(value) {
+  const text = String(value ?? "").trim();
+  if (CAMERA_CONTROL_MODE_VALUES.has(text)) return text;
+  return "native";
+}
+
 function getSceneId(scene) {
   return scene?.id ?? canvas.scene?.id;
 }
@@ -18,6 +26,12 @@ function readSceneProfilesSetting() {
 
 function writeSceneProfilesSetting(value) {
   return game.settings.set(MODULE_ID, SETTINGS_KEYS.SCENE_PROFILES, value);
+}
+
+function cloneValue(value) {
+  if (typeof foundry !== "undefined" && foundry?.utils?.deepClone) return foundry.utils.deepClone(value);
+  if (typeof structuredClone === "function") return structuredClone(value);
+  return JSON.parse(JSON.stringify(value ?? {}));
 }
 
 export function getSceneCamera(scene) {
@@ -40,6 +54,11 @@ export function getSceneProfile(scene) {
   return sceneData[sceneId] ?? null;
 }
 
+export function getSceneCameraControlMode(scene) {
+  const profile = getSceneProfile(scene);
+  return normalizeCameraControlMode(profile?.cameraControlMode);
+}
+
 export function sceneProfileEnabled(scene) {
   const profile = getSceneProfile(scene);
   return Boolean(profile?.enabled);
@@ -51,14 +70,30 @@ export function getSceneProfileLayout(playerId, scene) {
   return profile?.layouts?.[playerId] ?? null;
 }
 
-export async function applySceneProfile(sceneId, layouts) {
+export async function applySceneProfile(sceneId, layouts, options = {}) {
   const sceneData = readSceneProfilesSetting();
+  const current = sceneData[sceneId] ?? {};
   sceneData[sceneId] = {
     enabled: true,
+    cameraControlMode: normalizeCameraControlMode(options.cameraControlMode ?? current.cameraControlMode),
     layouts
   };
   await writeSceneProfilesSetting(sceneData);
   console.debug(`${MODULE_ID} | scene profile applied`, { sceneId });
+  return sceneData[sceneId];
+}
+
+export async function setSceneCameraControlMode(sceneId, cameraControlMode) {
+  const sceneData = readSceneProfilesSetting();
+  const current = sceneData[sceneId] ?? { enabled: true, layouts: {} };
+  sceneData[sceneId] = {
+    ...current,
+    enabled: true,
+    cameraControlMode: normalizeCameraControlMode(cameraControlMode),
+    layouts: cloneValue(current.layouts ?? {})
+  };
+  await writeSceneProfilesSetting(sceneData);
+  console.debug(`${MODULE_ID} | scene camera control mode updated`, { sceneId, cameraControlMode: sceneData[sceneId].cameraControlMode });
   return sceneData[sceneId];
 }
 
@@ -79,6 +114,7 @@ export async function updateSceneProfileLayout(sceneId, playerId, patch) {
   layouts[playerId] = foundry.utils.mergeObject(playerLayout, patch, { inplace: false });
   sceneData[sceneId] = {
     ...current,
+    cameraControlMode: normalizeCameraControlMode(current.cameraControlMode),
     layouts
   };
   await writeSceneProfilesSetting(sceneData);

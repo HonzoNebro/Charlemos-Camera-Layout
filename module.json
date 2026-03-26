@@ -1,8 +1,8 @@
 {
-  "id": "charlemos-camera-layout",
-  "title": "Charlemos Camera Layout",
+  "id": "charlemos-camera-layout-phase-8-camera-control-mode",
+  "title": "Charlemos Camera Layout - Phase 8 Camera Control Mode",
   "description": "Configurable camera layout and styling for Foundry VTT A/V.",
-  "version": "1.3.0",
+  "version": "1.3.0-phase8.1",
   "compatibility": {
     "minimum": "13",
     "verified": "13"
@@ -36,7 +36,7 @@
     "styles/module.css"
   ],
   "url": "https://github.com/HonzoNebro/Charlemos-Camera-Layout",
-  "manifest": "https://raw.githubusercontent.com/HonzoNebro/Charlemos-Camera-Layout/main/module.json",
-  "download": "https://github.com/HonzoNebro/Charlemos-Camera-Layout/archive/refs/tags/v1.3.0.zip",
+  "manifest": "https://raw.githubusercontent.com/HonzoNebro/Charlemos-Camera-Layout/phase-8-camera-control-mode/module.json",
+  "download": "https://github.com/HonzoNebro/Charlemos-Camera-Layout/archive/refs/heads/phase-8-camera-control-mode.zip",
   "license": "LICENSE"
 }

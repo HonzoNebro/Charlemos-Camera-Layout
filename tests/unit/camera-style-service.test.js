@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildVideoStyle, getAllPlayerLayouts, removePlayerLayout } from "../../scripts/camera-style-service.js";
+import { buildCameraViewStyle, buildVideoStyle, getAllPlayerLayouts, removePlayerLayout } from "../../scripts/camera-style-service.js";
 
 function installSettings(initialLayouts = {}) {
   const store = {
@@ -37,14 +37,29 @@ test("buildVideoStyle returns only supported style keys", () => {
   });
 
   assert.deepEqual(result, {
+    transform: "rotate(2deg)",
+    filter: "grayscale(0.3)",
+    clipPath: "circle(45%)"
+  });
+});
+
+test("buildCameraViewStyle returns only geometry ownership keys", () => {
+  const result = buildCameraViewStyle({
     position: "absolute",
     top: "10px",
     left: "20px",
     width: "320px",
     height: "180px",
     transform: "rotate(2deg)",
-    filter: "grayscale(0.3)",
-    clipPath: "circle(45%)"
+    filter: "grayscale(0.3)"
+  });
+
+  assert.deepEqual(result, {
+    position: "absolute",
+    top: "10px",
+    left: "20px",
+    width: "320px",
+    height: "180px"
   });
 });
 

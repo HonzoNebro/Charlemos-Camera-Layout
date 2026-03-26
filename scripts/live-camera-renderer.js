@@ -1,6 +1,7 @@
 import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
 import { composeTransform, nameStyle, overlayStyle } from "./camera-layout-style.js";
-import { getSceneProfileLayout, sceneProfileEnabled } from "./scene-camera.js";
+import { buildCameraViewStyle } from "./camera-style-service.js";
+import { getSceneCameraControlMode, getSceneProfileLayout, sceneProfileEnabled } from "./scene-camera.js";
 
 const RENDER_DELAY_MS = 50;
 const ALTERNATE_NAME_TICK_MS = 1000;
@@ -601,7 +602,7 @@ function applyOverlay(viewElement, layout) {
   applyFrameOverlayFallbackStyle(element, layout?.overlay);
 }
 
-function applyViewStyle(viewElement, layout) {
+function applyViewStyle(viewElement, layout, applyGeometry) {
   viewElement.classList.add("charlemos-camera-view");
   viewElement.classList.remove("charlemos-direct-edit");
   assignStyle(viewElement, {
@@ -609,8 +610,14 @@ function applyViewStyle(viewElement, layout) {
     background: "transparent",
     backgroundColor: "transparent",
     outline: "",
-    cursor: ""
+    cursor: "",
+    position: "",
+    top: "",
+    left: "",
+    width: "",
+    height: ""
   });
+  if (applyGeometry) assignStyle(viewElement, buildCameraViewStyle(layout));
 }
 
 function applyVideoStyle(videoElement, layout) {
@@ -626,7 +633,12 @@ function resetViewStyle(viewElement, videoElement) {
     background: "",
     backgroundColor: "",
     outline: "",
-    cursor: ""
+    cursor: "",
+    position: "",
+    top: "",
+    left: "",
+    width: "",
+    height: ""
   });
   assignStyle(videoElement, {
     transform: "",
@@ -637,11 +649,6 @@ function resetViewStyle(viewElement, videoElement) {
     visibility: "",
     opacity: "",
     backgroundColor: "",
-    position: "",
-    top: "",
-    left: "",
-    width: "",
-    height: "",
     objectFit: ""
   });
 }
@@ -682,8 +689,10 @@ function applyPlayerLayout(app, user) {
     resetViewStyle(viewElement, videoElement);
     return;
   }
+  const cameraControlMode = getSceneCameraControlMode();
+  const applyGeometry = cameraControlMode === "module";
   logRendererDebug("before-apply", userId, enabled, viewElement, videoElement, layout);
-  applyViewStyle(viewElement, layout);
+  applyViewStyle(viewElement, layout, applyGeometry);
   applyVideoStyle(videoElement, layout);
   syncFoundryAvatarVisibility(viewElement, videoElement);
   applyOverlay(viewElement, layout);

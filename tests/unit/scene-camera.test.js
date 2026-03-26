@@ -2,11 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   applySceneProfile,
+  getSceneCameraControlMode,
   getSceneCamera,
   getSceneProfile,
   migrateLegacySceneProfiles,
   resetSceneProfile,
   sceneProfileEnabled,
+  setSceneCameraControlMode,
   setSceneCamera
 } from "../../scripts/scene-camera.js";
 
@@ -52,8 +54,13 @@ test("sceneCamera and sceneProfiles stay isolated", async () => {
   await applySceneProfile("scene-a", { u1: { clipPath: "circle(45%)" } });
 
   assert.deepEqual(getSceneCamera({ id: "scene-a" }), { playerId: "u1" });
-  assert.deepEqual(getSceneProfile({ id: "scene-a" }), { enabled: true, layouts: { u1: { clipPath: "circle(45%)" } } });
+  assert.deepEqual(getSceneProfile({ id: "scene-a" }), {
+    enabled: true,
+    cameraControlMode: "native",
+    layouts: { u1: { clipPath: "circle(45%)" } }
+  });
   assert.equal(sceneProfileEnabled({ id: "scene-a" }), true);
+  assert.equal(getSceneCameraControlMode({ id: "scene-a" }), "native");
 });
 
 test("resetSceneProfile removes scene profile entry", async () => {
@@ -69,4 +76,35 @@ test("resetSceneProfile removes scene profile entry", async () => {
   assert.equal(reset, true);
   assert.equal(getSceneProfile({ id: "scene-a" }), null);
   assert.equal(sceneProfileEnabled({ id: "scene-a" }), false);
+  assert.equal(getSceneCameraControlMode({ id: "scene-a" }), "native");
+});
+
+test("setSceneCameraControlMode stores normalized mode on the scene profile", async () => {
+  const store = installSettings({
+    sceneCamera: {},
+    sceneProfiles: {}
+  });
+
+  await setSceneCameraControlMode("scene-a", "module");
+
+  assert.equal(store.sceneProfiles["scene-a"].cameraControlMode, "module");
+  assert.equal(getSceneCameraControlMode({ id: "scene-a" }), "module");
+});
+
+test("applySceneProfile preserves existing camera control mode", async () => {
+  installSettings({
+    sceneCamera: {},
+    sceneProfiles: {
+      "scene-a": { enabled: true, cameraControlMode: "module", layouts: { u1: { top: "8px" } } }
+    }
+  });
+
+  await applySceneProfile("scene-a", { u2: { filter: "blur(1px)" } });
+
+  assert.equal(getSceneCameraControlMode({ id: "scene-a" }), "module");
+  assert.deepEqual(getSceneProfile({ id: "scene-a" }), {
+    enabled: true,
+    cameraControlMode: "module",
+    layouts: { u2: { filter: "blur(1px)" } }
+  });
 });

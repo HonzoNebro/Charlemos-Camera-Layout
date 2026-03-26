@@ -26,7 +26,7 @@ import {
   usersForConfig
 } from "./camera-config-shared.js";
 import { getAllPlayerLayouts } from "./camera-style-service.js";
-import { getSceneProfile } from "./scene-camera.js";
+import { getSceneCameraControlMode, getSceneProfile, setSceneCameraControlMode } from "./scene-camera.js";
 
 function titleKey() {
   return `${MODULE_ID}.ui.config.title`;
@@ -92,6 +92,21 @@ function nameSummary(formData) {
   ].join(" · ");
 }
 
+function cameraControlModeSelect(value, disabled) {
+  const disabledAttr = disabled ? " disabled" : "";
+  const items = [
+    { id: "native", label: localize("ui.config.cameraControlMode.native") },
+    { id: "module", label: localize("ui.config.cameraControlMode.module") }
+  ];
+  const options = items
+    .map((item) => {
+      const selectedAttr = item.id === value ? " selected" : "";
+      return `<option value="${item.id}"${selectedAttr}>${foundry.utils.escapeHTML(item.label)}</option>`;
+    })
+    .join("");
+  return `<select id="${MODULE_ID}-camera-control-mode" name="cameraControlMode"${disabledAttr}>${options}</select>`;
+}
+
 function buttonCard(action, title, description, summary) {
   return [
     `<section class="charlemos-config-card">`,
@@ -136,6 +151,19 @@ function toolsSection(formData) {
   ]);
 }
 
+function sceneSection(sceneId, cameraControlMode) {
+  const noScene = !sceneId;
+  const description = noScene
+    ? localize("ui.config.sections.sceneDescNoScene")
+    : localize("ui.config.sections.sceneDesc");
+  return sectionHtml(localize("ui.config.sections.scene"), description, [
+    rowHtml(
+      `${localize("ui.config.fields.cameraControlMode")}${helpText("cameraControlMode")}`,
+      cameraControlModeSelect(cameraControlMode, noScene)
+    )
+  ]);
+}
+
 function actionsHtml() {
   return [
     `<div class="charlemos-actions">`,
@@ -154,6 +182,7 @@ function buildHtml(context) {
     rowHtml(`${localize("ui.config.fields.player")}${helpText("player")}`, playerSelectHtml(context.users, context.selectedUserId)),
     `<form id="${appId("hub-form")}" class="charlemos-config-form">`,
     `<div class="charlemos-config-scroll">`,
+    sceneSection(context.sceneId, context.cameraControlMode),
     toolsSection(context.formData),
     `</div>`,
     actionsHtml(),
@@ -189,6 +218,7 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
       title: game.i18n.localize(titleKey()),
       users,
       sceneId: currentSceneId(),
+      cameraControlMode: getSceneCameraControlMode(),
       selectedUserId: this.selectedUserId,
       formData: buildFormData(layout)
     };
@@ -204,6 +234,7 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
 
   async _onRender() {
     this.bindPlayerChange();
+    this.bindSceneControlMode();
     this.bindActions();
   }
 
@@ -213,6 +244,17 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
     select.addEventListener("change", (event) => {
       this.selectedUserId = event.currentTarget.value;
       this.render(true);
+    });
+  }
+
+  bindSceneControlMode() {
+    const select = document.getElementById(`${MODULE_ID}-camera-control-mode`);
+    if (!select) return;
+    select.addEventListener("change", async (event) => {
+      const sceneId = currentSceneId();
+      if (!sceneId) return;
+      await setSceneCameraControlMode(sceneId, event.currentTarget.value);
+      await this.render(true);
     });
   }
 
