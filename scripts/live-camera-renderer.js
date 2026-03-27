@@ -654,12 +654,44 @@ function metricValue(source, key) {
 }
 
 function buildLayoutMetrics(layout, viewElement) {
+  const layoutMode = inferLayoutMode(layout);
+  const top = metricValue(layout, "top") ?? viewMetric(viewElement, "top", "offsetTop");
+  const left = metricValue(layout, "left") ?? viewMetric(viewElement, "left", "offsetLeft");
   return {
-    top: metricValue(layout, "top") ?? viewMetric(viewElement, "top", "offsetTop"),
-    left: metricValue(layout, "left") ?? viewMetric(viewElement, "left", "offsetLeft"),
+    top: top ?? (layoutMode === "absolute" ? 0 : null),
+    left: left ?? (layoutMode === "absolute" ? 0 : null),
     width: metricValue(layout, "width") ?? viewMetric(viewElement, "width", "offsetWidth"),
     height: metricValue(layout, "height") ?? viewMetric(viewElement, "height", "offsetHeight")
   };
+}
+
+function videoMetric(videoElement, key) {
+  const value = Number(videoElement?.[key]);
+  if (Number.isFinite(value) && value > 0) return value;
+  return null;
+}
+
+export function applyGeometryDefaults(layout, viewElement, videoElement) {
+  const next = cloneValue(layout);
+  next.position = "absolute";
+
+  const layoutMode = inferLayoutMode(layout);
+  const explicitTop = metricValue(layout, "top");
+  const explicitLeft = metricValue(layout, "left");
+  if (layoutMode === "absolute") {
+    next.top = explicitTop === null ? "0px" : next.top;
+    next.left = explicitLeft === null ? "0px" : next.left;
+  }
+
+  if (!next.width) {
+    const width = videoMetric(videoElement, "videoWidth") ?? viewMetric(viewElement, "width", "offsetWidth");
+    if (width !== null) next.width = `${width}px`;
+  }
+  if (!next.height) {
+    const height = videoMetric(videoElement, "videoHeight") ?? viewMetric(viewElement, "height", "offsetHeight");
+    if (height !== null) next.height = `${height}px`;
+  }
+  return next;
 }
 
 function relativeTargetUserId(layout) {
@@ -884,13 +916,14 @@ function applyPlayerLayout(app, user, options = {}) {
   const cameraControlMode = getSceneCameraControlMode();
   const applyGeometry = cameraControlMode === "module";
   const resolvedLayout = options.resolvedLayouts?.[userId] ?? layout;
+  const normalizedLayout = applyGeometry ? applyGeometryDefaults(resolvedLayout, viewElement, videoElement) : resolvedLayout;
   logRendererDebug("before-apply", userId, enabled, viewElement, videoElement, layout);
-  applyViewStyle(viewElement, resolvedLayout, applyGeometry);
-  applyVideoStyle(videoElement, resolvedLayout);
+  applyViewStyle(viewElement, normalizedLayout, applyGeometry);
+  applyVideoStyle(videoElement, normalizedLayout);
   syncFoundryAvatarVisibility(viewElement, videoElement);
-  applyOverlay(viewElement, resolvedLayout);
-  applyName(viewElement, resolvedLayout, user);
-  applyCropMasks(viewElement, resolvedLayout);
+  applyOverlay(viewElement, normalizedLayout);
+  applyName(viewElement, normalizedLayout, user);
+  applyCropMasks(viewElement, normalizedLayout);
   const overlayElement = viewElement.querySelector(".charlemos-camera-overlay");
   const videoComputed = typeof window !== "undefined" && window.getComputedStyle ? window.getComputedStyle(videoElement) : null;
   logRendererDebug("after-apply", userId, enabled, viewElement, videoElement, layout, {

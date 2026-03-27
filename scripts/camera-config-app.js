@@ -194,10 +194,10 @@ function actionsHtml() {
 
 function buildHtml(context) {
   return [
-    `<div class="charlemos-config-shell">`,
+    `<div class="charlemos-config-shell" id="${context.shellId}">`,
     `<h2>${context.title}</h2>`,
-    rowHtml(`${localize("ui.config.fields.player")}${helpText("player")}`, playerSelectHtml(context.users, context.selectedUserId)),
-    `<form id="${appId("hub-form")}" class="charlemos-config-form">`,
+    rowHtml(`${localize("ui.config.fields.player")}${helpText("player")}`, playerSelectHtml(context.users, context.selectedUserId, context.playerSelectId)),
+    `<form id="${context.formId}" class="charlemos-config-form">`,
     `<div class="charlemos-config-scroll">`,
     sceneSection(context.sceneId, context.cameraControlMode),
     toolsSection(context.formData),
@@ -226,6 +226,10 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
     this.selectedUserId = game.user?.id ?? null;
   }
 
+  scopedId(suffix) {
+    return `${appId(suffix)}-${this.id}`;
+  }
+
   async _prepareContext() {
     const users = usersForConfig();
     const selected = selectedUser(users, this.selectedUserId);
@@ -233,6 +237,9 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
     const layout = loadLayoutForUser(this.selectedUserId);
     return {
       title: game.i18n.localize(titleKey()),
+      shellId: this.scopedId("shell"),
+      formId: this.scopedId("hub-form"),
+      playerSelectId: this.scopedId("player-select"),
       users,
       sceneId: currentSceneId(),
       cameraControlMode: getSceneCameraControlMode(),
@@ -256,7 +263,7 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
   }
 
   bindPlayerChange() {
-    const select = document.getElementById(`${MODULE_ID}-player-select`);
+    const select = document.getElementById(this.scopedId("player-select"));
     if (!select) return;
     select.addEventListener("change", (event) => {
       this.selectedUserId = event.currentTarget.value;
@@ -277,7 +284,7 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
   }
 
   bindActions() {
-    const root = document.getElementById(appId("hub-form"));
+    const root = document.getElementById(this.scopedId("hub-form"));
     if (!root) return;
     root.addEventListener("click", async (event) => {
       if (!(event.target instanceof Element)) return;
