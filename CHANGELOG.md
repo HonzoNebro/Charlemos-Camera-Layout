@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.4] - 2026-03-28
+
+### Fixed
+- Configuration cards, form rows, and action buttons now stack vertically instead of compressing text and controls into side-by-side layouts that remained hard to read even with scroll.
+
+### Changed
+- Release metadata updated for stable distribution:
+  - module version: `1.5.4`
+  - download URL points to tag archive `v1.5.4`
+
 ## [1.5.3] - 2026-03-27
 
 ### Fixed
