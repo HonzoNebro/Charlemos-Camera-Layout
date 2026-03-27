@@ -206,6 +206,7 @@
   "charlemos-camera-layout-phase-9-layout-mode-contract.ui.config.preset.compactSide": "Compacto lateral",
   "charlemos-camera-layout-phase-9-layout-mode-contract.ui.config.help.player": "Selecciona o usuario a editar. Os valores gárdanse por xogador.",
   "charlemos-camera-layout-phase-9-layout-mode-contract.ui.config.help.cameraControlMode": "Nativo deixa posición e tamaño baixo control de Foundry. Módulo reaplica position, top, left, width e height desde o perfil da escena.",
+  "charlemos-camera-layout-phase-9-layout-mode-contract.ui.config.notes.cameraControlModeImmediate": "Este axuste aplícase inmediatamente.",
   "charlemos-camera-layout-phase-9-layout-mode-contract.ui.config.help.preset": "Selecciona preset e preme Aplicar preset. Actualiza position/top/left e volve a Manual.",
   "charlemos-camera-layout-phase-9-layout-mode-contract.ui.config.help.resizeAspect": "Bloqueo de relación usado só en modo drag/resize.",
   "charlemos-camera-layout-phase-9-layout-mode-contract.ui.config.help.snapEnabled": "Axuste á grella redondea top/left numérico ou px ao aplicar preset e ao gardar.",

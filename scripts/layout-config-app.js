@@ -125,7 +125,8 @@ function sceneSection(sceneId, cameraControlMode) {
     rowHtml(
       `${localize("ui.config.fields.cameraControlMode")}${helpText("cameraControlMode")}`,
       cameraControlModeSelect(cameraControlMode, noScene)
-    )
+    ),
+    noScene ? "" : `<p class="charlemos-section-desc">${foundry.utils.escapeHTML(localize("ui.config.notes.cameraControlModeImmediate"))}</p>`
   ]);
 }
 
