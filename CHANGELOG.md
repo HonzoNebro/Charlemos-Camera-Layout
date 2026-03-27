@@ -5,6 +5,32 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-03-27
+
+### Added
+- Scene-level camera control mode with explicit `native` vs `module` ownership for camera geometry.
+- Dedicated layout geometry controls for module-owned scenes, including persisted `position`, `top`, `left`, `width`, and `height`.
+- Relative camera positioning with edge/center alignment options (`above`, `below`, `left`, `right` variants).
+- Scene layout generator with dynamic grid sizing, narrative presets, responsive/fixed units, and selectable user order.
+- Offline-user editing support so camera layouts can be prepared before a player reconnects.
+
+### Changed
+- Native mode now preserves Foundry camera movement and resize behavior without module interference.
+- Module mode now blocks native drag/resize affordances and reapplies geometry immediately when scene control mode changes.
+- Scene layout presets now size cells from live video feed dimensions when available, with safe fallback sizing when no feed exists.
+- Release metadata restored to stable production identity in manifest:
+  - module id: `charlemos-camera-layout`
+  - manifest URL on `main`
+  - download URL on tag archive `v1.4.0`
+
+### Fixed
+- Resize handle visibility now follows ownership rules correctly: hover-only in native mode, always hidden in module mode.
+- Scene profile macros now apply immediately instead of only loading draft data into the editor.
+- Locale JSON files restored to valid structure after phase-8 testing changes.
+
+### Quality
+- Added unit coverage for scene control mode, relative positioning, scene layout generation, and offline-user selection.
+
 ## [1.3.0] - 2026-03-26
 
 ### Added
