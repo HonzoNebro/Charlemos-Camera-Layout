@@ -195,7 +195,7 @@ function buildHtml(context) {
     geometrySection(context.formData, context.cameraControlMode, context.users, context.selectedUserId, context.validation, context.validationShellId),
     layoutSection(context.formData),
     `</div>`,
-    `<div class="charlemos-actions"><button type="button" data-action="save">${localize("ui.config.actions.save")}</button></div>`,
+    `<div class="charlemos-actions"><button type="submit">${localize("ui.config.actions.save")}</button></div>`,
     `</form>`,
     `</div>`
   ].join("");
@@ -277,7 +277,8 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
     form.addEventListener("change", () => {
       this.syncValidationState(form);
     });
-    form.querySelector('[data-action="save"]')?.addEventListener("click", async () => {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
       await this.saveForm(form);
     });
   }
@@ -338,7 +339,6 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
     delete patch.nameStyle;
     delete patch.geometry;
     await saveLayoutPatchForUser(this.selectedUserId, patch);
-    await this.close({ animate: false });
     if (this.onSaved) this.onSaved();
     ui.notifications.info(localize("ui.config.notifications.saved"));
     console.debug(`${MODULE_ID} | layout config saved`, { playerId: this.selectedUserId, patch });
