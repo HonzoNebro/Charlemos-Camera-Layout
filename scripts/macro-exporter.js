@@ -9,12 +9,14 @@ function buildCommand(layout, playerId) {
   ].join("\n");
 }
 
-function buildSceneCommand(sceneId, layouts) {
-  const payload = JSON.stringify(layouts, null, 2);
+function buildSceneCommand(profile) {
+  const payload = JSON.stringify(profile, null, 2);
   return [
     `const moduleApi = game.modules.get("${MODULE_ID}")?.api;`,
     "if (!moduleApi) return;",
-    `await moduleApi.applySceneProfileDraft("${sceneId}", ${payload});`
+    "const sceneId = canvas.scene?.id;",
+    "if (!sceneId) return;",
+    `await moduleApi.applySceneProfileDraft(sceneId, ${payload});`
   ].join("\n");
 }
 
@@ -38,7 +40,7 @@ export async function exportLayoutToMacro(playerId, layout, macroName) {
 
 export async function exportSceneProfileToMacro(sceneId, profile, macroName) {
   const name = macroName || game.i18n.localize(`${MODULE_ID}.macro.sceneDefaultName`);
-  const command = buildSceneCommand(sceneId, profile);
+  const command = buildSceneCommand(profile);
   const macroData = buildMacroData(name, command);
   const macro = await Macro.create(macroData);
   console.debug(`${MODULE_ID} | scene macro exported`, { sceneId, macroId: macro.id });

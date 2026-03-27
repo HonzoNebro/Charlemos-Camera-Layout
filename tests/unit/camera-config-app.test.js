@@ -150,6 +150,8 @@ test("camera config exportCurrentLayout exports scene macro with scene control m
   assert.ok(createdMacro);
   assert.equal(createdMacro.name, "Scene Draft");
   assert.equal(createdMacro.command.includes("applySceneProfileDraft"), true);
+  assert.equal(createdMacro.command.includes("const sceneId = canvas.scene?.id;"), true);
+  assert.equal(createdMacro.command.includes('"scene-a"'), false);
   assert.equal(createdMacro.command.includes('"cameraControlMode": "module"'), true);
   assert.equal(createdMacro.command.includes('"top": "10px"'), true);
   assert.equal(createdMacro.command.includes('"left": "20px"'), true);

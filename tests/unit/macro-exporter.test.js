@@ -34,5 +34,7 @@ test("exportSceneProfileToMacro creates apply-scene macro command", async () => 
   assert.equal(created.name, "Scene Draft");
   assert.equal(created.command.includes("applySceneProfileDraft"), true);
   assert.equal(created.command.includes("loadSceneProfileDraft"), false);
+  assert.equal(created.command.includes("const sceneId = canvas.scene?.id;"), true);
+  assert.equal(created.command.includes('"scene-a"'), false);
   assert.equal(created.command.includes('"cameraControlMode": "native"'), true);
 });
