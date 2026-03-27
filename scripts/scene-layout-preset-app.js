@@ -34,9 +34,10 @@ function unitModeSelect(value) {
 }
 
 function userRow(userState) {
+  const offlineSuffix = userState.active ? "" : ` ${foundry.utils.escapeHTML(localize("ui.config.common.offline"))}`;
   return [
     `<div class="charlemos-scene-user-row">`,
-    `<label class="charlemos-scene-user-toggle">${checkboxInput(`include-${userState.id}`, userState.include)}<span>${foundry.utils.escapeHTML(userState.name)}</span></label>`,
+    `<label class="charlemos-scene-user-toggle">${checkboxInput(`include-${userState.id}`, userState.include)}<span>${foundry.utils.escapeHTML(userState.name)}${offlineSuffix}</span></label>`,
     `<input type="number" name="order-${userState.id}" value="${userState.order}" min="1" step="1">`,
     `</div>`
   ].join("");
@@ -103,10 +104,11 @@ function buildHtml(context) {
 }
 
 function defaultUserStates() {
-  return usersForConfig({ activeOnly: true }).map((user, index) => ({
+  return usersForConfig().map((user, index) => ({
     id: user.id,
     name: user.name,
-    include: true,
+    active: Boolean(user.active),
+    include: Boolean(user.active),
     order: index + 1
   }));
 }
