@@ -9,6 +9,7 @@ import {
   resolveRelativeLayoutFromMetrics,
   resolveSceneLayouts,
   shouldBlockNativeGeometryInteraction,
+  syncOverlayMediaSource,
   syncResizeHandleVisibility,
   syncGeometryInteractionMode,
   syncManagedViewGeometry,
@@ -204,6 +205,31 @@ test("applyFrameOverlayFallbackStyle can target media elements", () => {
   assert.equal(element.style.objectFit, "fill");
   assert.equal(element.style.objectPosition, "center");
   assert.equal(element.style.mixBlendMode, "screen");
+});
+
+test("syncOverlayMediaSource does not reset identical video source", () => {
+  let srcWrites = 0;
+  const mediaElement = {
+    dataset: { charlemosOverlaySource: "modules/jb2a_patreon/Library/1st_Level/Sleep/SleepSymbol01_01_Dark_OrangePurple_400x400.webm" },
+    getAttribute: (name) => (name === "src" ? "modules/jb2a_patreon/Library/1st_Level/Sleep/SleepSymbol01_01_Dark_OrangePurple_400x400.webm" : null),
+    play: () => Promise.resolve(),
+    pause: () => {},
+    removeAttribute: () => {},
+    load: () => {}
+  };
+  Object.defineProperty(mediaElement, "src", {
+    get() {
+      return this.dataset.charlemosOverlaySource;
+    },
+    set(value) {
+      srcWrites += 1;
+      this.dataset.charlemosOverlaySource = value;
+    }
+  });
+
+  syncOverlayMediaSource(mediaElement, "video", "modules/jb2a_patreon/Library/1st_Level/Sleep/SleepSymbol01_01_Dark_OrangePurple_400x400.webm");
+
+  assert.equal(srcWrites, 0);
 });
 
 test("isRendererDebugEnabled reads module setting", () => {

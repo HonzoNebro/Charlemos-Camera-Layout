@@ -77,22 +77,39 @@ function getOrCreateOverlayTint(overlayElement) {
   return tint;
 }
 
-function syncOverlayMediaSource(mediaElement, kind, source) {
+export function syncOverlayMediaSource(mediaElement, kind, source) {
   const nextSource = String(source ?? "").trim();
+  const currentSource = String(mediaElement.getAttribute?.("src") ?? mediaElement.dataset?.charlemosOverlaySource ?? "").trim();
   if (kind === "video") {
     if (nextSource) {
-      if (mediaElement.src !== nextSource) mediaElement.src = nextSource;
+      if (currentSource !== nextSource) {
+        mediaElement.src = nextSource;
+        if (mediaElement.dataset) mediaElement.dataset.charlemosOverlaySource = nextSource;
+      }
       mediaElement.play?.().catch(() => {});
     } else {
+      mediaElement.pause?.();
       mediaElement.removeAttribute("src");
+      if (mediaElement.dataset) delete mediaElement.dataset.charlemosOverlaySource;
+      mediaElement.load?.();
     }
     return;
   }
-  if (mediaElement.src !== nextSource) mediaElement.src = nextSource;
+  if (currentSource !== nextSource) {
+    mediaElement.src = nextSource;
+    if (mediaElement.dataset) mediaElement.dataset.charlemosOverlaySource = nextSource;
+  }
 }
 
 function clearOverlayMedia(overlayElement) {
-  overlayElement.querySelector(".charlemos-camera-overlay-media")?.remove();
+  const mediaElement = overlayElement.querySelector(".charlemos-camera-overlay-media");
+  if (!mediaElement) return;
+  if (String(mediaElement.tagName ?? "").toUpperCase() === "VIDEO") {
+    mediaElement.pause?.();
+    mediaElement.removeAttribute("src");
+    mediaElement.load?.();
+  }
+  mediaElement.remove();
 }
 
 function getOrCreateName(viewElement) {
