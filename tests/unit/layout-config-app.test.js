@@ -116,3 +116,16 @@ test("layout config closes after successful save", async () => {
     }
   });
 });
+
+test("layout config renders an explicit save action button", async () => {
+  installLayoutConfigEnv();
+  const { LayoutConfigApp } = await import("../../scripts/layout-config-app.js");
+
+  const app = new LayoutConfigApp({ selectedUserId: "u1" });
+  app.id = "layout-app";
+  const context = await app._prepareContext();
+  const html = await app._renderHTML(context);
+
+  assert.match(html, /data-action="save"/);
+  assert.doesNotMatch(html, /type="submit"/);
+});

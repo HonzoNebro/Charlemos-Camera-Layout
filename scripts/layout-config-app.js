@@ -195,7 +195,7 @@ function buildHtml(context) {
     geometrySection(context.formData, context.cameraControlMode, context.users, context.selectedUserId, context.validation, context.validationShellId),
     layoutSection(context.formData),
     `</div>`,
-    `<div class="charlemos-actions"><button type="submit">${localize("ui.config.actions.save")}</button></div>`,
+    `<div class="charlemos-actions"><button type="button" data-action="save">${localize("ui.config.actions.save")}</button></div>`,
     `</form>`,
     `</div>`
   ].join("");
@@ -277,8 +277,7 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
     form.addEventListener("change", () => {
       this.syncValidationState(form);
     });
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
+    form.querySelector('[data-action="save"]')?.addEventListener("click", async () => {
       await this.saveForm(form);
     });
   }
