@@ -1,4 +1,5 @@
 import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
+import { inferLayoutMode } from "./camera-config-model.js";
 import { composeTransform, nameStyle, overlayStyle } from "./camera-layout-style.js";
 import { buildCameraViewStyle } from "./camera-style-service.js";
 import { getSceneCameraControlMode, getSceneProfileLayout, sceneProfileEnabled } from "./scene-camera.js";
@@ -797,7 +798,8 @@ function applyPlayerLayout(app, user, options = {}) {
   }
   const cameraControlMode = getSceneCameraControlMode();
   const applyGeometry = cameraControlMode === "module";
-  const targetUserId = String(layout?.relative?.targetUserId ?? "").trim();
+  const layoutMode = inferLayoutMode(layout);
+  const targetUserId = layoutMode === "relative" ? String(layout?.relative?.targetUserId ?? "").trim() : "";
   const resolvedLayout =
     applyGeometry && options.resolveRelative !== false && targetUserId
       ? resolveRelativeLayout(layout, getViewElement(app, targetUserId), viewElement)

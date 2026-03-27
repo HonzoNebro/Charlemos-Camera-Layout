@@ -23,10 +23,6 @@ function normalizeLayoutLength(value) {
   return text;
 }
 
-function positionFrom(layout) {
-  return nullableText(layout?.position) ?? "absolute";
-}
-
 function visibleFrom(layout) {
   return layout?.nameStyle?.visible !== false;
 }
@@ -109,6 +105,7 @@ function nameColorFromUser(layout) {
 const NAME_TEXT_ALIGN_VALUES = new Set(["left", "center", "right", "justify"]);
 const NAME_FONT_WEIGHT_VALUES = new Set(["400", "500", "600", "700"]);
 const NAME_FONT_STYLE_VALUES = new Set(["normal", "italic"]);
+const LAYOUT_MODE_VALUES = new Set(["absolute", "relative"]);
 const RELATIVE_PLACEMENT_VALUES = new Set([
   "none",
   "above",
@@ -150,6 +147,13 @@ function normalizedNameFontStyle(value) {
   return "normal";
 }
 
+export function normalizedLayoutMode(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "absolute";
+  if (LAYOUT_MODE_VALUES.has(text)) return text;
+  return "absolute";
+}
+
 function resizeAspectFrom(layout) {
   return nullableText(layout?.resize?.aspectMode) ?? "free";
 }
@@ -160,6 +164,15 @@ function cropValue(layout, side) {
 
 function relativeTargetFrom(layout) {
   return nullableText(layout?.relative?.targetUserId) ?? "";
+}
+
+export function inferLayoutMode(layout) {
+  const explicit = normalizedLayoutMode(layout?.layoutMode);
+  if (layout?.layoutMode) return explicit;
+  const legacyPosition = String(layout?.position ?? "").trim();
+  if (legacyPosition === "relative") return "relative";
+  if (relativeTargetFrom(layout)) return "relative";
+  return "absolute";
 }
 
 function normalizedRelativePlacement(value) {
@@ -175,7 +188,7 @@ export function buildFormData(layout) {
     snapEnabled: snapEnabledFrom(layout),
     snapSize: snapSizeFrom(layout),
     resizeAspect: resizeAspectFrom(layout),
-    position: positionFrom(layout),
+    layoutMode: inferLayoutMode(layout),
     top: nullableText(layout?.top) ?? "",
     left: nullableText(layout?.left) ?? "",
     width: nullableText(layout?.width) ?? "",
@@ -263,8 +276,16 @@ function buildGeometryPayload(formData) {
 }
 
 function buildRelativePayload(formData) {
+  const layoutMode = normalizedLayoutMode(formData.layoutMode);
   const placement = normalizedRelativePlacement(formData.relativePlacement);
   const targetUserId = nullableText(formData.relativeTargetUserId);
+  if (layoutMode !== "relative") {
+    return {
+      targetUserId: null,
+      placement: "none",
+      gap: null
+    };
+  }
   return {
     targetUserId,
     placement,
@@ -273,8 +294,10 @@ function buildRelativePayload(formData) {
 }
 
 export function buildLayoutPatch(formData) {
+  const layoutMode = normalizedLayoutMode(formData.layoutMode);
   return {
-    position: nullableText(formData.position),
+    layoutMode,
+    position: "absolute",
     top: normalizeLayoutLength(formData.top),
     left: normalizeLayoutLength(formData.left),
     width: normalizeLayoutLength(formData.width),

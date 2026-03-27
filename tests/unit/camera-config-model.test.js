@@ -1,13 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildFormData, buildLayoutPatch, buildNameStylePatch } from "../../scripts/camera-config-model.js";
+import { buildFormData, buildLayoutPatch, buildNameStylePatch, inferLayoutMode, normalizedLayoutMode } from "../../scripts/camera-config-model.js";
 
 test("buildFormData maps stored layout to UI fields", () => {
   const formData = buildFormData({
     preset: "topLeft",
     snap: { enabled: true, size: 16 },
     resize: { aspectMode: "16:9" },
-    position: "relative",
+    layoutMode: "relative",
+    position: "absolute",
     top: "1rem",
     left: "2rem",
     width: "280px",
@@ -52,7 +53,7 @@ test("buildFormData maps stored layout to UI fields", () => {
     snapEnabled: true,
     snapSize: 16,
     resizeAspect: "16:9",
-    position: "relative",
+    layoutMode: "relative",
     top: "1rem",
     left: "2rem",
     width: "280px",
@@ -98,7 +99,7 @@ test("buildFormData maps stored layout to UI fields", () => {
 
 test("buildLayoutPatch normalizes empty form values", () => {
   const patch = buildLayoutPatch({
-    position: "absolute",
+    layoutMode: "relative",
     top: "10",
     left: "5%",
     width: "320",
@@ -142,6 +143,7 @@ test("buildLayoutPatch normalizes empty form values", () => {
   });
 
   assert.deepEqual(patch, {
+    layoutMode: "relative",
     position: "absolute",
     top: "10px",
     left: "5%",
@@ -196,6 +198,70 @@ test("buildLayoutPatch normalizes empty form values", () => {
       borderRadius: "10px"
     }
   });
+});
+
+test("buildLayoutPatch clears relative payload when layout mode is absolute", () => {
+  const patch = buildLayoutPatch({
+    layoutMode: "absolute",
+    top: "10",
+    left: "20",
+    width: "",
+    height: "",
+    relativeTargetUserId: "u2",
+    relativePlacement: "below-center",
+    relativeGap: "12",
+    cropTop: "",
+    cropRight: "",
+    cropBottom: "",
+    cropLeft: "",
+    transform: "",
+    filter: "",
+    clipPath: "",
+    overlayEnabled: false,
+    overlayImage: "",
+    overlayOpacity: "",
+    overlayOffsetX: "",
+    overlayOffsetY: "",
+    overlayScale: "",
+    overlayRotate: "",
+    overlayFitMode: "",
+    overlayAnchor: "",
+    overlayTintEnabled: false,
+    overlayTintColor: "",
+    overlayTintOpacity: "",
+    overlayTintBlendMode: "",
+    nameVisible: true,
+    nameSource: "user",
+    nameText: "",
+    nameColorFromUser: false,
+    nameColor: "#ffffff",
+    nameFont: "",
+    namePosition: "bottom",
+    nameTextAlign: "center",
+    nameFontWeight: "600",
+    nameFontStyle: "normal",
+    geometryBorderRadius: ""
+  });
+
+  assert.deepEqual(patch.relative, {
+    targetUserId: null,
+    placement: "none",
+    gap: null
+  });
+});
+
+test("inferLayoutMode supports legacy layouts", () => {
+  assert.equal(inferLayoutMode({ position: "relative" }), "relative");
+  assert.equal(inferLayoutMode({ relative: { targetUserId: "u2" } }), "relative");
+  assert.equal(inferLayoutMode({ position: "absolute" }), "absolute");
+  assert.equal(inferLayoutMode({ layoutMode: "relative" }), "relative");
+});
+
+test("normalizedLayoutMode falls back safely", () => {
+  assert.equal(normalizedLayoutMode("absolute"), "absolute");
+  assert.equal(normalizedLayoutMode("relative"), "relative");
+  assert.equal(normalizedLayoutMode("invalid"), "absolute");
+  assert.equal(normalizedLayoutMode(""), "absolute");
 });
 
 test("buildLayoutPatch applies safe defaults for invalid name typography values", () => {

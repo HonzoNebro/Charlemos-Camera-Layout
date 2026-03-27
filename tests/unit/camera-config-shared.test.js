@@ -5,6 +5,7 @@ import { sanitizeLayoutForCameraControlMode, sanitizeLayouts } from "../../scrip
 test("sanitizeLayoutForCameraControlMode strips geometry ownership fields in native mode", () => {
   const result = sanitizeLayoutForCameraControlMode(
     {
+      layoutMode: "relative",
       position: "absolute",
       top: "10px",
       left: "20px",
@@ -31,6 +32,7 @@ test("sanitizeLayouts preserves geometry ownership fields in module mode", () =>
   const result = sanitizeLayouts(
     {
       u1: {
+        layoutMode: "relative",
         position: "absolute",
         top: "10px",
         left: "20px",
@@ -49,6 +51,7 @@ test("sanitizeLayouts preserves geometry ownership fields in module mode", () =>
 
   assert.deepEqual(result, {
     u1: {
+      layoutMode: "relative",
       position: "absolute",
       top: "10px",
       left: "20px",

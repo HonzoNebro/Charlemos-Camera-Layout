@@ -11,7 +11,7 @@ function titleKey() {
 
 function readFormData(form) {
   return {
-    position: form.elements.namedItem("position")?.value ?? "",
+    layoutMode: form.elements.namedItem("layoutMode")?.value ?? "",
     top: form.elements.namedItem("top")?.value ?? "",
     left: form.elements.namedItem("left")?.value ?? "",
     width: form.elements.namedItem("width")?.value ?? "",
@@ -26,11 +26,11 @@ function readFormData(form) {
   };
 }
 
-function positionModeSelect(value, disabled) {
+function layoutModeSelect(value, disabled) {
   const disabledAttr = disabled ? " disabled" : "";
   const items = [
-    { id: "absolute", label: localize("ui.config.position.absolute") },
-    { id: "relative", label: localize("ui.config.position.relative") }
+    { id: "absolute", label: localize("ui.config.layoutMode.absolute") },
+    { id: "relative", label: localize("ui.config.layoutMode.relative") }
   ];
   const options = items
     .map((item) => {
@@ -38,7 +38,7 @@ function positionModeSelect(value, disabled) {
       return `<option value="${item.id}"${selectedAttr}>${foundry.utils.escapeHTML(item.label)}</option>`;
     })
     .join("");
-  return `<select name="position"${disabledAttr}>${options}</select>`;
+  return `<select name="layoutMode"${disabledAttr}>${options}</select>`;
 }
 
 function relationTargetSelect(users, selectedUserId, value, disabled) {
@@ -90,15 +90,17 @@ function geometrySection(formData, cameraControlMode, users, selectedUserId) {
   const description = moduleOwned
     ? localize("ui.config.sections.geometryDescModule")
     : localize("ui.config.sections.geometryDescNative");
+  const absoluteDisabledAttr = moduleOwned && formData.layoutMode === "absolute" ? "" : " disabled";
+  const relativeDisabled = !moduleOwned || formData.layoutMode !== "relative";
   return sectionHtml(localize("ui.config.sections.geometry"), description, [
-    rowWithHelp("position", positionModeSelect(formData.position, !moduleOwned), "position"),
-    rowWithHelp("top", `<input type="text" name="top" value="${foundry.utils.escapeHTML(String(formData.top ?? ""))}"${disabledAttr}>`, "top"),
-    rowWithHelp("left", `<input type="text" name="left" value="${foundry.utils.escapeHTML(String(formData.left ?? ""))}"${disabledAttr}>`, "left"),
-    rowWithHelp("width", `<input type="text" name="width" value="${foundry.utils.escapeHTML(String(formData.width ?? ""))}"${disabledAttr}>`, "width"),
-    rowWithHelp("height", `<input type="text" name="height" value="${foundry.utils.escapeHTML(String(formData.height ?? ""))}"${disabledAttr}>`, "height"),
-    rowWithHelp("relativeTargetUserId", relationTargetSelect(users, selectedUserId, formData.relativeTargetUserId, !moduleOwned), "relativeTargetUserId"),
-    rowWithHelp("relativePlacement", relationPlacementSelect(formData.relativePlacement, !moduleOwned), "relativePlacement"),
-    rowWithHelp("relativeGap", `<input type="text" name="relativeGap" value="${foundry.utils.escapeHTML(String(formData.relativeGap ?? ""))}"${disabledAttr}>`, "relativeGap")
+    rowWithHelp("layoutMode", layoutModeSelect(formData.layoutMode, !moduleOwned), "layoutMode"),
+    rowWithHelp("top", `<input type="text" name="top" value="${foundry.utils.escapeHTML(String(formData.top ?? ""))}"${absoluteDisabledAttr}>`, "top"),
+    rowWithHelp("left", `<input type="text" name="left" value="${foundry.utils.escapeHTML(String(formData.left ?? ""))}"${absoluteDisabledAttr}>`, "left"),
+    rowWithHelp("width", `<input type="text" name="width" value="${foundry.utils.escapeHTML(String(formData.width ?? ""))}"${absoluteDisabledAttr}>`, "width"),
+    rowWithHelp("height", `<input type="text" name="height" value="${foundry.utils.escapeHTML(String(formData.height ?? ""))}"${absoluteDisabledAttr}>`, "height"),
+    rowWithHelp("relativeTargetUserId", relationTargetSelect(users, selectedUserId, formData.relativeTargetUserId, relativeDisabled), "relativeTargetUserId"),
+    rowWithHelp("relativePlacement", relationPlacementSelect(formData.relativePlacement, relativeDisabled), "relativePlacement"),
+    rowWithHelp("relativeGap", `<input type="text" name="relativeGap" value="${foundry.utils.escapeHTML(String(formData.relativeGap ?? ""))}"${relativeDisabled ? " disabled" : ""}>`, "relativeGap")
   ]);
 }
 
@@ -182,6 +184,7 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
     if (!this.selectedUserId) return;
     const patch = buildLayoutPatch(readFormData(form));
     if (getSceneCameraControlMode() !== "module") {
+      delete patch.layoutMode;
       delete patch.position;
       delete patch.top;
       delete patch.left;

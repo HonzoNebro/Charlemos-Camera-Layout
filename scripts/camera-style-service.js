@@ -1,4 +1,5 @@
 import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
+import { inferLayoutMode } from "./camera-config-model.js";
 
 function readLayouts() {
   return game.settings.get(MODULE_ID, SETTINGS_KEYS.PLAYER_LAYOUTS) ?? {};
@@ -59,7 +60,9 @@ export async function updatePlayerLayout(playerId, patch) {
 export function buildCameraViewStyle(layout) {
   if (!layout) return {};
   const style = {};
-  if (layout.position) style.position = layout.position;
+  const layoutMode = inferLayoutMode(layout);
+  if (layoutMode === "relative") style.position = "absolute";
+  else if (layout.position) style.position = layout.position;
   if (layout.top) style.top = layout.top;
   if (layout.left) style.left = layout.left;
   if (layout.width) style.width = layout.width;

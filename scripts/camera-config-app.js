@@ -37,7 +37,7 @@ function titleKey() {
 
 function layoutSummary(formData) {
   const values = [
-    formData.position ? `${localize("ui.config.fields.position")}: ${formData.position}` : null,
+    formData.layoutMode ? `${localize("ui.config.fields.layoutMode")}: ${localize(`ui.config.layoutMode.${formData.layoutMode}`)}` : null,
     formData.top ? `T ${formData.top}` : null,
     formData.left ? `L ${formData.left}` : null,
     formData.width ? `W ${formData.width}` : null,
