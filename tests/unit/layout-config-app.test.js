@@ -97,13 +97,16 @@ test("layout config closes after successful save", async () => {
 
   const app = new LayoutConfigApp({ selectedUserId: "u1" });
   let closed = false;
-  app.close = async () => {
+  let closeOptions = null;
+  app.close = async (options) => {
     closed = true;
+    closeOptions = options;
   };
 
   await app.saveForm(createForm());
 
   assert.equal(closed, true);
+  assert.deepEqual(closeOptions, { animate: false });
   assert.deepEqual(store.playerLayouts.u1, {
     crop: {
       top: null,
