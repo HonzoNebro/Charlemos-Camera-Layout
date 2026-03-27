@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.3] - 2026-03-27
+
+### Fixed
+- Configuration windows now open at larger default sizes and can be resized instead of forcing all long localized labels into a cramped scrolling layout.
+- Narrower window widths now collapse form rows and action cards more cleanly, improving Spanish and Galician text flow.
+
+### Changed
+- Release metadata updated for stable distribution:
+  - module version: `1.5.3`
+  - download URL points to tag archive `v1.5.3`
+
 ## [1.5.2] - 2026-03-27
 
 ### Fixed
