@@ -417,6 +417,50 @@ function resizeHandle(viewElement) {
   return firstMatch(viewElement, ".window-resize-handle, .window-resizable-handle, .ui-resizable-handle");
 }
 
+function syncResizeHandleVisibility(viewElement, applyGeometry) {
+  const handle = resizeHandle(viewElement);
+  if (!handle?.style) return;
+
+  const setVisible = (visible) => {
+    handle.style.opacity = visible ? "1" : "0";
+    handle.style.pointerEvents = applyGeometry ? "none" : visible ? "auto" : "none";
+    handle.style.cursor = applyGeometry ? "default" : "";
+  };
+
+  if (!viewElement.__charlemosResizeVisibilityBound) {
+    viewElement.addEventListener("mouseenter", () => {
+      if (viewElement.classList.contains("charlemos-geometry-native")) setVisible(true);
+    });
+    viewElement.addEventListener("mouseleave", () => {
+      setVisible(false);
+    });
+    viewElement.__charlemosResizeVisibilityBound = true;
+  }
+
+  setVisible(false);
+}
+
+export function shouldBlockNativeGeometryInteraction(viewElement, target) {
+  if (!viewElement?.classList?.contains("charlemos-geometry-module")) return false;
+  if (!(target instanceof Element)) return false;
+  if (target.closest(".control-bar, .bottom, .notification-bar, .av-control, button, [data-action]")) return false;
+  return Boolean(target.closest(".video-container, .camera-container-popout, .camera-container, .window-resize-handle, .window-resizable-handle, .ui-resizable-handle"));
+}
+
+function syncNativeGeometryInteractionBlock(viewElement) {
+  if (!viewElement || viewElement.__charlemosGeometryBlockBound) return;
+  const handler = (event) => {
+    if (!shouldBlockNativeGeometryInteraction(viewElement, event.target)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    event.stopPropagation();
+  };
+  ["pointerdown", "mousedown", "touchstart", "dragstart"].forEach((type) => {
+    viewElement.addEventListener(type, handler, true);
+  });
+  viewElement.__charlemosGeometryBlockBound = true;
+}
+
 function viewChildrenMetrics(viewElement) {
   return Array.from(viewElement?.children ?? []).map((element) => ({
     tag: element.tagName ?? "",
@@ -836,6 +880,8 @@ function applyViewStyle(viewElement, layout, applyGeometry) {
   viewElement.classList.add("charlemos-camera-view");
   viewElement.classList.remove("charlemos-direct-edit");
   syncGeometryInteractionMode(viewElement, applyGeometry);
+  syncNativeGeometryInteractionBlock(viewElement);
+  syncResizeHandleVisibility(viewElement, applyGeometry);
   assignStyle(viewElement, {
     borderRadius: layout?.geometry?.borderRadius ?? "",
     background: "transparent",

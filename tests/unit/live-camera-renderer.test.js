@@ -8,6 +8,7 @@ import {
   resolveRelativeLayout,
   resolveRelativeLayoutFromMetrics,
   resolveSceneLayouts,
+  shouldBlockNativeGeometryInteraction,
   syncGeometryInteractionMode,
   syncManagedViewGeometry,
   syncFoundryAvatarVisibility,
@@ -452,6 +453,42 @@ test("resolveSceneLayouts falls back safely on cycles", () => {
   assert.equal(resolved.a.left, "20px");
   assert.equal(resolved.b.top, "40px");
   assert.equal(resolved.b.left, "60px");
+});
+
+test("shouldBlockNativeGeometryInteraction blocks drag origins in module mode", () => {
+  const controlBar = {};
+  const target = {
+    closest: (selector) => {
+      if (selector.includes(".control-bar")) return null;
+      if (selector.includes(".video-container")) return {};
+      return null;
+    }
+  };
+  globalThis.Element = Object;
+  const viewElement = {
+    classList: {
+      contains: (name) => name === "charlemos-geometry-module"
+    }
+  };
+
+  assert.equal(shouldBlockNativeGeometryInteraction(viewElement, target, controlBar), true);
+});
+
+test("shouldBlockNativeGeometryInteraction keeps native controls interactive", () => {
+  const target = {
+    closest: (selector) => {
+      if (selector.includes(".control-bar")) return {};
+      return null;
+    }
+  };
+  globalThis.Element = Object;
+  const viewElement = {
+    classList: {
+      contains: (name) => name === "charlemos-geometry-module"
+    }
+  };
+
+  assert.equal(shouldBlockNativeGeometryInteraction(viewElement, target), false);
 });
 
 test("resolveRelativeLayout still resolves legacy relative payloads", () => {
