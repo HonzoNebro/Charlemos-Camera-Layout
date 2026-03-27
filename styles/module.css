@@ -50,13 +50,13 @@
 
 .charlemos-config-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: 1fr;
   gap: 0.6rem;
 }
 
 .charlemos-config-card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: 1fr;
   gap: 0.75rem;
   align-items: start;
   border: 1px solid var(--color-border-light-primary);
@@ -76,6 +76,7 @@
 
 .charlemos-config-card button {
   white-space: normal;
+  width: 100%;
 }
 
 .charlemos-config-card-summary {
@@ -112,7 +113,7 @@
 
 .charlemos-field {
   display: grid;
-  grid-template-columns: minmax(150px, 180px) minmax(0, 1fr);
+  grid-template-columns: 1fr;
   align-items: start;
   gap: 0.5rem;
   margin-bottom: 0.4rem;
@@ -161,13 +162,13 @@
 
 .charlemos-effect-controls {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr;
   gap: 0.25rem;
 }
 
 .charlemos-image-field {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: 1fr;
   gap: 0.25rem;
 }
 
@@ -203,33 +204,6 @@
   place-items: center;
   font-size: 0.72rem;
   opacity: 0.85;
-}
-
-@media (max-width: 720px) {
-  .charlemos-config-card {
-    grid-template-columns: 1fr;
-  }
-
-  .charlemos-config-card button {
-    width: 100%;
-  }
-
-  .charlemos-field {
-    grid-template-columns: 1fr;
-  }
-
-  .charlemos-actions {
-    justify-content: stretch;
-  }
-
-  .charlemos-actions button {
-    flex: 1 1 220px;
-  }
-
-  .charlemos-image-field,
-  .charlemos-effect-controls {
-    grid-template-columns: 1fr;
-  }
 }
 
 .charlemos-overlay-label {
@@ -275,11 +249,15 @@
 
 .charlemos-actions {
   display: flex;
-  justify-content: flex-end;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: stretch;
   gap: 0.5rem;
   padding-top: 0.35rem;
   border-top: 1px solid var(--color-border-light-primary);
+}
+
+.charlemos-actions button {
+  width: 100%;
 }
 
 .charlemos-scene-user-row {
