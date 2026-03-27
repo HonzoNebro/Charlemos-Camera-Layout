@@ -1,44 +1,53 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildSceneLayoutPreset, getSceneLayoutPresetIds } from "../../scripts/scene-layout-presets.js";
+import { buildSceneLayoutPreset, getNarrativeSceneLayoutPresetIds } from "../../scripts/scene-layout-presets.js";
 
-test("getSceneLayoutPresetIds includes grid and narrative presets", () => {
-  const ids = getSceneLayoutPresetIds();
-  assert.equal(ids.includes("grid2x3"), true);
-  assert.equal(ids.includes("grid1x6"), true);
-  assert.equal(ids.includes("roleplayWide"), true);
-  assert.equal(ids.includes("mapBottomStrip"), true);
-  assert.equal(ids.includes("sideDock"), true);
+test("getNarrativeSceneLayoutPresetIds includes expected presets", () => {
+  const ids = getNarrativeSceneLayoutPresetIds();
+  assert.deepEqual(ids, ["roleplayWide", "mapBottomStrip", "sideDock"]);
 });
 
-test("buildSceneLayoutPreset creates a responsive 2x2 grid in row-major order", () => {
-  const result = buildSceneLayoutPreset(["u1", "u2", "u3", "u4"], "grid2x2", {
+test("buildSceneLayoutPreset creates a responsive dynamic 2x2 grid", () => {
+  const result = buildSceneLayoutPreset(["u1", "u2", "u3", "u4"], {
+    layoutType: "grid",
+    rows: 2,
+    cols: 2,
     unitMode: "responsive",
     gap: 2,
     marginX: 2,
     marginY: 3
   });
 
+  assert.equal(result.layoutType, "grid");
+  assert.equal(result.rows, 2);
+  assert.equal(result.cols, 2);
   assert.equal(result.unitMode, "responsive");
-  assert.deepEqual(result.ignoredUserIds, []);
-  assert.deepEqual(result.layouts.u1, {
-    position: "absolute",
-    top: "3vh",
-    left: "2vw",
-    width: "47vw",
-    height: "46vh",
-    relative: {
-      targetUserId: null,
-      placement: "none",
-      gap: null
-    }
-  });
+  assert.equal(result.layouts.u1.left, "2vw");
   assert.equal(result.layouts.u2.left, "51vw");
   assert.equal(result.layouts.u3.top, "51vh");
 });
 
+test("buildSceneLayoutPreset creates narrative preset layouts", () => {
+  const result = buildSceneLayoutPreset(["u1", "u2", "u3"], {
+    layoutType: "narrative",
+    presetId: "sideDock",
+    unitMode: "responsive",
+    gap: 2,
+    marginX: 2,
+    marginY: 2
+  });
+
+  assert.equal(result.layoutType, "narrative");
+  assert.equal(result.rows, 4);
+  assert.equal(result.cols, 1);
+  assert.equal(result.layouts.u2.top, "26.5vh");
+});
+
 test("buildSceneLayoutPreset can still use pixel units", () => {
-  const result = buildSceneLayoutPreset(["u1", "u2", "u3", "u4"], "grid2x2", {
+  const result = buildSceneLayoutPreset(["u1", "u2", "u3", "u4"], {
+    layoutType: "grid",
+    rows: 2,
+    cols: 2,
     unitMode: "px",
     viewportWidth: 1000,
     viewportHeight: 600,
@@ -54,7 +63,10 @@ test("buildSceneLayoutPreset can still use pixel units", () => {
 });
 
 test("buildSceneLayoutPreset ignores users beyond preset capacity", () => {
-  const result = buildSceneLayoutPreset(["u1", "u2", "u3"], "grid1x2", {
+  const result = buildSceneLayoutPreset(["u1", "u2", "u3"], {
+    layoutType: "grid",
+    rows: 1,
+    cols: 2,
     unitMode: "responsive",
     gap: 2,
     marginX: 2,

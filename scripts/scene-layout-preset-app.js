@@ -4,15 +4,22 @@ import { appId, checkboxInput, numberInput, rowWithHelp, sectionHtml, selectFrom
 import { currentSceneId, localize, usersForConfig } from "./camera-config-shared.js";
 import { getAllPlayerLayouts } from "./camera-style-service.js";
 import { applyCameraLayoutsNow } from "./live-camera-renderer.js";
-import { buildSceneLayoutPreset, getSceneLayoutPresetIds } from "./scene-layout-presets.js";
+import { buildSceneLayoutPreset, getNarrativeSceneLayoutPresetIds } from "./scene-layout-presets.js";
 import { applySceneProfile, getSceneProfile } from "./scene-camera.js";
 
 function titleKey() {
   return `${MODULE_ID}.ui.scenePresets.title`;
 }
 
-function presetSelect(value) {
-  const items = getSceneLayoutPresetIds().map((id) => ({
+function layoutTypeSelect(value) {
+  return selectFromItems("layoutType", value, [
+    { id: "grid", label: localize("ui.scenePresets.layoutType.grid") },
+    { id: "narrative", label: localize("ui.scenePresets.layoutType.narrative") }
+  ]);
+}
+
+function narrativePresetSelect(value) {
+  const items = getNarrativeSceneLayoutPresetIds().map((id) => ({
     id,
     label: localize(`ui.scenePresets.preset.${id}`)
   }));
@@ -47,13 +54,36 @@ function readFormData(form, fallbackUsers) {
     order: Number.parseInt(String(form.elements.namedItem(`order-${user.id}`)?.value ?? user.order), 10) || user.order
   }));
   return {
-    presetId: form.elements.namedItem("presetId")?.value ?? "grid2x2",
+    layoutType: form.elements.namedItem("layoutType")?.value ?? "grid",
+    presetId: form.elements.namedItem("presetId")?.value ?? "roleplayWide",
+    rows: form.elements.namedItem("rows")?.value ?? "2",
+    cols: form.elements.namedItem("cols")?.value ?? "2",
     unitMode: form.elements.namedItem("unitMode")?.value ?? "responsive",
     gap: form.elements.namedItem("gap")?.value ?? "2",
     marginX: form.elements.namedItem("marginX")?.value ?? "2",
     marginY: form.elements.namedItem("marginY")?.value ?? "2",
     users: userStates
   };
+}
+
+function layoutModeRows(formData) {
+  const isGrid = formData.layoutType !== "narrative";
+  const gridDisplay = isGrid ? "" : ' style="display:none"';
+  const narrativeDisplay = isGrid ? ' style="display:none"' : "";
+  return [
+    rowWithHelp("scenePresetLayoutType", layoutTypeSelect(formData.layoutType), "scenePresetLayoutType"),
+    `<div data-scene-grid-fields${gridDisplay}>`,
+    rowWithHelp("scenePresetRows", numberInput("rows", formData.rows, 1, 6, 1), "scenePresetRows"),
+    rowWithHelp("scenePresetCols", numberInput("cols", formData.cols, 1, 8, 1), "scenePresetCols"),
+    `</div>`,
+    `<div data-scene-narrative-fields${narrativeDisplay}>`,
+    rowWithHelp("scenePresetNarrativeId", narrativePresetSelect(formData.presetId), "scenePresetNarrativeId"),
+    `</div>`,
+    rowWithHelp("scenePresetUnitMode", unitModeSelect(formData.unitMode), "scenePresetUnitMode"),
+    rowWithHelp("scenePresetGap", numberInput("gap", formData.gap, 0, 128, 1), "scenePresetGap"),
+    rowWithHelp("scenePresetMarginX", numberInput("marginX", formData.marginX, 0, 256, 1), "scenePresetMarginX"),
+    rowWithHelp("scenePresetMarginY", numberInput("marginY", formData.marginY, 0, 256, 1), "scenePresetMarginY")
+  ];
 }
 
 function buildHtml(context) {
@@ -63,13 +93,7 @@ function buildHtml(context) {
     `<p class="charlemos-section-desc">${foundry.utils.escapeHTML(context.description)}</p>`,
     `<form id="${appId("scene-preset-form")}" class="charlemos-config-form">`,
     `<div class="charlemos-config-scroll">`,
-    sectionHtml(localize("ui.scenePresets.section"), localize("ui.scenePresets.sectionDesc"), [
-      rowWithHelp("scenePresetId", presetSelect(context.formData.presetId), "scenePresetId"),
-      rowWithHelp("scenePresetUnitMode", unitModeSelect(context.formData.unitMode), "scenePresetUnitMode"),
-      rowWithHelp("scenePresetGap", numberInput("gap", context.formData.gap, 0, 128, 1), "scenePresetGap"),
-      rowWithHelp("scenePresetMarginX", numberInput("marginX", context.formData.marginX, 0, 256, 1), "scenePresetMarginX"),
-      rowWithHelp("scenePresetMarginY", numberInput("marginY", context.formData.marginY, 0, 256, 1), "scenePresetMarginY")
-    ]),
+    sectionHtml(localize("ui.scenePresets.section"), localize("ui.scenePresets.sectionDesc"), layoutModeRows(context.formData)),
     usersSection(context.formData.users),
     `</div>`,
     `<div class="charlemos-actions"><button type="submit">${localize("ui.scenePresets.actions.apply")}</button></div>`,
@@ -103,7 +127,7 @@ export class SceneLayoutPresetApp extends foundry.applications.api.ApplicationV2
     },
     position: {
       width: 560,
-      height: 640
+      height: 700
     }
   };
 
@@ -111,7 +135,10 @@ export class SceneLayoutPresetApp extends foundry.applications.api.ApplicationV2
     super(options);
     this.onSaved = typeof options.onSaved === "function" ? options.onSaved : null;
     this.formData = {
-      presetId: "grid2x2",
+      layoutType: "grid",
+      presetId: "roleplayWide",
+      rows: 2,
+      cols: 2,
       unitMode: "responsive",
       gap: 2,
       marginX: 2,
@@ -150,6 +177,16 @@ export class SceneLayoutPresetApp extends foundry.applications.api.ApplicationV2
   async _onRender() {
     const form = document.getElementById(appId("scene-preset-form"));
     if (!form) return;
+    const layoutType = form.elements.namedItem("layoutType");
+    const syncLayoutMode = () => {
+      const isGrid = (layoutType?.value ?? "grid") !== "narrative";
+      const gridFields = form.querySelector("[data-scene-grid-fields]");
+      const narrativeFields = form.querySelector("[data-scene-narrative-fields]");
+      if (gridFields) gridFields.style.display = isGrid ? "" : "none";
+      if (narrativeFields) narrativeFields.style.display = isGrid ? "none" : "";
+    };
+    if (layoutType) layoutType.addEventListener("change", syncLayoutMode);
+    syncLayoutMode();
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       await this.applyPreset(form);
@@ -167,7 +204,11 @@ export class SceneLayoutPresetApp extends foundry.applications.api.ApplicationV2
       return;
     }
 
-    const built = buildSceneLayoutPreset(orderedUserIds, this.formData.presetId, {
+    const built = buildSceneLayoutPreset(orderedUserIds, {
+      layoutType: this.formData.layoutType,
+      presetId: this.formData.presetId,
+      rows: this.formData.rows,
+      cols: this.formData.cols,
       unitMode: this.formData.unitMode,
       gap: this.formData.gap,
       marginX: this.formData.marginX,

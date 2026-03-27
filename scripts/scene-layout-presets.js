@@ -1,11 +1,4 @@
-const SCENE_LAYOUT_PRESETS = {
-  grid1x2: { rows: 1, cols: 2 },
-  grid1x3: { rows: 1, cols: 3 },
-  grid1x4: { rows: 1, cols: 4 },
-  grid1x6: { rows: 1, cols: 6 },
-  grid2x2: { rows: 2, cols: 2 },
-  grid2x3: { rows: 2, cols: 3 },
-  grid2x4: { rows: 2, cols: 4 },
+const NARRATIVE_LAYOUT_PRESETS = {
   roleplayWide: { rows: 2, cols: 2 },
   mapBottomStrip: { rows: 1, cols: 6 },
   sideDock: { rows: 4, cols: 1 }
@@ -22,8 +15,26 @@ function normalizePositiveNumber(value, fallback) {
   return parsed >= 0 ? parsed : fallback;
 }
 
+function normalizeIntegerInRange(value, fallback, min, max) {
+  const parsed = Number.parseInt(String(value ?? ""), 10);
+  if (Number.isNaN(parsed)) return fallback;
+  return Math.min(max, Math.max(min, parsed));
+}
+
 function normalizeUnitMode(value) {
   return String(value ?? "").trim() === "px" ? "px" : "responsive";
+}
+
+function normalizeLayoutType(value) {
+  return String(value ?? "").trim() === "narrative" ? "narrative" : "grid";
+}
+
+function resolvePresetDefinition(layoutType, presetId, rows, cols) {
+  if (normalizeLayoutType(layoutType) === "narrative") return NARRATIVE_LAYOUT_PRESETS[presetId] ?? null;
+  return {
+    rows: normalizeIntegerInRange(rows, 2, 1, 6),
+    cols: normalizeIntegerInRange(cols, 2, 1, 8)
+  };
 }
 
 function responsiveLength(value, axis) {
@@ -101,32 +112,29 @@ function buildPixelLayouts(users, preset, options) {
   );
 }
 
-export function getSceneLayoutPresetIds() {
-  return Object.keys(SCENE_LAYOUT_PRESETS);
+export function getNarrativeSceneLayoutPresetIds() {
+  return Object.keys(NARRATIVE_LAYOUT_PRESETS);
 }
 
-export function getSceneLayoutPresetDefinition(presetId) {
-  return SCENE_LAYOUT_PRESETS[presetId] ?? null;
-}
-
-export function buildSceneLayoutPreset(layoutUserIds, presetId, options = {}) {
-  const preset = getSceneLayoutPresetDefinition(presetId);
-  if (!preset) return { capacity: 0, ignoredUserIds: [...(layoutUserIds ?? [])], layouts: {} };
-
+export function buildSceneLayoutPreset(layoutUserIds, options = {}) {
   const users = Array.isArray(layoutUserIds) ? layoutUserIds.filter(Boolean) : [];
+  const layoutType = normalizeLayoutType(options.layoutType);
+  const preset = resolvePresetDefinition(layoutType, options.presetId, options.rows, options.cols);
+  if (!preset) return { capacity: 0, ignoredUserIds: [...users], layouts: {}, unitMode: normalizeUnitMode(options.unitMode), layoutType };
+
   const capacity = preset.rows * preset.cols;
   const placedUserIds = users.slice(0, capacity);
   const ignoredUserIds = users.slice(capacity);
   const unitMode = normalizeUnitMode(options.unitMode);
-  const layouts =
-    unitMode === "px"
-      ? buildPixelLayouts(placedUserIds, preset, options)
-      : buildResponsiveLayouts(placedUserIds, preset, options);
+  const layouts = unitMode === "px" ? buildPixelLayouts(placedUserIds, preset, options) : buildResponsiveLayouts(placedUserIds, preset, options);
 
   return {
     capacity,
     ignoredUserIds,
     layouts,
-    unitMode
+    unitMode,
+    layoutType,
+    rows: preset.rows,
+    cols: preset.cols
   };
 }
