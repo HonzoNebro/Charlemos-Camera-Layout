@@ -341,6 +341,7 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
     await saveLayoutPatchForUser(this.selectedUserId, patch);
     if (this.onSaved) this.onSaved();
     ui.notifications.info(localize("ui.config.notifications.saved"));
+    await this.close();
     console.debug(`${MODULE_ID} | layout config saved`, { playerId: this.selectedUserId, patch });
   }
 }
