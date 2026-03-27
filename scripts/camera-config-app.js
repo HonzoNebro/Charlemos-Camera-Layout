@@ -9,7 +9,9 @@ import { OverlayConfigApp } from "./overlay-config-app.js";
 import { SceneLayoutPresetApp } from "./scene-layout-preset-app.js";
 import {
   appId,
+  helpText,
   playerSelectHtml,
+  rowHtml,
   sectionHtml
 } from "./camera-config-ui.js";
 import {
@@ -161,7 +163,7 @@ function actionsHtml() {
   ].join("");
 }
 
-function buildHtml(context) {
+export function buildHtml(context) {
   return [
     `<div class="charlemos-config-shell" id="${context.shellId}">`,
     `<h2>${context.title}</h2>`,
