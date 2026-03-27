@@ -292,7 +292,7 @@
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.overlayAnchor.topLeft": "Arriba esquerda",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.overlayAnchor.topRight": "Arriba dereita",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.overlayAnchor.bottomLeft": "Abaixo esquerda",
-  "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.overlayAnchor.bottomRight": "Abaixo dereita"
-}
+  "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.overlayAnchor.bottomRight": "Abaixo dereita",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.scenePresets.layoutType.grid": "Grella dinámica",
-  "charlemos-camera-layout-phase-8-camera-control-mode.ui.scenePresets.layoutType.narrative": "Preset narrativo",
+  "charlemos-camera-layout-phase-8-camera-control-mode.ui.scenePresets.layoutType.narrative": "Preset narrativo"
+}
