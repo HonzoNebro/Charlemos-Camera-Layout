@@ -417,6 +417,12 @@ function resizeHandle(viewElement) {
   return firstMatch(viewElement, ".window-resize-handle, .window-resizable-handle, .ui-resizable-handle");
 }
 
+export function viewSupportsModuleGeometry(viewElement) {
+  if (!viewElement?.classList) return false;
+  if (viewElement.classList.contains("popout")) return true;
+  return Boolean(viewElement.closest?.(".application.popout"));
+}
+
 export function syncResizeHandleVisibility(viewElement, applyGeometry) {
   const handle = resizeHandle(viewElement);
   if (!handle?.style) return;
@@ -811,6 +817,7 @@ export function resolveRelativeLayout(layout, targetViewElement, selfViewElement
 export function resolveSceneLayouts(layouts, options = {}) {
   const sourceLayouts = cloneValue(layouts ?? {});
   const viewElementsByUserId = options.viewElementsByUserId ?? {};
+  const geometryEligibleByUserId = options.geometryEligibleByUserId ?? {};
   const resolvedLayouts = {};
   const pending = new Set(Object.keys(sourceLayouts));
   const dependencies = new Map();
@@ -819,7 +826,11 @@ export function resolveSceneLayouts(layouts, options = {}) {
 
   Object.entries(sourceLayouts).forEach(([userId, layout]) => {
     const targetUserId = relativeTargetUserId(layout);
-    const validDependency = targetUserId && targetUserId !== userId && sourceLayouts[targetUserId];
+    const validDependency =
+      targetUserId &&
+      targetUserId !== userId &&
+      sourceLayouts[targetUserId] &&
+      geometryEligibleByUserId[targetUserId] !== false;
     if (!validDependency) {
       dependencies.set(userId, null);
       indegree.set(userId, 0);
@@ -951,7 +962,7 @@ function applyPlayerLayout(app, user, options = {}) {
     return;
   }
   const cameraControlMode = getSceneCameraControlMode();
-  const applyGeometry = cameraControlMode === "module";
+  const applyGeometry = cameraControlMode === "module" && viewSupportsModuleGeometry(viewElement);
   const resolvedLayout = options.resolvedLayouts?.[userId] ?? layout;
   const normalizedLayout = applyGeometry ? applyGeometryDefaults(resolvedLayout, viewElement, videoElement) : resolvedLayout;
   logRendererDebug("before-apply", userId, enabled, viewElement, videoElement, layout);
@@ -978,12 +989,17 @@ function applyAll(app) {
   const sceneProfile = getSceneProfile();
   const cameraControlMode = getSceneCameraControlMode();
   const users = game.users?.contents ?? Array.from(game.users ?? []);
+  const viewElementsByUserId = Object.fromEntries(users.map((user) => [user.id, getViewElement(app, user.id)]));
+  const geometryEligibleByUserId = Object.fromEntries(
+    users.map((user) => [user.id, viewSupportsModuleGeometry(viewElementsByUserId[user.id])])
+  );
   const resolvedLayouts =
     sceneProfileEnabled() && cameraControlMode === "module"
       ? resolveSceneLayouts(
           sceneProfile?.layouts ?? {},
           {
-            viewElementsByUserId: Object.fromEntries(users.map((user) => [user.id, getViewElement(app, user.id)]))
+            viewElementsByUserId,
+            geometryEligibleByUserId
           }
         )
       : null;

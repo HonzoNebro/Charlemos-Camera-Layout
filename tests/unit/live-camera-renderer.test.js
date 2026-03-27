@@ -13,6 +13,7 @@ import {
   syncGeometryInteractionMode,
   syncManagedViewGeometry,
   syncFoundryAvatarVisibility,
+  viewSupportsModuleGeometry,
   videoStyle
 } from "../../scripts/live-camera-renderer.js";
 
@@ -456,6 +457,47 @@ test("resolveSceneLayouts falls back safely on cycles", () => {
   assert.equal(resolved.b.left, "60px");
 });
 
+test("resolveSceneLayouts ignores dependencies on docked cameras", () => {
+  globalThis.foundry = {
+    utils: {
+      deepClone: (value) => JSON.parse(JSON.stringify(value))
+    }
+  };
+
+  const resolved = resolveSceneLayouts(
+    {
+      a: {
+        layoutMode: "absolute",
+        top: "10px",
+        left: "20px",
+        width: "300px",
+        height: "150px"
+      },
+      b: {
+        layoutMode: "relative",
+        top: "40px",
+        left: "60px",
+        width: "200px",
+        height: "100px",
+        relative: {
+          targetUserId: "a",
+          placement: "below-center",
+          gap: "10px"
+        }
+      }
+    },
+    {
+      geometryEligibleByUserId: {
+        a: false,
+        b: true
+      }
+    }
+  );
+
+  assert.equal(resolved.b.top, "40px");
+  assert.equal(resolved.b.left, "60px");
+});
+
 test("shouldBlockNativeGeometryInteraction blocks drag origins in module mode", () => {
   const controlBar = {};
   const target = {
@@ -528,6 +570,24 @@ test("syncResizeHandleVisibility forces module handle hidden", () => {
   assert.equal(handle.style.opacity, "0");
   assert.equal(handle.style.pointerEvents, "none");
   assert.equal(handle.style.cursor, "default");
+});
+
+test("viewSupportsModuleGeometry only returns true for popout camera views", () => {
+  const popoutView = {
+    classList: {
+      contains: (name) => name === "popout"
+    },
+    closest: () => null
+  };
+  const dockedView = {
+    classList: {
+      contains: () => false
+    },
+    closest: () => null
+  };
+
+  assert.equal(viewSupportsModuleGeometry(popoutView), true);
+  assert.equal(viewSupportsModuleGeometry(dockedView), false);
 });
 
 test("resolveRelativeLayout still resolves legacy relative payloads", () => {
