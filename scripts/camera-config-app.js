@@ -330,7 +330,6 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
     const cameraControlMode = draftCameraControlMode ?? getSceneCameraControlMode();
     const layouts = sanitizeLayouts(draftLayouts ?? currentSceneLayouts ?? getAllPlayerLayouts(), cameraControlMode);
     const macro = await exportSceneProfileToMacro(
-      sceneId,
       {
         cameraControlMode,
         layouts

@@ -29,6 +29,21 @@ function buildMacroData(name, command) {
   };
 }
 
+function sceneMacroArgs(sceneIdOrProfile, profileOrMacroName, maybeMacroName) {
+  if (sceneIdOrProfile && typeof sceneIdOrProfile === "object" && !Array.isArray(sceneIdOrProfile)) {
+    return {
+      sourceSceneId: null,
+      profile: sceneIdOrProfile,
+      macroName: profileOrMacroName
+    };
+  }
+  return {
+    sourceSceneId: sceneIdOrProfile ?? null,
+    profile: profileOrMacroName,
+    macroName: maybeMacroName
+  };
+}
+
 export async function exportLayoutToMacro(playerId, layout, macroName) {
   const name = macroName || game.i18n.localize(`${MODULE_ID}.macro.defaultName`);
   const command = buildCommand(layout, playerId);
@@ -38,11 +53,12 @@ export async function exportLayoutToMacro(playerId, layout, macroName) {
   return macro;
 }
 
-export async function exportSceneProfileToMacro(sceneId, profile, macroName) {
+export async function exportSceneProfileToMacro(sceneIdOrProfile, profileOrMacroName, maybeMacroName) {
+  const { sourceSceneId, profile, macroName } = sceneMacroArgs(sceneIdOrProfile, profileOrMacroName, maybeMacroName);
   const name = macroName || game.i18n.localize(`${MODULE_ID}.macro.sceneDefaultName`);
   const command = buildSceneCommand(profile);
   const macroData = buildMacroData(name, command);
   const macro = await Macro.create(macroData);
-  console.debug(`${MODULE_ID} | scene macro exported`, { sceneId, macroId: macro.id });
+  console.debug(`${MODULE_ID} | scene macro exported`, { sourceSceneId, macroId: macro.id });
   return macro;
 }

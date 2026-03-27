@@ -86,14 +86,6 @@ function normalizedOverlayAnchor(value) {
   return "center";
 }
 
-function snapEnabledFrom(layout) {
-  return Boolean(layout?.snap?.enabled);
-}
-
-function snapSizeFrom(layout) {
-  return layout?.snap?.size ?? 10;
-}
-
 function nameSourceFrom(layout) {
   return nullableText(layout?.nameStyle?.source) ?? "user";
 }
@@ -152,10 +144,6 @@ export function normalizedLayoutMode(value) {
   if (!text) return "absolute";
   if (LAYOUT_MODE_VALUES.has(text)) return text;
   return "absolute";
-}
-
-function resizeAspectFrom(layout) {
-  return nullableText(layout?.resize?.aspectMode) ?? "free";
 }
 
 function cropValue(layout, side) {
@@ -231,10 +219,6 @@ export function validateLayoutFormData(selectedUserId, formData, layoutsByUserId
 
 export function buildFormData(layout) {
   return {
-    preset: nullableText(layout?.preset) ?? "manual",
-    snapEnabled: snapEnabledFrom(layout),
-    snapSize: snapSizeFrom(layout),
-    resizeAspect: resizeAspectFrom(layout),
     layoutMode: inferLayoutMode(layout),
     top: nullableText(layout?.top) ?? "",
     left: nullableText(layout?.left) ?? "",

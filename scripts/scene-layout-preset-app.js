@@ -91,7 +91,7 @@ function buildHtml(context) {
     `<div class="charlemos-config-shell">`,
     `<h2>${context.title}</h2>`,
     `<p class="charlemos-section-desc">${foundry.utils.escapeHTML(context.description)}</p>`,
-    `<form id="${appId("scene-preset-form")}" class="charlemos-config-form">`,
+    `<form id="${context.formId}" class="charlemos-config-form">`,
     `<div class="charlemos-config-scroll">`,
     sectionHtml(localize("ui.scenePresets.section"), localize("ui.scenePresets.sectionDesc"), layoutModeRows(context.formData)),
     usersSection(context.formData.users),
@@ -174,6 +174,10 @@ export class SceneLayoutPresetApp extends foundry.applications.api.ApplicationV2
     };
   }
 
+  scopedId(suffix) {
+    return `${appId(suffix)}-${this.id}`;
+  }
+
   async _prepareContext() {
     const currentUsers = defaultUserStates();
     const currentById = new Map(currentUsers.map((user) => [user.id, user]));
@@ -189,6 +193,7 @@ export class SceneLayoutPresetApp extends foundry.applications.api.ApplicationV2
     return {
       title: game.i18n.localize(titleKey()),
       description: localize("ui.scenePresets.description"),
+      formId: this.scopedId("scene-preset-form"),
       formData: this.formData
     };
   }
@@ -202,7 +207,7 @@ export class SceneLayoutPresetApp extends foundry.applications.api.ApplicationV2
   }
 
   async _onRender() {
-    const form = document.getElementById(appId("scene-preset-form"));
+    const form = document.getElementById(this.scopedId("scene-preset-form"));
     if (!form) return;
     const layoutType = form.elements.namedItem("layoutType");
     const syncLayoutMode = () => {

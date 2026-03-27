@@ -31,7 +31,7 @@ function buildHtml(context) {
     `<div class="charlemos-config-shell">`,
     `<h2>${context.title}</h2>`,
     `<p class="charlemos-section-desc">${foundry.utils.escapeHTML(context.playerName)}</p>`,
-    `<form id="${appId("effects-form")}" class="charlemos-config-form">`,
+    `<form id="${context.formId}" class="charlemos-config-form">`,
     `<div class="charlemos-config-scroll">`,
     effectsSection(context.formData),
     `</div>`,
@@ -60,6 +60,10 @@ export class EffectsConfigApp extends foundry.applications.api.ApplicationV2 {
     this.onSaved = typeof options.onSaved === "function" ? options.onSaved : null;
   }
 
+  scopedId(suffix) {
+    return `${appId(suffix)}-${this.id}`;
+  }
+
   async _prepareContext() {
     const users = usersForConfig();
     const selected = selectedUser(users, this.selectedUserId);
@@ -69,6 +73,7 @@ export class EffectsConfigApp extends foundry.applications.api.ApplicationV2 {
       title: game.i18n.localize(titleKey()),
       playerName: selected?.name ?? "",
       sceneId: currentSceneId(),
+      formId: this.scopedId("effects-form"),
       formData: buildFormData(layout)
     };
   }
@@ -82,7 +87,7 @@ export class EffectsConfigApp extends foundry.applications.api.ApplicationV2 {
   }
 
   async _onRender() {
-    const form = document.getElementById(appId("effects-form"));
+    const form = document.getElementById(this.scopedId("effects-form"));
     if (!form) return;
     form.addEventListener("submit", async (event) => {
       event.preventDefault();

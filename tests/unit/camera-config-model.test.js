@@ -11,9 +11,6 @@ import {
 
 test("buildFormData maps stored layout to UI fields", () => {
   const formData = buildFormData({
-    preset: "topLeft",
-    snap: { enabled: true, size: 16 },
-    resize: { aspectMode: "16:9" },
     layoutMode: "relative",
     position: "absolute",
     top: "1rem",
@@ -56,10 +53,6 @@ test("buildFormData maps stored layout to UI fields", () => {
   });
 
   assert.deepEqual(formData, {
-    preset: "topLeft",
-    snapEnabled: true,
-    snapSize: 16,
-    resizeAspect: "16:9",
     layoutMode: "relative",
     top: "1rem",
     left: "2rem",

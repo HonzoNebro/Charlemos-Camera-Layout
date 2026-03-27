@@ -137,7 +137,7 @@ function validationMessagesHtml(validation) {
     ...normalized.warnings.map((code) => `<li class="charlemos-validation-item charlemos-validation-item-warning">${foundry.utils.escapeHTML(localize(`ui.config.validation.${code}`))}</li>`)
   ].join("");
   if (!items) return "";
-  return `<div id="${appId("layout-validation")}" class="charlemos-validation"><ul class="charlemos-validation-list">${items}</ul></div>`;
+  return `<div class="charlemos-validation"><ul class="charlemos-validation-list">${items}</ul></div>`;
 }
 
 function sceneSection(sceneId, cameraControlMode) {
@@ -154,7 +154,7 @@ function sceneSection(sceneId, cameraControlMode) {
   ]);
 }
 
-function geometrySection(formData, cameraControlMode, users, selectedUserId, validation) {
+function geometrySection(formData, cameraControlMode, users, selectedUserId, validation, validationShellId) {
   const moduleOwned = cameraControlMode === "module";
   const disabledAttr = moduleOwned ? "" : " disabled";
   const description = moduleOwned
@@ -171,7 +171,7 @@ function geometrySection(formData, cameraControlMode, users, selectedUserId, val
     rowWithHelp("relativeTargetUserId", relationTargetSelect(users, selectedUserId, formData.relativeTargetUserId, relativeDisabled), "relativeTargetUserId"),
     rowWithHelp("relativePlacement", relationPlacementSelect(formData.relativePlacement, relativeDisabled), "relativePlacement"),
     rowWithHelp("relativeGap", `<input type="text" name="relativeGap" value="${foundry.utils.escapeHTML(String(formData.relativeGap ?? ""))}"${relativeDisabled ? " disabled" : ""}>`, "relativeGap"),
-    `<div id="${appId("layout-validation-shell")}">${validationMessagesHtml(validation)}</div>`
+    `<div id="${validationShellId}">${validationMessagesHtml(validation)}</div>`
   ]);
 }
 
@@ -189,10 +189,10 @@ function buildHtml(context) {
     `<div class="charlemos-config-shell">`,
     `<h2>${context.title}</h2>`,
     `<p class="charlemos-section-desc">${foundry.utils.escapeHTML(context.playerName)}</p>`,
-    `<form id="${appId("layout-form")}" class="charlemos-config-form">`,
+    `<form id="${context.formId}" class="charlemos-config-form">`,
     `<div class="charlemos-config-scroll">`,
     sceneSection(context.sceneId, context.cameraControlMode),
-    geometrySection(context.formData, context.cameraControlMode, context.users, context.selectedUserId, context.validation),
+    geometrySection(context.formData, context.cameraControlMode, context.users, context.selectedUserId, context.validation, context.validationShellId),
     layoutSection(context.formData),
     `</div>`,
     `<div class="charlemos-actions"><button type="submit">${localize("ui.config.actions.save")}</button></div>`,
@@ -220,6 +220,10 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
     this.onSaved = typeof options.onSaved === "function" ? options.onSaved : null;
   }
 
+  scopedId(suffix) {
+    return `${appId(suffix)}-${this.id}`;
+  }
+
   async _prepareContext() {
     const users = usersForConfig();
     const selected = selectedUser(users, this.selectedUserId);
@@ -232,6 +236,8 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
       users,
       sceneId: currentSceneId(),
       cameraControlMode: getSceneCameraControlMode(),
+      formId: this.scopedId("layout-form"),
+      validationShellId: this.scopedId("layout-validation-shell"),
       formData,
       selectedUserId: this.selectedUserId,
       validation: this.getValidationState(formData, users, getSceneCameraControlMode())
@@ -247,7 +253,7 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
   }
 
   async _onRender() {
-    const form = document.getElementById(appId("layout-form"));
+    const form = document.getElementById(this.scopedId("layout-form"));
     if (!form) return;
     syncLayoutModeFieldState(form, getSceneCameraControlMode());
     this.syncValidationState(form);
@@ -301,7 +307,7 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
 
   syncValidationState(form) {
     const validation = this.getValidationState(readFormData(form), usersForConfig(), form.elements.namedItem("cameraControlMode")?.value ?? getSceneCameraControlMode());
-    const shell = document.getElementById(appId("layout-validation-shell"));
+    const shell = document.getElementById(this.scopedId("layout-validation-shell"));
     if (shell) shell.innerHTML = validationMessagesHtml(validation);
     const submit = form.querySelector('button[type="submit"]');
     if (submit) submit.disabled = validation.errors.length > 0;
