@@ -183,11 +183,12 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
     id: `${MODULE_ID}-config`,
     tag: "section",
     window: {
-      title: titleKey()
+      title: titleKey(),
+      resizable: true
     },
     position: {
-      width: 640,
-      height: 560
+      width: 860,
+      height: 700
     }
   };
 

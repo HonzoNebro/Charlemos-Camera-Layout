@@ -150,11 +150,12 @@ export class SceneLayoutPresetApp extends foundry.applications.api.ApplicationV2
     id: `${MODULE_ID}-scene-presets`,
     tag: "section",
     window: {
-      title: titleKey()
+      title: titleKey(),
+      resizable: true
     },
     position: {
-      width: 560,
-      height: 700
+      width: 760,
+      height: 780
     }
   };
 

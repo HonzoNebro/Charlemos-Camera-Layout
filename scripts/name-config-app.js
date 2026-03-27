@@ -194,11 +194,12 @@ export class NameConfigApp extends foundry.applications.api.ApplicationV2 {
     id: `${MODULE_ID}-name-config`,
     tag: "section",
     window: {
-      title: titleKey()
+      title: titleKey(),
+      resizable: true
     },
     position: {
-      width: 560,
-      height: 620
+      width: 720,
+      height: 700
     }
   };
 

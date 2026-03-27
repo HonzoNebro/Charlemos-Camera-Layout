@@ -81,3 +81,29 @@ test("config subwindows render scoped form ids per instance", async () => {
     assert.match(html, new RegExp(`id="${expectedFormId}"`));
   }
 });
+
+test("config windows expose larger resizable defaults", async () => {
+  installWindowTestEnv();
+
+  const { CameraConfigApp } = await import("../../scripts/camera-config-app.js");
+  const { LayoutConfigApp } = await import("../../scripts/layout-config-app.js");
+  const { EffectsConfigApp } = await import("../../scripts/effects-config-app.js");
+  const { OverlayConfigApp } = await import("../../scripts/overlay-config-app.js");
+  const { NameConfigApp } = await import("../../scripts/name-config-app.js");
+  const { SceneLayoutPresetApp } = await import("../../scripts/scene-layout-preset-app.js");
+
+  const cases = [
+    { App: CameraConfigApp, width: 860, height: 700 },
+    { App: LayoutConfigApp, width: 760, height: 620 },
+    { App: EffectsConfigApp, width: 760, height: 700 },
+    { App: OverlayConfigApp, width: 760, height: 780 },
+    { App: NameConfigApp, width: 720, height: 700 },
+    { App: SceneLayoutPresetApp, width: 760, height: 780 }
+  ];
+
+  for (const item of cases) {
+    assert.equal(item.App.DEFAULT_OPTIONS.window.resizable, true);
+    assert.equal(item.App.DEFAULT_OPTIONS.position.width, item.width);
+    assert.equal(item.App.DEFAULT_OPTIONS.position.height, item.height);
+  }
+});

@@ -206,11 +206,12 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
     id: `${MODULE_ID}-layout-config`,
     tag: "section",
     window: {
-      title: titleKey()
+      title: titleKey(),
+      resizable: true
     },
     position: {
-      width: 560,
-      height: 460
+      width: 760,
+      height: 620
     }
   };
 

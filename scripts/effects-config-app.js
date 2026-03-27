@@ -46,11 +46,12 @@ export class EffectsConfigApp extends foundry.applications.api.ApplicationV2 {
     id: `${MODULE_ID}-effects-config`,
     tag: "section",
     window: {
-      title: titleKey()
+      title: titleKey(),
+      resizable: true
     },
     position: {
-      width: 620,
-      height: 620
+      width: 760,
+      height: 700
     }
   };
 

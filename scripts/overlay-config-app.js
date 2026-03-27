@@ -87,11 +87,12 @@ export class OverlayConfigApp extends foundry.applications.api.ApplicationV2 {
     id: `${MODULE_ID}-overlay-config`,
     tag: "section",
     window: {
-      title: titleKey()
+      title: titleKey(),
+      resizable: true
     },
     position: {
-      width: 620,
-      height: 720
+      width: 760,
+      height: 780
     }
   };
 
