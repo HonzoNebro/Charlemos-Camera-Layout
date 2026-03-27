@@ -4,12 +4,16 @@ FoundryVTT module for advanced A/V camera styling and per-scene camera profiles.
 
 ## Current capabilities
 
+- Scene-level camera control mode: `native` or `module`
+- Absolute and relative camera layouts with persisted `top`, `left`, `width`, `height`, target, placement and gap
+- Scene layout presets: dynamic grid, narrative presets, responsive or fixed units
 - Per-player camera overlay with URL/path + file picker
 - Overlay controls: opacity, move, scale, rotate, fit mode, anchor, tint, blend mode
 - Video effects: transform, filter, clip-path, border radius
 - Camera crop masks (top/right/bottom/left)
 - Name styles: source, color, font family (Foundry fonts), position, alignment, weight and italic
-- Scene profile save/load via macros
+- Reusable scene profile macros that apply to the active scene
+- Offline-player editing support
 - JSON config export/import
 - Runtime renderer diagnostics mode
 
@@ -26,7 +30,6 @@ FoundryVTT module for advanced A/V camera styling and per-scene camera profiles.
 - `docs/DEVELOPMENT_RULES.md`: mandatory coding rules
 - `.github/workflows/release-guard-pr.yml`: validates release metadata and tests on PRs to `main`
 - `.github/workflows/release-tag-on-version-bump.yml`: auto-tags releases after version bumps reach `main`
-- `.github/workflows/release-tag-on-version-bump.yml`: auto-tag when `module.json` version changes on `main`
 
 ## Run tests
 

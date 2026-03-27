@@ -5,6 +5,32 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-03-27
+
+### Added
+- Explicit `layoutMode` contract (`absolute` vs `relative`) for camera geometry in module-owned scenes.
+- Scene-wide relative layout validation with user-facing errors and warnings for missing targets, self-targets, cycles, offline targets, and non-visible targets.
+- Reusable scene macros that apply the exported profile to whichever scene is active when the macro is executed.
+- Dedicated unit coverage for window instance scoping and relative-layout validation rules.
+
+### Changed
+- Relative camera chains now resolve at scene level before render, allowing stable `A -> B -> C` dependency resolution.
+- Scene camera profiles can be reused across scenes without being tied to the source scene id.
+- All dedicated config windows now use per-instance scoped DOM ids, avoiding cross-window interference when multiple editors are open.
+- Release metadata restored to stable production identity in manifest:
+  - module id: `charlemos-camera-layout`
+  - manifest URL on `main`
+  - download URL on tag archive `v1.5.0`
+
+### Fixed
+- Restored scene macro export from the config hub after the scene-control refactor.
+- Prevented docked cameras from keeping module-owned geometry while inside the Foundry dock.
+- Removed orphaned preset/snap/resize flows and stale i18n keys left over from earlier layout tooling.
+
+### Quality
+- Simplified config/runtime code by removing dead preset tooling and stale release-branch identifiers.
+- Validated release branch with `npm test` and JSON parsing for all locale files.
+
 ## [1.4.0] - 2026-03-27
 
 ### Added
