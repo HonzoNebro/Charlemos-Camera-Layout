@@ -5,6 +5,21 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2026-03-27
+
+### Added
+- Overlay media support for video files alongside existing static-image overlays.
+
+### Fixed
+- Border radius values entered as plain numbers now normalize to valid CSS lengths instead of being ignored by the browser.
+- Overlay validation now accepts supported video files instead of only static images.
+
+### Changed
+- Overlay rendering now uses real image/video media elements while preserving fit, anchor, transform, opacity, and tint behavior.
+- Release metadata updated for stable distribution:
+  - module version: `1.5.1`
+  - download URL points to tag archive `v1.5.1`
+
 ## [1.5.0] - 2026-03-27
 
 ### Added
