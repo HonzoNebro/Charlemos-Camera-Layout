@@ -302,7 +302,7 @@ function buildNameStylePayload(formData) {
 
 function buildGeometryPayload(formData) {
   return {
-    borderRadius: nullableCss(formData.geometryBorderRadius)
+    borderRadius: normalizeLayoutLength(formData.geometryBorderRadius)
   };
 }
 

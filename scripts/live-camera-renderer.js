@@ -1,6 +1,6 @@
 import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
 import { inferLayoutMode } from "./camera-config-model.js";
-import { composeTransform, nameStyle, overlayStyle } from "./camera-layout-style.js";
+import { composeTransform, nameStyle, overlayMediaKind, overlayMediaStyle, overlayStyle, overlayTintStyle } from "./camera-layout-style.js";
 import { buildCameraViewStyle } from "./camera-style-service.js";
 import { getSceneCameraControlMode, getSceneProfile, getSceneProfileLayout, sceneProfileEnabled } from "./scene-camera.js";
 
@@ -43,6 +43,56 @@ function getOrCreateOverlay(viewElement) {
   overlay.className = "charlemos-camera-overlay";
   viewElement.appendChild(overlay);
   return overlay;
+}
+
+function getOverlayMediaElement(overlayElement, kind) {
+  const current = overlayElement.querySelector(".charlemos-camera-overlay-media");
+  const expectedTag = kind === "video" ? "VIDEO" : "IMG";
+  if (current && current.tagName === expectedTag) return current;
+  if (current) current.remove();
+  const next = document.createElement(kind === "video" ? "video" : "img");
+  next.className = `charlemos-camera-overlay-media charlemos-camera-overlay-${kind}`;
+  if (kind === "video") {
+    next.autoplay = true;
+    next.loop = true;
+    next.muted = true;
+    next.playsInline = true;
+    next.preload = "auto";
+  } else {
+    next.alt = "";
+    next.decoding = "async";
+  }
+  const tint = overlayElement.querySelector(".charlemos-camera-overlay-tint");
+  if (tint) overlayElement.insertBefore(next, tint);
+  else overlayElement.appendChild(next);
+  return next;
+}
+
+function getOrCreateOverlayTint(overlayElement) {
+  let tint = overlayElement.querySelector(".charlemos-camera-overlay-tint");
+  if (tint) return tint;
+  tint = document.createElement("div");
+  tint.className = "charlemos-camera-overlay-tint";
+  overlayElement.appendChild(tint);
+  return tint;
+}
+
+function syncOverlayMediaSource(mediaElement, kind, source) {
+  const nextSource = String(source ?? "").trim();
+  if (kind === "video") {
+    if (nextSource) {
+      if (mediaElement.src !== nextSource) mediaElement.src = nextSource;
+      mediaElement.play?.().catch(() => {});
+    } else {
+      mediaElement.removeAttribute("src");
+    }
+    return;
+  }
+  if (mediaElement.src !== nextSource) mediaElement.src = nextSource;
+}
+
+function clearOverlayMedia(overlayElement) {
+  overlayElement.querySelector(".charlemos-camera-overlay-media")?.remove();
 }
 
 function getOrCreateName(viewElement) {
@@ -260,9 +310,15 @@ export function applyFrameOverlayFallbackStyle(element, overlay) {
   const hasExplicitFitMode = fitMode !== "" && fitMode !== "auto";
   const hasExplicitAnchor = anchor !== "" && anchor !== "center";
   if (hasExplicitFitMode || hasExplicitAnchor) return;
-  element.style.backgroundSize = "100% 100%";
-  element.style.backgroundPosition = "center";
-  element.style.backgroundRepeat = "no-repeat";
+  if ("backgroundSize" in element.style) {
+    element.style.backgroundSize = "100% 100%";
+    element.style.backgroundPosition = "center";
+    element.style.backgroundRepeat = "no-repeat";
+  }
+  if ("objectFit" in element.style) {
+    element.style.objectFit = "fill";
+    element.style.objectPosition = "center";
+  }
   if (!element.style.mixBlendMode) element.style.mixBlendMode = "screen";
 }
 
@@ -641,6 +697,23 @@ function applyOverlay(viewElement, layout) {
   const element = getOrCreateOverlay(viewElement);
   const style = overlayStyle(layout);
   assignStyle(element, style);
+  if (!layout?.overlay?.enabled) {
+    clearOverlayMedia(element);
+    assignStyle(getOrCreateOverlayTint(element), overlayTintStyle(null));
+    applyFrameOverlayFallbackStyle(element, layout?.overlay);
+    return;
+  }
+  const source = String(layout?.overlay?.imageUrl ?? "").trim();
+  if (source) {
+    const kind = overlayMediaKind(source);
+    const mediaElement = getOverlayMediaElement(element, kind);
+    assignStyle(mediaElement, overlayMediaStyle(layout));
+    syncOverlayMediaSource(mediaElement, kind, source);
+    applyFrameOverlayFallbackStyle(mediaElement, layout?.overlay);
+  } else {
+    clearOverlayMedia(element);
+  }
+  assignStyle(getOrCreateOverlayTint(element), overlayTintStyle(layout));
   applyFrameOverlayFallbackStyle(element, layout?.overlay);
 }
 

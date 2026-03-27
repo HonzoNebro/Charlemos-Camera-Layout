@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { composeTransform, nameStyle, overlayStyle } from "../../scripts/camera-layout-style.js";
+import { composeTransform, nameStyle, overlayMediaKind, overlayMediaStyle, overlayStyle, overlayTintStyle } from "../../scripts/camera-layout-style.js";
 
 test("composeTransform appends geometry skew", () => {
   const transform = composeTransform("rotate(2deg)", { skewX: 5, skewY: -3 });
@@ -21,11 +21,14 @@ test("overlayStyle disabled hides overlay", () => {
     mixBlendMode: "normal",
     opacity: "1",
     transform: "",
-    transformOrigin: "center"
+    transformOrigin: "center",
+    backgroundSize: "",
+    backgroundPosition: "",
+    backgroundRepeat: ""
   });
 });
 
-test("overlayStyle applies transform and tint layer", () => {
+test("overlayStyle applies transform and keeps overlay container media-agnostic", () => {
   const style = overlayStyle({
     overlay: {
       enabled: true,
@@ -38,10 +41,10 @@ test("overlayStyle applies transform and tint layer", () => {
     }
   });
   assert.equal(style.display, "block");
-  assert.equal(style.backgroundImage, 'linear-gradient(rgba(18, 52, 86, 0.4), rgba(18, 52, 86, 0.4)), url("/x.png")');
-  assert.equal(style.backgroundSize, "cover");
-  assert.equal(style.backgroundPosition, "center center");
-  assert.equal(style.backgroundBlendMode, "multiply");
+  assert.equal(style.backgroundImage, "");
+  assert.equal(style.backgroundSize, "");
+  assert.equal(style.backgroundPosition, "");
+  assert.equal(style.backgroundBlendMode, "normal");
   assert.equal(style.mixBlendMode, "normal");
   assert.equal(style.opacity, "0.6");
   assert.equal(style.transform, "translate(10px, -2%) scale(1.15) rotate(12deg)");
@@ -56,13 +59,11 @@ test("overlayStyle uses screen blend mode for frame overlays", () => {
       opacity: 1
     }
   });
-  assert.equal(style.backgroundSize, "100% 100%");
-  assert.equal(style.backgroundPosition, "center center");
   assert.equal(style.mixBlendMode, "screen");
 });
 
-test("overlayStyle honors explicit fit mode and anchor", () => {
-  const style = overlayStyle({
+test("overlayMediaStyle honors explicit fit mode and anchor", () => {
+  const style = overlayMediaStyle({
     overlay: {
       enabled: true,
       imageUrl: "modules/falemos/assets/img/frames/elegant.png",
@@ -70,8 +71,29 @@ test("overlayStyle honors explicit fit mode and anchor", () => {
       anchor: "bottom-right"
     }
   });
-  assert.equal(style.backgroundSize, "contain");
-  assert.equal(style.backgroundPosition, "right bottom");
+  assert.equal(style.objectFit, "contain");
+  assert.equal(style.objectPosition, "right bottom");
+});
+
+test("overlayMediaKind detects video sources", () => {
+  assert.equal(overlayMediaKind("/assets/overlay.webm"), "video");
+  assert.equal(overlayMediaKind("/assets/overlay.png"), "image");
+});
+
+test("overlayTintStyle returns tint layer style", () => {
+  const style = overlayTintStyle({
+    overlay: {
+      tint: {
+        enabled: true,
+        color: "#123456",
+        opacity: 0.4,
+        blendMode: "multiply"
+      }
+    }
+  });
+  assert.equal(style.display, "block");
+  assert.equal(style.backgroundColor, "rgba(18, 52, 86, 0.4)");
+  assert.equal(style.mixBlendMode, "multiply");
 });
 
 test("nameStyle resolves text and position", () => {

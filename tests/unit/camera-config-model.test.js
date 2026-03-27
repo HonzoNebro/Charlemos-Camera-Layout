@@ -250,6 +250,52 @@ test("buildLayoutPatch clears relative payload when layout mode is absolute", ()
   });
 });
 
+test("buildLayoutPatch normalizes border radius numbers as px", () => {
+  const patch = buildLayoutPatch({
+    layoutMode: "absolute",
+    top: "",
+    left: "",
+    width: "",
+    height: "",
+    relativeTargetUserId: "",
+    relativePlacement: "",
+    relativeGap: "",
+    cropTop: "",
+    cropRight: "",
+    cropBottom: "",
+    cropLeft: "",
+    transform: "",
+    filter: "",
+    clipPath: "",
+    overlayEnabled: false,
+    overlayImage: "",
+    overlayOpacity: "",
+    overlayOffsetX: "",
+    overlayOffsetY: "",
+    overlayScale: "",
+    overlayRotate: "",
+    overlayFitMode: "",
+    overlayAnchor: "",
+    overlayTintEnabled: false,
+    overlayTintColor: "",
+    overlayTintOpacity: "",
+    overlayTintBlendMode: "",
+    nameVisible: true,
+    nameSource: "user",
+    nameText: "",
+    nameColorFromUser: false,
+    nameColor: "#ffffff",
+    nameFont: "",
+    namePosition: "bottom",
+    nameTextAlign: "center",
+    nameFontWeight: "600",
+    nameFontStyle: "normal",
+    geometryBorderRadius: "8"
+  });
+
+  assert.equal(patch.geometry.borderRadius, "8px");
+});
+
 test("inferLayoutMode supports legacy layouts", () => {
   assert.equal(inferLayoutMode({ position: "relative" }), "relative");
   assert.equal(inferLayoutMode({ relative: { targetUserId: "u2" } }), "relative");

@@ -323,10 +323,27 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
+  overflow: hidden;
   z-index: 3;
+}
+
+.charlemos-camera-overlay-media,
+.charlemos-camera-overlay-tint {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.charlemos-camera-overlay-media {
+  display: block;
+  object-fit: cover;
+  object-position: center center;
+}
+
+.charlemos-camera-overlay-video {
+  background: transparent;
 }
 
 .charlemos-camera-name {

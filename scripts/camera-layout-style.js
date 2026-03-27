@@ -59,6 +59,14 @@ function overlayMixBlendMode(imageUrl) {
   return "normal";
 }
 
+function overlayPathExtension(imageUrl) {
+  const text = String(imageUrl ?? "").trim().toLowerCase();
+  if (!text) return "";
+  const clean = text.split(/[?#]/, 1)[0];
+  const match = clean.match(/\.([a-z0-9]+)$/);
+  return match?.[1] ?? "";
+}
+
 const OVERLAY_FIT_MODE_VALUES = new Set(["auto", "cover", "contain", "fill"]);
 const OVERLAY_ANCHOR_VALUES = new Set([
   "center",
@@ -98,19 +106,18 @@ function anchorToBackgroundPosition(anchor) {
   return "center center";
 }
 
-function overlayBackgroundSize(layout, imageUrl) {
+function overlayObjectFit(layout, imageUrl) {
   const fitMode = normalizedOverlayFitMode(layout?.overlay?.fitMode);
   if (fitMode === "cover") return "cover";
   if (fitMode === "contain") return "contain";
-  if (fitMode === "fill") return "100% 100%";
-  // Legacy auto mode keeps previous frame-path behavior for compatibility.
+  if (fitMode === "fill") return "fill";
   const text = String(imageUrl ?? "").toLowerCase();
   if (!text) return "cover";
-  if (text.includes("/frame") || text.includes("/frames/")) return "100% 100%";
+  if (text.includes("/frame") || text.includes("/frames/")) return "fill";
   return "cover";
 }
 
-function overlayBackgroundPosition(layout) {
+function overlayObjectPosition(layout) {
   return anchorToBackgroundPosition(normalizedOverlayAnchor(layout?.overlay?.anchor));
 }
 
@@ -172,6 +179,12 @@ export function composeTransform(baseTransform, geometry) {
   return `${base} ${skew}`.trim();
 }
 
+export function overlayMediaKind(imageUrl) {
+  const extension = overlayPathExtension(imageUrl);
+  if (["webm", "mp4", "m4v", "mov", "ogv", "ogg"].includes(extension)) return "video";
+  return "image";
+}
+
 export function overlayStyle(layout) {
   const enabled = Boolean(layout?.overlay?.enabled);
   if (!enabled) {
@@ -182,25 +195,49 @@ export function overlayStyle(layout) {
       mixBlendMode: "normal",
       opacity: "1",
       transform: "",
-      transformOrigin: "center"
+      transformOrigin: "center",
+      backgroundSize: "",
+      backgroundPosition: "",
+      backgroundRepeat: ""
     };
   }
   const image = layout?.overlay?.imageUrl;
   const opacityValue = numeric(layout?.overlay?.opacity, 1);
-  const tint = overlayTint(layout);
-  const layers = [];
-  if (tint) layers.push(`linear-gradient(${tint}, ${tint})`);
-  if (image) layers.push(`url("${image}")`);
   return {
     display: "block",
-    backgroundImage: layers.join(", "),
-    backgroundSize: overlayBackgroundSize(layout, image),
-    backgroundPosition: overlayBackgroundPosition(layout),
-    backgroundBlendMode: layout?.overlay?.tint?.blendMode ?? "normal",
+    backgroundImage: "",
+    backgroundSize: "",
+    backgroundPosition: "",
+    backgroundRepeat: "",
+    backgroundBlendMode: "normal",
     mixBlendMode: overlayMixBlendMode(image),
     opacity: String(clamp(opacityValue, 0, 1)),
     transform: overlayTransform(layout),
     transformOrigin: "center"
+  };
+}
+
+export function overlayMediaStyle(layout) {
+  return {
+    display: String(layout?.overlay?.imageUrl ?? "").trim() ? "block" : "none",
+    objectFit: overlayObjectFit(layout, layout?.overlay?.imageUrl),
+    objectPosition: overlayObjectPosition(layout)
+  };
+}
+
+export function overlayTintStyle(layout) {
+  const tint = overlayTint(layout);
+  if (!tint) {
+    return {
+      display: "none",
+      backgroundColor: "",
+      mixBlendMode: "normal"
+    };
+  }
+  return {
+    display: "block",
+    backgroundColor: tint,
+    mixBlendMode: layout?.overlay?.tint?.blendMode ?? "normal"
   };
 }
 

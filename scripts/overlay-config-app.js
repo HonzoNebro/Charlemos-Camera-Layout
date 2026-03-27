@@ -1,5 +1,6 @@
 import { MODULE_ID } from "./constants.js";
 import { buildFormData, buildLayoutPatch } from "./camera-config-model.js";
+import { overlayMediaKind } from "./camera-layout-style.js";
 import { replaceAppContent } from "./dom-replace.js";
 import {
   appId,
@@ -161,7 +162,26 @@ export class OverlayConfigApp extends foundry.applications.api.ApplicationV2 {
     return Boolean(String(formData.overlayImage ?? "").trim());
   }
 
-  imageLoadPromise(path) {
+  mediaLoadPromise(path) {
+    const kind = overlayMediaKind(path);
+    if (kind === "video") {
+      return new Promise((resolve) => {
+        const video = document.createElement("video");
+        const timeoutId = window.setTimeout(() => {
+          resolve(false);
+        }, 8000);
+        video.onloadedmetadata = () => {
+          window.clearTimeout(timeoutId);
+          resolve(true);
+        };
+        video.onerror = () => {
+          window.clearTimeout(timeoutId);
+          resolve(false);
+        };
+        video.preload = "metadata";
+        video.src = path;
+      });
+    }
     return new Promise((resolve) => {
       const image = new Image();
       const timeoutId = window.setTimeout(() => {
@@ -181,7 +201,7 @@ export class OverlayConfigApp extends foundry.applications.api.ApplicationV2 {
 
   async validateOverlayImage(formData) {
     if (!this.shouldValidateOverlay(formData)) return true;
-    return this.imageLoadPromise(String(formData.overlayImage ?? "").trim());
+    return this.mediaLoadPromise(String(formData.overlayImage ?? "").trim());
   }
 
   async saveForm(form) {

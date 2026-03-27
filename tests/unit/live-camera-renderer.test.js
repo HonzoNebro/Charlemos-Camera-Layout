@@ -190,6 +190,22 @@ test("applyFrameOverlayFallbackStyle respects explicit fit mode and anchor", () 
   assert.equal(element.style.backgroundRepeat, "no-repeat");
 });
 
+test("applyFrameOverlayFallbackStyle can target media elements", () => {
+  const element = {
+    style: {
+      objectFit: "",
+      objectPosition: "",
+      mixBlendMode: ""
+    }
+  };
+
+  applyFrameOverlayFallbackStyle(element, "modules/falemos/assets/img/frames/elegant.webm");
+
+  assert.equal(element.style.objectFit, "fill");
+  assert.equal(element.style.objectPosition, "center");
+  assert.equal(element.style.mixBlendMode, "screen");
+});
+
 test("isRendererDebugEnabled reads module setting", () => {
   globalThis.game = {
     settings: {
