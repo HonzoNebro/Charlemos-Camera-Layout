@@ -6,6 +6,8 @@ import {
   isFrameOverlayPath,
   isRendererDebugEnabled,
   resolveRelativeLayout,
+  resolveRelativeLayoutFromMetrics,
+  resolveSceneLayouts,
   syncGeometryInteractionMode,
   syncManagedViewGeometry,
   syncFoundryAvatarVisibility,
@@ -340,6 +342,116 @@ test("resolveRelativeLayout places a camera below-center its target", () => {
 
   assert.equal(resolved.top, "230px");
   assert.equal(resolved.left, "160px");
+});
+
+test("resolveRelativeLayoutFromMetrics resolves against numeric metrics", () => {
+  globalThis.foundry = {
+    utils: {
+      deepClone: (value) => JSON.parse(JSON.stringify(value))
+    }
+  };
+
+  const resolved = resolveRelativeLayoutFromMetrics(
+    {
+      width: "200px",
+      height: "120px",
+      relative: {
+        targetUserId: "u2",
+        placement: "right-center",
+        gap: "8px"
+      }
+    },
+    { top: 40, left: 100, width: 320, height: 180 },
+    { width: 200, height: 120 }
+  );
+
+  assert.equal(resolved.top, "70px");
+  assert.equal(resolved.left, "428px");
+});
+
+test("resolveSceneLayouts resolves dependency chains in topological order", () => {
+  globalThis.foundry = {
+    utils: {
+      deepClone: (value) => JSON.parse(JSON.stringify(value))
+    }
+  };
+
+  const resolved = resolveSceneLayouts({
+    a: {
+      layoutMode: "absolute",
+      position: "absolute",
+      top: "10px",
+      left: "20px",
+      width: "300px",
+      height: "150px"
+    },
+    b: {
+      layoutMode: "relative",
+      width: "200px",
+      height: "100px",
+      relative: {
+        targetUserId: "a",
+        placement: "below-center",
+        gap: "10px"
+      }
+    },
+    c: {
+      layoutMode: "relative",
+      width: "180px",
+      height: "90px",
+      relative: {
+        targetUserId: "b",
+        placement: "right-center",
+        gap: "12px"
+      }
+    }
+  });
+
+  assert.equal(resolved.a.top, "10px");
+  assert.equal(resolved.b.top, "170px");
+  assert.equal(resolved.b.left, "70px");
+  assert.equal(resolved.c.top, "175px");
+  assert.equal(resolved.c.left, "282px");
+});
+
+test("resolveSceneLayouts falls back safely on cycles", () => {
+  globalThis.foundry = {
+    utils: {
+      deepClone: (value) => JSON.parse(JSON.stringify(value))
+    }
+  };
+
+  const resolved = resolveSceneLayouts({
+    a: {
+      layoutMode: "relative",
+      top: "10px",
+      left: "20px",
+      width: "300px",
+      height: "150px",
+      relative: {
+        targetUserId: "b",
+        placement: "below-center",
+        gap: "10px"
+      }
+    },
+    b: {
+      layoutMode: "relative",
+      top: "40px",
+      left: "60px",
+      width: "200px",
+      height: "100px",
+      relative: {
+        targetUserId: "a",
+        placement: "right-center",
+        gap: "12px"
+      }
+    }
+  });
+
+  assert.equal(resolved.a.top, "10px");
+  assert.equal(resolved.a.left, "20px");
+  assert.equal(resolved.b.top, "40px");
+  assert.equal(resolved.b.left, "60px");
 });
 
 test("resolveRelativeLayout still resolves legacy relative payloads", () => {

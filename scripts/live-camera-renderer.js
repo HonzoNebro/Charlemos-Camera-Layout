@@ -2,7 +2,7 @@ import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
 import { inferLayoutMode } from "./camera-config-model.js";
 import { composeTransform, nameStyle, overlayStyle } from "./camera-layout-style.js";
 import { buildCameraViewStyle } from "./camera-style-service.js";
-import { getSceneCameraControlMode, getSceneProfileLayout, sceneProfileEnabled } from "./scene-camera.js";
+import { getSceneCameraControlMode, getSceneProfile, getSceneProfileLayout, sceneProfileEnabled } from "./scene-camera.js";
 
 const RENDER_DELAY_MS = 50;
 const ALTERNATE_NAME_TICK_MS = 1000;
@@ -640,23 +640,50 @@ function viewMetric(viewElement, styleKey, offsetKey) {
   return parsePixelLength(viewElement.style?.[styleKey]);
 }
 
-export function resolveRelativeLayout(layout, targetViewElement, selfViewElement) {
+function cloneValue(value) {
+  if (typeof foundry !== "undefined" && foundry?.utils?.deepClone) return foundry.utils.deepClone(value ?? {});
+  if (typeof structuredClone === "function") return structuredClone(value ?? {});
+  return JSON.parse(JSON.stringify(value ?? {}));
+}
+
+function metricValue(source, key) {
+  if (!source) return null;
+  const direct = parsePixelLength(source[key]);
+  if (direct !== null) return direct;
+  return parsePixelLength(source.style?.[key]);
+}
+
+function buildLayoutMetrics(layout, viewElement) {
+  return {
+    top: metricValue(layout, "top") ?? viewMetric(viewElement, "top", "offsetTop"),
+    left: metricValue(layout, "left") ?? viewMetric(viewElement, "left", "offsetLeft"),
+    width: metricValue(layout, "width") ?? viewMetric(viewElement, "width", "offsetWidth"),
+    height: metricValue(layout, "height") ?? viewMetric(viewElement, "height", "offsetHeight")
+  };
+}
+
+function relativeTargetUserId(layout) {
+  if (inferLayoutMode(layout) !== "relative") return "";
+  return String(layout?.relative?.targetUserId ?? "").trim();
+}
+
+export function resolveRelativeLayoutFromMetrics(layout, targetMetrics, selfMetrics) {
   const relative = layout?.relative;
   const placement = String(relative?.placement ?? "").trim();
   const targetUserId = String(relative?.targetUserId ?? "").trim();
-  if (!targetUserId || !placement || placement === "none" || !targetViewElement || targetViewElement === selfViewElement) return layout;
+  if (!targetUserId || !placement || placement === "none") return layout;
 
-  const targetTop = viewMetric(targetViewElement, "top", "offsetTop");
-  const targetLeft = viewMetric(targetViewElement, "left", "offsetLeft");
-  const targetWidth = viewMetric(targetViewElement, "width", "offsetWidth");
-  const targetHeight = viewMetric(targetViewElement, "height", "offsetHeight");
+  const targetTop = targetMetrics?.top ?? null;
+  const targetLeft = targetMetrics?.left ?? null;
+  const targetWidth = targetMetrics?.width ?? null;
+  const targetHeight = targetMetrics?.height ?? null;
   if (targetTop === null || targetLeft === null || targetWidth === null || targetHeight === null) return layout;
 
-  const selfWidth = parsePixelLength(layout?.width) ?? viewMetric(selfViewElement, "width", "offsetWidth");
-  const selfHeight = parsePixelLength(layout?.height) ?? viewMetric(selfViewElement, "height", "offsetHeight");
+  const selfWidth = selfMetrics?.width ?? null;
+  const selfHeight = selfMetrics?.height ?? null;
   const gap = parsePixelLength(relative?.gap) ?? 0;
 
-  const next = foundry.utils.deepClone(layout ?? {});
+  const next = cloneValue(layout);
   next.position = "absolute";
 
   const alignedLeft = (mode) => {
@@ -707,6 +734,64 @@ export function resolveRelativeLayout(layout, targetViewElement, selfViewElement
     return next;
   }
   return layout;
+}
+
+export function resolveRelativeLayout(layout, targetViewElement, selfViewElement) {
+  if (!targetViewElement || targetViewElement === selfViewElement) return layout;
+  return resolveRelativeLayoutFromMetrics(layout, buildLayoutMetrics(null, targetViewElement), buildLayoutMetrics(layout, selfViewElement));
+}
+
+export function resolveSceneLayouts(layouts, options = {}) {
+  const sourceLayouts = cloneValue(layouts ?? {});
+  const viewElementsByUserId = options.viewElementsByUserId ?? {};
+  const resolvedLayouts = {};
+  const pending = new Set(Object.keys(sourceLayouts));
+  const dependencies = new Map();
+  const dependents = new Map();
+  const indegree = new Map();
+
+  Object.entries(sourceLayouts).forEach(([userId, layout]) => {
+    const targetUserId = relativeTargetUserId(layout);
+    const validDependency = targetUserId && targetUserId !== userId && sourceLayouts[targetUserId];
+    if (!validDependency) {
+      dependencies.set(userId, null);
+      indegree.set(userId, 0);
+      return;
+    }
+    dependencies.set(userId, targetUserId);
+    indegree.set(userId, 1);
+    const list = dependents.get(targetUserId) ?? [];
+    list.push(userId);
+    dependents.set(targetUserId, list);
+  });
+
+  const queue = [...pending].filter((userId) => (indegree.get(userId) ?? 0) === 0);
+  while (queue.length) {
+    const userId = queue.shift();
+    if (!pending.has(userId)) continue;
+    pending.delete(userId);
+    const layout = sourceLayouts[userId];
+    const targetUserId = dependencies.get(userId);
+    if (targetUserId && resolvedLayouts[targetUserId]) {
+      const targetViewElement = viewElementsByUserId[targetUserId] ?? null;
+      const selfViewElement = viewElementsByUserId[userId] ?? null;
+      const targetMetrics = buildLayoutMetrics(resolvedLayouts[targetUserId], targetViewElement);
+      const selfMetrics = buildLayoutMetrics(layout, selfViewElement);
+      resolvedLayouts[userId] = resolveRelativeLayoutFromMetrics(layout, targetMetrics, selfMetrics);
+    } else {
+      resolvedLayouts[userId] = cloneValue(layout);
+    }
+    const children = dependents.get(userId) ?? [];
+    children.forEach((childUserId) => {
+      indegree.set(childUserId, Math.max(0, (indegree.get(childUserId) ?? 0) - 1));
+      if ((indegree.get(childUserId) ?? 0) === 0) queue.push(childUserId);
+    });
+  }
+
+  pending.forEach((userId) => {
+    resolvedLayouts[userId] = cloneValue(sourceLayouts[userId]);
+  });
+  return resolvedLayouts;
 }
 
 export function syncGeometryInteractionMode(viewElement, applyGeometry) {
@@ -798,12 +883,7 @@ function applyPlayerLayout(app, user, options = {}) {
   }
   const cameraControlMode = getSceneCameraControlMode();
   const applyGeometry = cameraControlMode === "module";
-  const layoutMode = inferLayoutMode(layout);
-  const targetUserId = layoutMode === "relative" ? String(layout?.relative?.targetUserId ?? "").trim() : "";
-  const resolvedLayout =
-    applyGeometry && options.resolveRelative !== false && targetUserId
-      ? resolveRelativeLayout(layout, getViewElement(app, targetUserId), viewElement)
-      : layout;
+  const resolvedLayout = options.resolvedLayouts?.[userId] ?? layout;
   logRendererDebug("before-apply", userId, enabled, viewElement, videoElement, layout);
   applyViewStyle(viewElement, resolvedLayout, applyGeometry);
   applyVideoStyle(videoElement, resolvedLayout);
@@ -825,8 +905,19 @@ function applyPlayerLayout(app, user, options = {}) {
 }
 
 function applyAll(app) {
-  game.users.forEach((user) => applyPlayerLayout(app, user, { resolveRelative: false }));
-  game.users.forEach((user) => applyPlayerLayout(app, user, { resolveRelative: true }));
+  const sceneProfile = getSceneProfile();
+  const cameraControlMode = getSceneCameraControlMode();
+  const users = game.users?.contents ?? Array.from(game.users ?? []);
+  const resolvedLayouts =
+    sceneProfileEnabled() && cameraControlMode === "module"
+      ? resolveSceneLayouts(
+          sceneProfile?.layouts ?? {},
+          {
+            viewElementsByUserId: Object.fromEntries(users.map((user) => [user.id, getViewElement(app, user.id)]))
+          }
+        )
+      : null;
+  users.forEach((user) => applyPlayerLayout(app, user, { resolvedLayouts }));
   if (isRendererDebugEnabled()) {
     console.debug(`${MODULE_ID} | camera layouts applied`);
   }
