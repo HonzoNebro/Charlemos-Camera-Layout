@@ -1,8 +1,8 @@
 {
-  "id": "charlemos-camera-layout",
-  "title": "Charlemos Camera Layout",
+  "id": "charlemos-camera-layout-phase-9-layout-mode-contract",
+  "title": "Charlemos Camera Layout - Phase 9 Layout Mode Contract",
   "description": "Configurable camera layout and styling for Foundry VTT A/V.",
-  "version": "1.4.0",
+  "version": "1.4.0-phase9.1",
   "compatibility": {
     "minimum": "13",
     "verified": "13"
@@ -36,7 +36,7 @@
     "styles/module.css"
   ],
   "url": "https://github.com/HonzoNebro/Charlemos-Camera-Layout",
-  "manifest": "https://raw.githubusercontent.com/HonzoNebro/Charlemos-Camera-Layout/main/module.json",
-  "download": "https://github.com/HonzoNebro/Charlemos-Camera-Layout/archive/refs/tags/v1.4.0.zip",
+  "manifest": "https://raw.githubusercontent.com/HonzoNebro/Charlemos-Camera-Layout/phase-9-layout-mode-contract/module.json",
+  "download": "https://github.com/HonzoNebro/Charlemos-Camera-Layout/archive/refs/heads/phase-9-layout-mode-contract.zip",
   "license": "LICENSE"
 }

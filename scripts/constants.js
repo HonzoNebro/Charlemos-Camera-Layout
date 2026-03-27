@@ -1,4 +1,4 @@
-export const MODULE_ID = "charlemos-camera-layout";
+export const MODULE_ID = "charlemos-camera-layout-phase-9-layout-mode-contract";
 
 export const SETTINGS_KEYS = {
   PLAYER_LAYOUTS: "playerLayouts",
