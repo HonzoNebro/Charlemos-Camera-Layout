@@ -9,6 +9,7 @@ import {
   resolveRelativeLayoutFromMetrics,
   resolveSceneLayouts,
   shouldBlockNativeGeometryInteraction,
+  syncResizeHandleVisibility,
   syncGeometryInteractionMode,
   syncManagedViewGeometry,
   syncFoundryAvatarVisibility,
@@ -489,6 +490,44 @@ test("shouldBlockNativeGeometryInteraction keeps native controls interactive", (
   };
 
   assert.equal(shouldBlockNativeGeometryInteraction(viewElement, target), false);
+});
+
+test("syncResizeHandleVisibility leaves native handle styling to CSS", () => {
+  const handle = {
+    style: {
+      opacity: "0",
+      pointerEvents: "none",
+      cursor: "default"
+    }
+  };
+  const viewElement = {
+    querySelector: () => handle
+  };
+
+  syncResizeHandleVisibility(viewElement, false);
+
+  assert.equal(handle.style.opacity, "");
+  assert.equal(handle.style.pointerEvents, "");
+  assert.equal(handle.style.cursor, "");
+});
+
+test("syncResizeHandleVisibility forces module handle hidden", () => {
+  const handle = {
+    style: {
+      opacity: "",
+      pointerEvents: "",
+      cursor: ""
+    }
+  };
+  const viewElement = {
+    querySelector: () => handle
+  };
+
+  syncResizeHandleVisibility(viewElement, true);
+
+  assert.equal(handle.style.opacity, "0");
+  assert.equal(handle.style.pointerEvents, "none");
+  assert.equal(handle.style.cursor, "default");
 });
 
 test("resolveRelativeLayout still resolves legacy relative payloads", () => {

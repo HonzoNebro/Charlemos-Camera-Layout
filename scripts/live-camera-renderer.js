@@ -417,27 +417,18 @@ function resizeHandle(viewElement) {
   return firstMatch(viewElement, ".window-resize-handle, .window-resizable-handle, .ui-resizable-handle");
 }
 
-function syncResizeHandleVisibility(viewElement, applyGeometry) {
+export function syncResizeHandleVisibility(viewElement, applyGeometry) {
   const handle = resizeHandle(viewElement);
   if (!handle?.style) return;
-
-  const setVisible = (visible) => {
-    handle.style.opacity = visible ? "1" : "0";
-    handle.style.pointerEvents = applyGeometry ? "none" : visible ? "auto" : "none";
-    handle.style.cursor = applyGeometry ? "default" : "";
-  };
-
-  if (!viewElement.__charlemosResizeVisibilityBound) {
-    viewElement.addEventListener("mouseenter", () => {
-      if (viewElement.classList.contains("charlemos-geometry-native")) setVisible(true);
-    });
-    viewElement.addEventListener("mouseleave", () => {
-      setVisible(false);
-    });
-    viewElement.__charlemosResizeVisibilityBound = true;
+  if (applyGeometry) {
+    handle.style.opacity = "0";
+    handle.style.pointerEvents = "none";
+    handle.style.cursor = "default";
+    return;
   }
-
-  setVisible(false);
+  handle.style.opacity = "";
+  handle.style.pointerEvents = "";
+  handle.style.cursor = "";
 }
 
 export function shouldBlockNativeGeometryInteraction(viewElement, target) {
