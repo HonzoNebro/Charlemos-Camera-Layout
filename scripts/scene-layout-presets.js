@@ -29,6 +29,15 @@ function normalizeLayoutType(value) {
   return String(value ?? "").trim() === "narrative" ? "narrative" : "grid";
 }
 
+function normalizeFeedDimensions(options = {}) {
+  const width = normalizePositiveNumber(options.feedWidth, 300);
+  const height = normalizePositiveNumber(options.feedHeight, 300);
+  return {
+    width: Math.max(1, width),
+    height: Math.max(1, height)
+  };
+}
+
 function resolvePresetDefinition(layoutType, presetId, rows, cols) {
   if (normalizeLayoutType(layoutType) === "narrative") return NARRATIVE_LAYOUT_PRESETS[presetId] ?? null;
   return {
@@ -46,25 +55,56 @@ function pixelLength(value) {
   return `${Math.max(1, Math.floor(value))}px`;
 }
 
-function buildResponsiveLayouts(users, preset, options) {
+function gridGeometry(preset, options) {
+  const feed = normalizeFeedDimensions(options);
+  const viewportWidth = normalizePositiveNumber(options.viewportWidth, 1280);
+  const viewportHeight = normalizePositiveNumber(options.viewportHeight, 720);
   const gap = normalizePositiveNumber(options.gap, 1);
   const marginX = normalizePositiveNumber(options.marginX, 2);
   const marginY = normalizePositiveNumber(options.marginY, 2);
   const totalGapX = gap * Math.max(0, preset.cols - 1);
   const totalGapY = gap * Math.max(0, preset.rows - 1);
-  const width = Math.max(0.1, (100 - marginX * 2 - totalGapX) / preset.cols);
-  const height = Math.max(0.1, (100 - marginY * 2 - totalGapY) / preset.rows);
+  const availableWidth = Math.max(1, viewportWidth - marginX * 2 - totalGapX);
+  const availableHeight = Math.max(1, viewportHeight - marginY * 2 - totalGapY);
+  const widthLimit = availableWidth / preset.cols;
+  const heightLimit = availableHeight / preset.rows;
+  const scale = Math.min(widthLimit / feed.width, heightLimit / feed.height, 1);
+  const widthPx = Math.max(1, feed.width * scale);
+  const heightPx = Math.max(1, feed.height * scale);
+  const usedWidth = widthPx * preset.cols + totalGapX;
+  const usedHeight = heightPx * preset.rows + totalGapY;
+  const startX = marginX + Math.max(0, (availableWidth - widthPx * preset.cols) / 2);
+  const startY = marginY + Math.max(0, (availableHeight - heightPx * preset.rows) / 2);
+  return {
+    gap,
+    widthPx,
+    heightPx,
+    startX,
+    startY,
+    viewportWidth,
+    viewportHeight,
+    usedWidth,
+    usedHeight
+  };
+}
+
+function buildResponsiveLayouts(users, preset, options) {
+  const geometry = gridGeometry(preset, options);
+  const width = (geometry.widthPx / geometry.viewportWidth) * 100;
+  const height = (geometry.heightPx / geometry.viewportHeight) * 100;
 
   return Object.fromEntries(
     users.map((userId, index) => {
       const row = Math.floor(index / preset.cols);
       const col = index % preset.cols;
+      const topPx = geometry.startY + row * (geometry.heightPx + geometry.gap);
+      const leftPx = geometry.startX + col * (geometry.widthPx + geometry.gap);
       return [
         userId,
         {
           position: "absolute",
-          top: responsiveLength(marginY + row * (height + gap), "y"),
-          left: responsiveLength(marginX + col * (width + gap), "x"),
+          top: responsiveLength((topPx / geometry.viewportHeight) * 100, "y"),
+          left: responsiveLength((leftPx / geometry.viewportWidth) * 100, "x"),
           width: responsiveLength(width, "x"),
           height: responsiveLength(height, "y"),
           relative: {
@@ -79,28 +119,22 @@ function buildResponsiveLayouts(users, preset, options) {
 }
 
 function buildPixelLayouts(users, preset, options) {
-  const viewportWidth = normalizePositiveNumber(options.viewportWidth, 1280);
-  const viewportHeight = normalizePositiveNumber(options.viewportHeight, 720);
-  const gap = normalizePositiveNumber(options.gap, 8);
-  const marginX = normalizePositiveNumber(options.marginX, 8);
-  const marginY = normalizePositiveNumber(options.marginY, 8);
-  const totalGapX = gap * Math.max(0, preset.cols - 1);
-  const totalGapY = gap * Math.max(0, preset.rows - 1);
-  const width = Math.max(1, (viewportWidth - marginX * 2 - totalGapX) / preset.cols);
-  const height = Math.max(1, (viewportHeight - marginY * 2 - totalGapY) / preset.rows);
+  const geometry = gridGeometry(preset, options);
 
   return Object.fromEntries(
     users.map((userId, index) => {
       const row = Math.floor(index / preset.cols);
       const col = index % preset.cols;
+      const top = geometry.startY + row * (geometry.heightPx + geometry.gap);
+      const left = geometry.startX + col * (geometry.widthPx + geometry.gap);
       return [
         userId,
         {
           position: "absolute",
-          top: pixelLength(marginY + row * (height + gap)),
-          left: pixelLength(marginX + col * (width + gap)),
-          width: pixelLength(width),
-          height: pixelLength(height),
+          top: pixelLength(top),
+          left: pixelLength(left),
+          width: pixelLength(geometry.widthPx),
+          height: pixelLength(geometry.heightPx),
           relative: {
             targetUserId: null,
             placement: "none",

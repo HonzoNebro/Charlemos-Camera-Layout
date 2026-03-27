@@ -118,6 +118,33 @@ function orderedSelectedUserIds(userStates) {
     .map((user) => user.id);
 }
 
+function queryUserVideo(userId) {
+  return document.querySelector(`.camera-view[data-user="${userId}"] video, .camera-view[data-user-id="${userId}"] video`);
+}
+
+function liveFeedDimensions(videoElement) {
+  const width = Number(videoElement?.videoWidth);
+  const height = Number(videoElement?.videoHeight);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return null;
+  return { width, height };
+}
+
+function representativeFeedDimensions(selectedUserIds) {
+  const sizes = [];
+  for (const userId of selectedUserIds) {
+    const size = liveFeedDimensions(queryUserVideo(userId));
+    if (size) sizes.push(size);
+  }
+  if (sizes.length === 0) {
+    document.querySelectorAll(".camera-view video").forEach((videoElement) => {
+      const size = liveFeedDimensions(videoElement);
+      if (size) sizes.push(size);
+    });
+  }
+  if (sizes.length === 0) return { width: 300, height: 300 };
+  return sizes.sort((a, b) => b.width * b.height - a.width * a.height)[0];
+}
+
 export class SceneLayoutPresetApp extends foundry.applications.api.ApplicationV2 {
   static DEFAULT_OPTIONS = {
     id: `${MODULE_ID}-scene-presets`,
@@ -213,6 +240,7 @@ export class SceneLayoutPresetApp extends foundry.applications.api.ApplicationV2
       gap: this.formData.gap,
       marginX: this.formData.marginX,
       marginY: this.formData.marginY,
+      ...representativeFeedDimensions(orderedUserIds),
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight
     });

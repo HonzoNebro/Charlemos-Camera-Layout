@@ -13,6 +13,8 @@ test("buildSceneLayoutPreset creates a responsive dynamic 2x2 grid", () => {
     rows: 2,
     cols: 2,
     unitMode: "responsive",
+    feedWidth: 300,
+    feedHeight: 300,
     gap: 2,
     marginX: 2,
     marginY: 3
@@ -22,9 +24,9 @@ test("buildSceneLayoutPreset creates a responsive dynamic 2x2 grid", () => {
   assert.equal(result.rows, 2);
   assert.equal(result.cols, 2);
   assert.equal(result.unitMode, "responsive");
-  assert.equal(result.layouts.u1.left, "2vw");
-  assert.equal(result.layouts.u2.left, "51vw");
-  assert.equal(result.layouts.u3.top, "51vh");
+  assert.equal(result.layouts.u1.left, "26.4844vw");
+  assert.equal(result.layouts.u2.left, "50.0781vw");
+  assert.equal(result.layouts.u3.top, "50.1389vh");
 });
 
 test("buildSceneLayoutPreset creates narrative preset layouts", () => {
@@ -32,6 +34,8 @@ test("buildSceneLayoutPreset creates narrative preset layouts", () => {
     layoutType: "narrative",
     presetId: "sideDock",
     unitMode: "responsive",
+    feedWidth: 300,
+    feedHeight: 300,
     gap: 2,
     marginX: 2,
     marginY: 2
@@ -40,7 +44,7 @@ test("buildSceneLayoutPreset creates narrative preset layouts", () => {
   assert.equal(result.layoutType, "narrative");
   assert.equal(result.rows, 4);
   assert.equal(result.cols, 1);
-  assert.equal(result.layouts.u2.top, "26.5vh");
+  assert.equal(result.layouts.u2.top, "25.2083vh");
 });
 
 test("buildSceneLayoutPreset can still use pixel units", () => {
@@ -49,6 +53,8 @@ test("buildSceneLayoutPreset can still use pixel units", () => {
     rows: 2,
     cols: 2,
     unitMode: "px",
+    feedWidth: 300,
+    feedHeight: 300,
     viewportWidth: 1000,
     viewportHeight: 600,
     gap: 10,
@@ -57,8 +63,8 @@ test("buildSceneLayoutPreset can still use pixel units", () => {
   });
 
   assert.equal(result.unitMode, "px");
-  assert.equal(result.layouts.u1.left, "20px");
-  assert.equal(result.layouts.u1.width, "475px");
+  assert.equal(result.layouts.u1.left, "230px");
+  assert.equal(result.layouts.u1.width, "265px");
   assert.equal(result.layouts.u3.top, "305px");
 });
 
@@ -68,6 +74,8 @@ test("buildSceneLayoutPreset ignores users beyond preset capacity", () => {
     rows: 1,
     cols: 2,
     unitMode: "responsive",
+    feedWidth: 300,
+    feedHeight: 300,
     gap: 2,
     marginX: 2,
     marginY: 2
