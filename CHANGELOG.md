@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.2] - 2026-03-27
+
+### Fixed
+- Overlay videos no longer restart prematurely when camera layouts are reapplied, so playback now reaches the real clip duration before looping.
+
+### Changed
+- Release metadata updated for stable distribution:
+  - module version: `1.5.2`
+  - download URL points to tag archive `v1.5.2`
+
 ## [1.5.1] - 2026-03-27
 
 ### Added
