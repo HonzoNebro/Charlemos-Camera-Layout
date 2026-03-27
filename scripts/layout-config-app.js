@@ -9,6 +9,22 @@ function titleKey() {
   return `${MODULE_ID}.ui.layout.title`;
 }
 
+function syncLayoutModeFieldState(form, cameraControlMode) {
+  const moduleOwned = cameraControlMode === "module";
+  const layoutMode = form.elements.namedItem("layoutMode")?.value ?? "absolute";
+  const absoluteDisabled = !moduleOwned || layoutMode !== "absolute";
+  const relativeDisabled = !moduleOwned || layoutMode !== "relative";
+
+  ["top", "left", "width", "height"].forEach((name) => {
+    const field = form.elements.namedItem(name);
+    if (field) field.disabled = absoluteDisabled;
+  });
+  ["relativeTargetUserId", "relativePlacement", "relativeGap"].forEach((name) => {
+    const field = form.elements.namedItem(name);
+    if (field) field.disabled = relativeDisabled;
+  });
+}
+
 function readFormData(form) {
   return {
     layoutMode: form.elements.namedItem("layoutMode")?.value ?? "",
@@ -174,6 +190,11 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
   async _onRender() {
     const form = document.getElementById(appId("layout-form"));
     if (!form) return;
+    const cameraControlMode = getSceneCameraControlMode();
+    syncLayoutModeFieldState(form, cameraControlMode);
+    form.elements.namedItem("layoutMode")?.addEventListener("change", () => {
+      syncLayoutModeFieldState(form, cameraControlMode);
+    });
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       await this.saveForm(form);
