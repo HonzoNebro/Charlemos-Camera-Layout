@@ -23,10 +23,6 @@ function normalizeLayoutLength(value) {
   return text;
 }
 
-function positionFrom(layout) {
-  return nullableText(layout?.position) ?? "absolute";
-}
-
 function visibleFrom(layout) {
   return layout?.nameStyle?.visible !== false;
 }
@@ -90,14 +86,6 @@ function normalizedOverlayAnchor(value) {
   return "center";
 }
 
-function snapEnabledFrom(layout) {
-  return Boolean(layout?.snap?.enabled);
-}
-
-function snapSizeFrom(layout) {
-  return layout?.snap?.size ?? 10;
-}
-
 function nameSourceFrom(layout) {
   return nullableText(layout?.nameStyle?.source) ?? "user";
 }
@@ -109,6 +97,7 @@ function nameColorFromUser(layout) {
 const NAME_TEXT_ALIGN_VALUES = new Set(["left", "center", "right", "justify"]);
 const NAME_FONT_WEIGHT_VALUES = new Set(["400", "500", "600", "700"]);
 const NAME_FONT_STYLE_VALUES = new Set(["normal", "italic"]);
+const LAYOUT_MODE_VALUES = new Set(["absolute", "relative"]);
 const RELATIVE_PLACEMENT_VALUES = new Set([
   "none",
   "above",
@@ -150,8 +139,11 @@ function normalizedNameFontStyle(value) {
   return "normal";
 }
 
-function resizeAspectFrom(layout) {
-  return nullableText(layout?.resize?.aspectMode) ?? "free";
+export function normalizedLayoutMode(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "absolute";
+  if (LAYOUT_MODE_VALUES.has(text)) return text;
+  return "absolute";
 }
 
 function cropValue(layout, side) {
@@ -162,6 +154,30 @@ function relativeTargetFrom(layout) {
   return nullableText(layout?.relative?.targetUserId) ?? "";
 }
 
+function cycleDetectedFrom(startUserId, layoutsByUserId) {
+  const visited = new Set();
+  let currentUserId = startUserId;
+  while (currentUserId) {
+    if (visited.has(currentUserId)) return true;
+    visited.add(currentUserId);
+    const layout = layoutsByUserId?.[currentUserId];
+    if (inferLayoutMode(layout) !== "relative") return false;
+    const targetUserId = relativeTargetFrom(layout);
+    if (!targetUserId) return false;
+    currentUserId = targetUserId;
+  }
+  return false;
+}
+
+export function inferLayoutMode(layout) {
+  const explicit = normalizedLayoutMode(layout?.layoutMode);
+  if (layout?.layoutMode) return explicit;
+  const legacyPosition = String(layout?.position ?? "").trim();
+  if (legacyPosition === "relative") return "relative";
+  if (relativeTargetFrom(layout)) return "relative";
+  return "absolute";
+}
+
 function normalizedRelativePlacement(value) {
   const text = String(value ?? "").trim();
   if (!text) return "none";
@@ -169,13 +185,41 @@ function normalizedRelativePlacement(value) {
   return "none";
 }
 
+export function validateLayoutFormData(selectedUserId, formData, layoutsByUserId = {}, users = []) {
+  const errors = [];
+  const warnings = [];
+  if (normalizedLayoutMode(formData?.layoutMode) !== "relative") return { errors, warnings };
+
+  const targetUserId = nullableText(formData?.relativeTargetUserId);
+  const placement = normalizedRelativePlacement(formData?.relativePlacement);
+  const usersById = new Map((users ?? []).map((user) => [user.id, user]));
+
+  if (!targetUserId) errors.push("relativeTargetRequired");
+  if (targetUserId && selectedUserId && targetUserId === selectedUserId) errors.push("relativeTargetSelf");
+  if (placement === "none") errors.push("relativePlacementRequired");
+  if (targetUserId && !usersById.has(targetUserId)) warnings.push("relativeTargetMissing");
+  if (targetUserId && usersById.get(targetUserId)?.active === false) warnings.push("relativeTargetOffline");
+
+  if (selectedUserId && targetUserId && targetUserId !== selectedUserId) {
+    const nextLayouts = {
+      ...(layoutsByUserId ?? {}),
+      [selectedUserId]: {
+        ...((layoutsByUserId ?? {})[selectedUserId] ?? {}),
+        ...buildLayoutPatch(formData)
+      }
+    };
+    if (cycleDetectedFrom(selectedUserId, nextLayouts)) errors.push("relativeCycle");
+  }
+
+  return {
+    errors: [...new Set(errors)],
+    warnings: [...new Set(warnings)]
+  };
+}
+
 export function buildFormData(layout) {
   return {
-    preset: nullableText(layout?.preset) ?? "manual",
-    snapEnabled: snapEnabledFrom(layout),
-    snapSize: snapSizeFrom(layout),
-    resizeAspect: resizeAspectFrom(layout),
-    position: positionFrom(layout),
+    layoutMode: inferLayoutMode(layout),
     top: nullableText(layout?.top) ?? "",
     left: nullableText(layout?.left) ?? "",
     width: nullableText(layout?.width) ?? "",
@@ -263,8 +307,16 @@ function buildGeometryPayload(formData) {
 }
 
 function buildRelativePayload(formData) {
+  const layoutMode = normalizedLayoutMode(formData.layoutMode);
   const placement = normalizedRelativePlacement(formData.relativePlacement);
   const targetUserId = nullableText(formData.relativeTargetUserId);
+  if (layoutMode !== "relative") {
+    return {
+      targetUserId: null,
+      placement: "none",
+      gap: null
+    };
+  }
   return {
     targetUserId,
     placement,
@@ -273,8 +325,10 @@ function buildRelativePayload(formData) {
 }
 
 export function buildLayoutPatch(formData) {
+  const layoutMode = normalizedLayoutMode(formData.layoutMode);
   return {
-    position: nullableText(formData.position),
+    layoutMode,
+    position: "absolute",
     top: normalizeLayoutLength(formData.top),
     left: normalizeLayoutLength(formData.left),
     width: normalizeLayoutLength(formData.width),

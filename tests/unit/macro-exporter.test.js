@@ -34,5 +34,21 @@ test("exportSceneProfileToMacro creates apply-scene macro command", async () => 
   assert.equal(created.name, "Scene Draft");
   assert.equal(created.command.includes("applySceneProfileDraft"), true);
   assert.equal(created.command.includes("loadSceneProfileDraft"), false);
+  assert.equal(created.command.includes("const sceneId = canvas.scene?.id;"), true);
+  assert.equal(created.command.includes('"scene-a"'), false);
   assert.equal(created.command.includes('"cameraControlMode": "native"'), true);
+});
+
+test("exportSceneProfileToMacro also supports profile-first signature", async () => {
+  const env = mockMacroEnv();
+
+  await exportSceneProfileToMacro(
+    { cameraControlMode: "module", layouts: { u1: { top: "10px" } } },
+    "Scene Draft"
+  );
+  const created = env.getCreated();
+
+  assert.equal(created.name, "Scene Draft");
+  assert.equal(created.command.includes('"cameraControlMode": "module"'), true);
+  assert.equal(created.command.includes('"top": "10px"'), true);
 });

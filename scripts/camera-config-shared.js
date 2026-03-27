@@ -65,6 +65,7 @@ export function sanitizeLayout(layout) {
 export function sanitizeLayoutForCameraControlMode(layout, cameraControlMode) {
   const next = sanitizeLayout(layout);
   if (cameraControlMode === "module") return next;
+  delete next.layoutMode;
   delete next.position;
   delete next.top;
   delete next.left;

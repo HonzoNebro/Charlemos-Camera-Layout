@@ -6,9 +6,14 @@ import {
   isFrameOverlayPath,
   isRendererDebugEnabled,
   resolveRelativeLayout,
+  resolveRelativeLayoutFromMetrics,
+  resolveSceneLayouts,
+  shouldBlockNativeGeometryInteraction,
+  syncResizeHandleVisibility,
   syncGeometryInteractionMode,
   syncManagedViewGeometry,
   syncFoundryAvatarVisibility,
+  viewSupportsModuleGeometry,
   videoStyle
 } from "../../scripts/live-camera-renderer.js";
 
@@ -315,6 +320,287 @@ test("resolveRelativeLayout places a camera below-center its target", () => {
     position: "absolute",
     top: "0px",
     left: "0px",
+    width: "200px",
+    height: "120px",
+    relative: {
+      targetUserId: "u2",
+      placement: "below-center",
+      gap: "10px"
+    }
+  };
+  const targetView = {
+    offsetTop: 40,
+    offsetLeft: 100,
+    offsetWidth: 320,
+    offsetHeight: 180,
+    style: {}
+  };
+  const selfView = {
+    offsetWidth: 200,
+    offsetHeight: 120,
+    style: {}
+  };
+
+  const resolved = resolveRelativeLayout(layout, targetView, selfView);
+
+  assert.equal(resolved.top, "230px");
+  assert.equal(resolved.left, "160px");
+});
+
+test("resolveRelativeLayoutFromMetrics resolves against numeric metrics", () => {
+  globalThis.foundry = {
+    utils: {
+      deepClone: (value) => JSON.parse(JSON.stringify(value))
+    }
+  };
+
+  const resolved = resolveRelativeLayoutFromMetrics(
+    {
+      width: "200px",
+      height: "120px",
+      relative: {
+        targetUserId: "u2",
+        placement: "right-center",
+        gap: "8px"
+      }
+    },
+    { top: 40, left: 100, width: 320, height: 180 },
+    { width: 200, height: 120 }
+  );
+
+  assert.equal(resolved.top, "70px");
+  assert.equal(resolved.left, "428px");
+});
+
+test("resolveSceneLayouts resolves dependency chains in topological order", () => {
+  globalThis.foundry = {
+    utils: {
+      deepClone: (value) => JSON.parse(JSON.stringify(value))
+    }
+  };
+
+  const resolved = resolveSceneLayouts({
+    a: {
+      layoutMode: "absolute",
+      position: "absolute",
+      top: "10px",
+      left: "20px",
+      width: "300px",
+      height: "150px"
+    },
+    b: {
+      layoutMode: "relative",
+      width: "200px",
+      height: "100px",
+      relative: {
+        targetUserId: "a",
+        placement: "below-center",
+        gap: "10px"
+      }
+    },
+    c: {
+      layoutMode: "relative",
+      width: "180px",
+      height: "90px",
+      relative: {
+        targetUserId: "b",
+        placement: "right-center",
+        gap: "12px"
+      }
+    }
+  });
+
+  assert.equal(resolved.a.top, "10px");
+  assert.equal(resolved.b.top, "170px");
+  assert.equal(resolved.b.left, "70px");
+  assert.equal(resolved.c.top, "175px");
+  assert.equal(resolved.c.left, "282px");
+});
+
+test("resolveSceneLayouts falls back safely on cycles", () => {
+  globalThis.foundry = {
+    utils: {
+      deepClone: (value) => JSON.parse(JSON.stringify(value))
+    }
+  };
+
+  const resolved = resolveSceneLayouts({
+    a: {
+      layoutMode: "relative",
+      top: "10px",
+      left: "20px",
+      width: "300px",
+      height: "150px",
+      relative: {
+        targetUserId: "b",
+        placement: "below-center",
+        gap: "10px"
+      }
+    },
+    b: {
+      layoutMode: "relative",
+      top: "40px",
+      left: "60px",
+      width: "200px",
+      height: "100px",
+      relative: {
+        targetUserId: "a",
+        placement: "right-center",
+        gap: "12px"
+      }
+    }
+  });
+
+  assert.equal(resolved.a.top, "10px");
+  assert.equal(resolved.a.left, "20px");
+  assert.equal(resolved.b.top, "40px");
+  assert.equal(resolved.b.left, "60px");
+});
+
+test("resolveSceneLayouts ignores dependencies on docked cameras", () => {
+  globalThis.foundry = {
+    utils: {
+      deepClone: (value) => JSON.parse(JSON.stringify(value))
+    }
+  };
+
+  const resolved = resolveSceneLayouts(
+    {
+      a: {
+        layoutMode: "absolute",
+        top: "10px",
+        left: "20px",
+        width: "300px",
+        height: "150px"
+      },
+      b: {
+        layoutMode: "relative",
+        top: "40px",
+        left: "60px",
+        width: "200px",
+        height: "100px",
+        relative: {
+          targetUserId: "a",
+          placement: "below-center",
+          gap: "10px"
+        }
+      }
+    },
+    {
+      geometryEligibleByUserId: {
+        a: false,
+        b: true
+      }
+    }
+  );
+
+  assert.equal(resolved.b.top, "40px");
+  assert.equal(resolved.b.left, "60px");
+});
+
+test("shouldBlockNativeGeometryInteraction blocks drag origins in module mode", () => {
+  const controlBar = {};
+  const target = {
+    closest: (selector) => {
+      if (selector.includes(".control-bar")) return null;
+      if (selector.includes(".video-container")) return {};
+      return null;
+    }
+  };
+  globalThis.Element = Object;
+  const viewElement = {
+    classList: {
+      contains: (name) => name === "charlemos-geometry-module"
+    }
+  };
+
+  assert.equal(shouldBlockNativeGeometryInteraction(viewElement, target, controlBar), true);
+});
+
+test("shouldBlockNativeGeometryInteraction keeps native controls interactive", () => {
+  const target = {
+    closest: (selector) => {
+      if (selector.includes(".control-bar")) return {};
+      return null;
+    }
+  };
+  globalThis.Element = Object;
+  const viewElement = {
+    classList: {
+      contains: (name) => name === "charlemos-geometry-module"
+    }
+  };
+
+  assert.equal(shouldBlockNativeGeometryInteraction(viewElement, target), false);
+});
+
+test("syncResizeHandleVisibility leaves native handle styling to CSS", () => {
+  const handle = {
+    style: {
+      opacity: "0",
+      pointerEvents: "none",
+      cursor: "default"
+    }
+  };
+  const viewElement = {
+    querySelector: () => handle
+  };
+
+  syncResizeHandleVisibility(viewElement, false);
+
+  assert.equal(handle.style.opacity, "");
+  assert.equal(handle.style.pointerEvents, "");
+  assert.equal(handle.style.cursor, "");
+});
+
+test("syncResizeHandleVisibility forces module handle hidden", () => {
+  const handle = {
+    style: {
+      opacity: "",
+      pointerEvents: "",
+      cursor: ""
+    }
+  };
+  const viewElement = {
+    querySelector: () => handle
+  };
+
+  syncResizeHandleVisibility(viewElement, true);
+
+  assert.equal(handle.style.opacity, "0");
+  assert.equal(handle.style.pointerEvents, "none");
+  assert.equal(handle.style.cursor, "default");
+});
+
+test("viewSupportsModuleGeometry only returns true for popout camera views", () => {
+  const popoutView = {
+    classList: {
+      contains: (name) => name === "popout"
+    },
+    closest: () => null
+  };
+  const dockedView = {
+    classList: {
+      contains: () => false
+    },
+    closest: () => null
+  };
+
+  assert.equal(viewSupportsModuleGeometry(popoutView), true);
+  assert.equal(viewSupportsModuleGeometry(dockedView), false);
+});
+
+test("resolveRelativeLayout still resolves legacy relative payloads", () => {
+  globalThis.foundry = {
+    utils: {
+      deepClone: (value) => JSON.parse(JSON.stringify(value))
+    }
+  };
+
+  const layout = {
+    position: "absolute",
+    top: "12px",
+    left: "24px",
     width: "200px",
     height: "120px",
     relative: {

@@ -63,6 +63,25 @@ test("buildCameraViewStyle returns only geometry ownership keys", () => {
   });
 });
 
+test("buildCameraViewStyle forces absolute CSS positioning for relative layouts", () => {
+  const result = buildCameraViewStyle({
+    layoutMode: "relative",
+    position: "relative",
+    top: "10px",
+    left: "20px",
+    width: "320px",
+    height: "180px"
+  });
+
+  assert.deepEqual(result, {
+    position: "absolute",
+    top: "10px",
+    left: "20px",
+    width: "320px",
+    height: "180px"
+  });
+});
+
 test("removePlayerLayout deletes only the selected player layout", async () => {
   installSettings({
     u1: { filter: "blur(1px)" },

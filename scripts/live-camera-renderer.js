@@ -1,7 +1,8 @@
 import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
+import { inferLayoutMode } from "./camera-config-model.js";
 import { composeTransform, nameStyle, overlayStyle } from "./camera-layout-style.js";
 import { buildCameraViewStyle } from "./camera-style-service.js";
-import { getSceneCameraControlMode, getSceneProfileLayout, sceneProfileEnabled } from "./scene-camera.js";
+import { getSceneCameraControlMode, getSceneProfile, getSceneProfileLayout, sceneProfileEnabled } from "./scene-camera.js";
 
 const RENDER_DELAY_MS = 50;
 const ALTERNATE_NAME_TICK_MS = 1000;
@@ -416,6 +417,47 @@ function resizeHandle(viewElement) {
   return firstMatch(viewElement, ".window-resize-handle, .window-resizable-handle, .ui-resizable-handle");
 }
 
+export function viewSupportsModuleGeometry(viewElement) {
+  if (!viewElement?.classList) return false;
+  if (viewElement.classList.contains("popout")) return true;
+  return Boolean(viewElement.closest?.(".application.popout"));
+}
+
+export function syncResizeHandleVisibility(viewElement, applyGeometry) {
+  const handle = resizeHandle(viewElement);
+  if (!handle?.style) return;
+  if (applyGeometry) {
+    handle.style.opacity = "0";
+    handle.style.pointerEvents = "none";
+    handle.style.cursor = "default";
+    return;
+  }
+  handle.style.opacity = "";
+  handle.style.pointerEvents = "";
+  handle.style.cursor = "";
+}
+
+export function shouldBlockNativeGeometryInteraction(viewElement, target) {
+  if (!viewElement?.classList?.contains("charlemos-geometry-module")) return false;
+  if (!(target instanceof Element)) return false;
+  if (target.closest(".control-bar, .bottom, .notification-bar, .av-control, button, [data-action]")) return false;
+  return Boolean(target.closest(".video-container, .camera-container-popout, .camera-container, .window-resize-handle, .window-resizable-handle, .ui-resizable-handle"));
+}
+
+function syncNativeGeometryInteractionBlock(viewElement) {
+  if (!viewElement || viewElement.__charlemosGeometryBlockBound) return;
+  const handler = (event) => {
+    if (!shouldBlockNativeGeometryInteraction(viewElement, event.target)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    event.stopPropagation();
+  };
+  ["pointerdown", "mousedown", "touchstart", "dragstart"].forEach((type) => {
+    viewElement.addEventListener(type, handler, true);
+  });
+  viewElement.__charlemosGeometryBlockBound = true;
+}
+
 function viewChildrenMetrics(viewElement) {
   return Array.from(viewElement?.children ?? []).map((element) => ({
     tag: element.tagName ?? "",
@@ -639,23 +681,82 @@ function viewMetric(viewElement, styleKey, offsetKey) {
   return parsePixelLength(viewElement.style?.[styleKey]);
 }
 
-export function resolveRelativeLayout(layout, targetViewElement, selfViewElement) {
+function cloneValue(value) {
+  if (typeof foundry !== "undefined" && foundry?.utils?.deepClone) return foundry.utils.deepClone(value ?? {});
+  if (typeof structuredClone === "function") return structuredClone(value ?? {});
+  return JSON.parse(JSON.stringify(value ?? {}));
+}
+
+function metricValue(source, key) {
+  if (!source) return null;
+  const direct = parsePixelLength(source[key]);
+  if (direct !== null) return direct;
+  return parsePixelLength(source.style?.[key]);
+}
+
+function buildLayoutMetrics(layout, viewElement) {
+  const layoutMode = inferLayoutMode(layout);
+  const top = metricValue(layout, "top") ?? viewMetric(viewElement, "top", "offsetTop");
+  const left = metricValue(layout, "left") ?? viewMetric(viewElement, "left", "offsetLeft");
+  return {
+    top: top ?? (layoutMode === "absolute" ? 0 : null),
+    left: left ?? (layoutMode === "absolute" ? 0 : null),
+    width: metricValue(layout, "width") ?? viewMetric(viewElement, "width", "offsetWidth"),
+    height: metricValue(layout, "height") ?? viewMetric(viewElement, "height", "offsetHeight")
+  };
+}
+
+function videoMetric(videoElement, key) {
+  const value = Number(videoElement?.[key]);
+  if (Number.isFinite(value) && value > 0) return value;
+  return null;
+}
+
+export function applyGeometryDefaults(layout, viewElement, videoElement) {
+  const next = cloneValue(layout);
+  next.position = "absolute";
+
+  const layoutMode = inferLayoutMode(layout);
+  const explicitTop = metricValue(layout, "top");
+  const explicitLeft = metricValue(layout, "left");
+  if (layoutMode === "absolute") {
+    next.top = explicitTop === null ? "0px" : next.top;
+    next.left = explicitLeft === null ? "0px" : next.left;
+  }
+
+  if (!next.width) {
+    const width = videoMetric(videoElement, "videoWidth") ?? viewMetric(viewElement, "width", "offsetWidth");
+    if (width !== null) next.width = `${width}px`;
+  }
+  if (!next.height) {
+    const height = videoMetric(videoElement, "videoHeight") ?? viewMetric(viewElement, "height", "offsetHeight");
+    if (height !== null) next.height = `${height}px`;
+  }
+  return next;
+}
+
+function relativeTargetUserId(layout) {
+  if (inferLayoutMode(layout) !== "relative") return "";
+  return String(layout?.relative?.targetUserId ?? "").trim();
+}
+
+export function resolveRelativeLayoutFromMetrics(layout, targetMetrics, selfMetrics) {
   const relative = layout?.relative;
   const placement = String(relative?.placement ?? "").trim();
   const targetUserId = String(relative?.targetUserId ?? "").trim();
-  if (!targetUserId || !placement || placement === "none" || !targetViewElement || targetViewElement === selfViewElement) return layout;
+  if (!targetUserId || !placement || placement === "none") return layout;
 
-  const targetTop = viewMetric(targetViewElement, "top", "offsetTop");
-  const targetLeft = viewMetric(targetViewElement, "left", "offsetLeft");
-  const targetWidth = viewMetric(targetViewElement, "width", "offsetWidth");
-  const targetHeight = viewMetric(targetViewElement, "height", "offsetHeight");
+  const targetTop = targetMetrics?.top ?? null;
+  const targetLeft = targetMetrics?.left ?? null;
+  const targetWidth = targetMetrics?.width ?? null;
+  const targetHeight = targetMetrics?.height ?? null;
   if (targetTop === null || targetLeft === null || targetWidth === null || targetHeight === null) return layout;
 
-  const selfWidth = parsePixelLength(layout?.width) ?? viewMetric(selfViewElement, "width", "offsetWidth");
-  const selfHeight = parsePixelLength(layout?.height) ?? viewMetric(selfViewElement, "height", "offsetHeight");
+  const selfWidth = selfMetrics?.width ?? null;
+  const selfHeight = selfMetrics?.height ?? null;
   const gap = parsePixelLength(relative?.gap) ?? 0;
 
-  const next = foundry.utils.deepClone(layout ?? {});
+  const next = cloneValue(layout);
   next.position = "absolute";
 
   const alignedLeft = (mode) => {
@@ -708,6 +809,69 @@ export function resolveRelativeLayout(layout, targetViewElement, selfViewElement
   return layout;
 }
 
+export function resolveRelativeLayout(layout, targetViewElement, selfViewElement) {
+  if (!targetViewElement || targetViewElement === selfViewElement) return layout;
+  return resolveRelativeLayoutFromMetrics(layout, buildLayoutMetrics(null, targetViewElement), buildLayoutMetrics(layout, selfViewElement));
+}
+
+export function resolveSceneLayouts(layouts, options = {}) {
+  const sourceLayouts = cloneValue(layouts ?? {});
+  const viewElementsByUserId = options.viewElementsByUserId ?? {};
+  const geometryEligibleByUserId = options.geometryEligibleByUserId ?? {};
+  const resolvedLayouts = {};
+  const pending = new Set(Object.keys(sourceLayouts));
+  const dependencies = new Map();
+  const dependents = new Map();
+  const indegree = new Map();
+
+  Object.entries(sourceLayouts).forEach(([userId, layout]) => {
+    const targetUserId = relativeTargetUserId(layout);
+    const validDependency =
+      targetUserId &&
+      targetUserId !== userId &&
+      sourceLayouts[targetUserId] &&
+      geometryEligibleByUserId[targetUserId] !== false;
+    if (!validDependency) {
+      dependencies.set(userId, null);
+      indegree.set(userId, 0);
+      return;
+    }
+    dependencies.set(userId, targetUserId);
+    indegree.set(userId, 1);
+    const list = dependents.get(targetUserId) ?? [];
+    list.push(userId);
+    dependents.set(targetUserId, list);
+  });
+
+  const queue = [...pending].filter((userId) => (indegree.get(userId) ?? 0) === 0);
+  while (queue.length) {
+    const userId = queue.shift();
+    if (!pending.has(userId)) continue;
+    pending.delete(userId);
+    const layout = sourceLayouts[userId];
+    const targetUserId = dependencies.get(userId);
+    if (targetUserId && resolvedLayouts[targetUserId]) {
+      const targetViewElement = viewElementsByUserId[targetUserId] ?? null;
+      const selfViewElement = viewElementsByUserId[userId] ?? null;
+      const targetMetrics = buildLayoutMetrics(resolvedLayouts[targetUserId], targetViewElement);
+      const selfMetrics = buildLayoutMetrics(layout, selfViewElement);
+      resolvedLayouts[userId] = resolveRelativeLayoutFromMetrics(layout, targetMetrics, selfMetrics);
+    } else {
+      resolvedLayouts[userId] = cloneValue(layout);
+    }
+    const children = dependents.get(userId) ?? [];
+    children.forEach((childUserId) => {
+      indegree.set(childUserId, Math.max(0, (indegree.get(childUserId) ?? 0) - 1));
+      if ((indegree.get(childUserId) ?? 0) === 0) queue.push(childUserId);
+    });
+  }
+
+  pending.forEach((userId) => {
+    resolvedLayouts[userId] = cloneValue(sourceLayouts[userId]);
+  });
+  return resolvedLayouts;
+}
+
 export function syncGeometryInteractionMode(viewElement, applyGeometry) {
   if (!viewElement?.classList) return;
   viewElement.classList.toggle("charlemos-geometry-module", applyGeometry);
@@ -718,6 +882,8 @@ function applyViewStyle(viewElement, layout, applyGeometry) {
   viewElement.classList.add("charlemos-camera-view");
   viewElement.classList.remove("charlemos-direct-edit");
   syncGeometryInteractionMode(viewElement, applyGeometry);
+  syncNativeGeometryInteractionBlock(viewElement);
+  syncResizeHandleVisibility(viewElement, applyGeometry);
   assignStyle(viewElement, {
     borderRadius: layout?.geometry?.borderRadius ?? "",
     background: "transparent",
@@ -796,19 +962,16 @@ function applyPlayerLayout(app, user, options = {}) {
     return;
   }
   const cameraControlMode = getSceneCameraControlMode();
-  const applyGeometry = cameraControlMode === "module";
-  const targetUserId = String(layout?.relative?.targetUserId ?? "").trim();
-  const resolvedLayout =
-    applyGeometry && options.resolveRelative !== false && targetUserId
-      ? resolveRelativeLayout(layout, getViewElement(app, targetUserId), viewElement)
-      : layout;
+  const applyGeometry = cameraControlMode === "module" && viewSupportsModuleGeometry(viewElement);
+  const resolvedLayout = options.resolvedLayouts?.[userId] ?? layout;
+  const normalizedLayout = applyGeometry ? applyGeometryDefaults(resolvedLayout, viewElement, videoElement) : resolvedLayout;
   logRendererDebug("before-apply", userId, enabled, viewElement, videoElement, layout);
-  applyViewStyle(viewElement, resolvedLayout, applyGeometry);
-  applyVideoStyle(videoElement, resolvedLayout);
+  applyViewStyle(viewElement, normalizedLayout, applyGeometry);
+  applyVideoStyle(videoElement, normalizedLayout);
   syncFoundryAvatarVisibility(viewElement, videoElement);
-  applyOverlay(viewElement, resolvedLayout);
-  applyName(viewElement, resolvedLayout, user);
-  applyCropMasks(viewElement, resolvedLayout);
+  applyOverlay(viewElement, normalizedLayout);
+  applyName(viewElement, normalizedLayout, user);
+  applyCropMasks(viewElement, normalizedLayout);
   const overlayElement = viewElement.querySelector(".charlemos-camera-overlay");
   const videoComputed = typeof window !== "undefined" && window.getComputedStyle ? window.getComputedStyle(videoElement) : null;
   logRendererDebug("after-apply", userId, enabled, viewElement, videoElement, layout, {
@@ -823,8 +986,24 @@ function applyPlayerLayout(app, user, options = {}) {
 }
 
 function applyAll(app) {
-  game.users.forEach((user) => applyPlayerLayout(app, user, { resolveRelative: false }));
-  game.users.forEach((user) => applyPlayerLayout(app, user, { resolveRelative: true }));
+  const sceneProfile = getSceneProfile();
+  const cameraControlMode = getSceneCameraControlMode();
+  const users = game.users?.contents ?? Array.from(game.users ?? []);
+  const viewElementsByUserId = Object.fromEntries(users.map((user) => [user.id, getViewElement(app, user.id)]));
+  const geometryEligibleByUserId = Object.fromEntries(
+    users.map((user) => [user.id, viewSupportsModuleGeometry(viewElementsByUserId[user.id])])
+  );
+  const resolvedLayouts =
+    sceneProfileEnabled() && cameraControlMode === "module"
+      ? resolveSceneLayouts(
+          sceneProfile?.layouts ?? {},
+          {
+            viewElementsByUserId,
+            geometryEligibleByUserId
+          }
+        )
+      : null;
+  users.forEach((user) => applyPlayerLayout(app, user, { resolvedLayouts }));
   if (isRendererDebugEnabled()) {
     console.debug(`${MODULE_ID} | camera layouts applied`);
   }

@@ -7,7 +7,6 @@ import { LayoutConfigApp } from "./layout-config-app.js";
 import { NameConfigApp } from "./name-config-app.js";
 import { OverlayConfigApp } from "./overlay-config-app.js";
 import { SceneLayoutPresetApp } from "./scene-layout-preset-app.js";
-import { applyCameraLayoutsNow } from "./live-camera-renderer.js";
 import {
   appId,
   helpText,
@@ -29,7 +28,7 @@ import {
   usersForConfig
 } from "./camera-config-shared.js";
 import { getAllPlayerLayouts } from "./camera-style-service.js";
-import { getSceneCameraControlMode, getSceneProfile, setSceneCameraControlMode } from "./scene-camera.js";
+import { getSceneCameraControlMode, getSceneProfile } from "./scene-camera.js";
 
 function titleKey() {
   return `${MODULE_ID}.ui.config.title`;
@@ -37,7 +36,7 @@ function titleKey() {
 
 function layoutSummary(formData) {
   const values = [
-    formData.position ? `${localize("ui.config.fields.position")}: ${formData.position}` : null,
+    formData.layoutMode ? `${localize("ui.config.fields.layoutMode")}: ${localize(`ui.config.layoutMode.${formData.layoutMode}`)}` : null,
     formData.top ? `T ${formData.top}` : null,
     formData.left ? `L ${formData.left}` : null,
     formData.width ? `W ${formData.width}` : null,
@@ -103,21 +102,6 @@ function nameSummary(formData) {
   ].join(" · ");
 }
 
-function cameraControlModeSelect(value, disabled) {
-  const disabledAttr = disabled ? " disabled" : "";
-  const items = [
-    { id: "native", label: localize("ui.config.cameraControlMode.native") },
-    { id: "module", label: localize("ui.config.cameraControlMode.module") }
-  ];
-  const options = items
-    .map((item) => {
-      const selectedAttr = item.id === value ? " selected" : "";
-      return `<option value="${item.id}"${selectedAttr}>${foundry.utils.escapeHTML(item.label)}</option>`;
-    })
-    .join("");
-  return `<select id="${MODULE_ID}-camera-control-mode" name="cameraControlMode"${disabledAttr}>${options}</select>`;
-}
-
 function buttonCard(action, title, description, summary) {
   return [
     `<section class="charlemos-config-card">`,
@@ -168,19 +152,6 @@ function toolsSection(formData) {
   ]);
 }
 
-function sceneSection(sceneId, cameraControlMode) {
-  const noScene = !sceneId;
-  const description = noScene
-    ? localize("ui.config.sections.sceneDescNoScene")
-    : localize("ui.config.sections.sceneDesc");
-  return sectionHtml(localize("ui.config.sections.scene"), description, [
-    rowHtml(
-      `${localize("ui.config.fields.cameraControlMode")}${helpText("cameraControlMode")}`,
-      cameraControlModeSelect(cameraControlMode, noScene)
-    )
-  ]);
-}
-
 function actionsHtml() {
   return [
     `<div class="charlemos-actions">`,
@@ -192,14 +163,13 @@ function actionsHtml() {
   ].join("");
 }
 
-function buildHtml(context) {
+export function buildHtml(context) {
   return [
-    `<div class="charlemos-config-shell">`,
+    `<div class="charlemos-config-shell" id="${context.shellId}">`,
     `<h2>${context.title}</h2>`,
-    rowHtml(`${localize("ui.config.fields.player")}${helpText("player")}`, playerSelectHtml(context.users, context.selectedUserId)),
-    `<form id="${appId("hub-form")}" class="charlemos-config-form">`,
+    rowHtml(`${localize("ui.config.fields.player")}${helpText("player")}`, playerSelectHtml(context.users, context.selectedUserId, context.playerSelectId)),
+    `<form id="${context.formId}" class="charlemos-config-form">`,
     `<div class="charlemos-config-scroll">`,
-    sceneSection(context.sceneId, context.cameraControlMode),
     toolsSection(context.formData),
     `</div>`,
     actionsHtml(),
@@ -226,6 +196,10 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
     this.selectedUserId = game.user?.id ?? null;
   }
 
+  scopedId(suffix) {
+    return `${appId(suffix)}-${this.id}`;
+  }
+
   async _prepareContext() {
     const users = usersForConfig();
     const selected = selectedUser(users, this.selectedUserId);
@@ -233,9 +207,11 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
     const layout = loadLayoutForUser(this.selectedUserId);
     return {
       title: game.i18n.localize(titleKey()),
+      shellId: this.scopedId("shell"),
+      formId: this.scopedId("hub-form"),
+      playerSelectId: this.scopedId("player-select"),
       users,
       sceneId: currentSceneId(),
-      cameraControlMode: getSceneCameraControlMode(),
       selectedUserId: this.selectedUserId,
       formData: buildFormData(layout)
     };
@@ -251,12 +227,11 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
 
   async _onRender() {
     this.bindPlayerChange();
-    this.bindSceneControlMode();
     this.bindActions();
   }
 
   bindPlayerChange() {
-    const select = document.getElementById(`${MODULE_ID}-player-select`);
+    const select = document.getElementById(this.scopedId("player-select"));
     if (!select) return;
     select.addEventListener("change", (event) => {
       this.selectedUserId = event.currentTarget.value;
@@ -264,20 +239,8 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
     });
   }
 
-  bindSceneControlMode() {
-    const select = document.getElementById(`${MODULE_ID}-camera-control-mode`);
-    if (!select) return;
-    select.addEventListener("change", async (event) => {
-      const sceneId = currentSceneId();
-      if (!sceneId) return;
-      await setSceneCameraControlMode(sceneId, event.currentTarget.value);
-      applyCameraLayoutsNow();
-      await this.render(true);
-    });
-  }
-
   bindActions() {
-    const root = document.getElementById(appId("hub-form"));
+    const root = document.getElementById(this.scopedId("hub-form"));
     if (!root) return;
     root.addEventListener("click", async (event) => {
       if (!(event.target instanceof Element)) return;
@@ -367,7 +330,6 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
     const cameraControlMode = draftCameraControlMode ?? getSceneCameraControlMode();
     const layouts = sanitizeLayouts(draftLayouts ?? currentSceneLayouts ?? getAllPlayerLayouts(), cameraControlMode);
     const macro = await exportSceneProfileToMacro(
-      sceneId,
       {
         cameraControlMode,
         layouts

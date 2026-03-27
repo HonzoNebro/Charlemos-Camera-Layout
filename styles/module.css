@@ -76,6 +76,31 @@
   opacity: 0.9;
 }
 
+.charlemos-validation {
+  margin-top: 0.35rem;
+  border: 1px solid var(--color-border-light-primary);
+  border-radius: 6px;
+  padding: 0.45rem 0.55rem;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.charlemos-validation-list {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.charlemos-validation-item {
+  font-size: 0.78rem;
+}
+
+.charlemos-validation-item-error {
+  color: var(--color-text-danger, #c33);
+}
+
+.charlemos-validation-item-warning {
+  color: var(--color-text-warning, #b8860b);
+}
+
 .charlemos-field {
   display: grid;
   grid-template-columns: 180px 1fr;
