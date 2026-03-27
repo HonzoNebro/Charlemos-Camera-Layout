@@ -11,8 +11,14 @@ export function localize(key) {
   return game.i18n.localize(`${MODULE_ID}.${key}`);
 }
 
-export function usersForConfig() {
-  return game.users.filter((user) => user.active);
+export function usersForConfig(options = {}) {
+  const activeOnly = Boolean(options.activeOnly);
+  const users = game.users?.contents ?? Array.from(game.users ?? []);
+  const filtered = activeOnly ? users.filter((user) => user.active) : users;
+  return [...filtered].sort((a, b) => {
+    if (Boolean(b.active) !== Boolean(a.active)) return Number(b.active) - Number(a.active);
+    return String(a.name ?? "").localeCompare(String(b.name ?? ""));
+  });
 }
 
 export function selectedUser(users, selectedUserId) {

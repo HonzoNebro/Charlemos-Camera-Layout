@@ -45,7 +45,8 @@ export function sectionHtml(title, description, rows) {
 
 export function optionTag(user, selectedId) {
   const selectedAttr = user.id === selectedId ? " selected" : "";
-  return `<option value="${user.id}"${selectedAttr}>${foundry.utils.escapeHTML(user.name)}</option>`;
+  const offlineSuffix = user.active ? "" : ` ${foundry.utils.escapeHTML(localize("ui.config.common.offline"))}`;
+  return `<option value="${user.id}"${selectedAttr}>${foundry.utils.escapeHTML(user.name)}${offlineSuffix}</option>`;
 }
 
 export function playerSelectHtml(users, selectedId, selectId = `${MODULE_ID}-player-select`) {

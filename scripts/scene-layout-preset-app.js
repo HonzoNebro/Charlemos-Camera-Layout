@@ -103,7 +103,7 @@ function buildHtml(context) {
 }
 
 function defaultUserStates() {
-  return usersForConfig().map((user, index) => ({
+  return usersForConfig({ activeOnly: true }).map((user, index) => ({
     id: user.id,
     name: user.name,
     include: true,

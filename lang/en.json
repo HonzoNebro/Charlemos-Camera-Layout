@@ -170,6 +170,7 @@
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.actions.effectPlaceholder": "Select option...",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.common.enabled": "Enabled",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.common.disabled": "Disabled",
+  "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.common.offline": "(offline)",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.cameraControlMode.native": "Native",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.cameraControlMode.module": "Module",
   "charlemos-camera-layout-phase-8-camera-control-mode.ui.config.summary.none": "No custom values",
