@@ -1,9 +1,10 @@
 import { MODULE_ID } from "./constants.js";
 import { buildFormData, buildLayoutPatch } from "./camera-config-model.js";
 import { replaceAppContent } from "./dom-replace.js";
-import { appId, rowWithHelp, sectionHtml, textInput } from "./camera-config-ui.js";
+import { appId, helpText, rowHtml, rowWithHelp, sectionHtml, textInput } from "./camera-config-ui.js";
 import { currentSceneId, loadLayoutForUser, localize, saveLayoutPatchForUser, selectedUser, usersForConfig } from "./camera-config-shared.js";
-import { getSceneCameraControlMode } from "./scene-camera.js";
+import { applyCameraLayoutsNow } from "./live-camera-renderer.js";
+import { getSceneCameraControlMode, setSceneCameraControlMode } from "./scene-camera.js";
 
 function titleKey() {
   return `${MODULE_ID}.ui.layout.title`;
@@ -23,6 +24,21 @@ function syncLayoutModeFieldState(form, cameraControlMode) {
     const field = form.elements.namedItem(name);
     if (field) field.disabled = relativeDisabled;
   });
+}
+
+function cameraControlModeSelect(value, disabled) {
+  const disabledAttr = disabled ? " disabled" : "";
+  const items = [
+    { id: "native", label: localize("ui.config.cameraControlMode.native") },
+    { id: "module", label: localize("ui.config.cameraControlMode.module") }
+  ];
+  const options = items
+    .map((item) => {
+      const selectedAttr = item.id === value ? " selected" : "";
+      return `<option value="${item.id}"${selectedAttr}>${foundry.utils.escapeHTML(item.label)}</option>`;
+    })
+    .join("");
+  return `<select name="cameraControlMode"${disabledAttr}>${options}</select>`;
 }
 
 function readFormData(form) {
@@ -100,6 +116,19 @@ function relationPlacementSelect(value, disabled) {
   return `<select name="relativePlacement"${disabledAttr}>${options}</select>`;
 }
 
+function sceneSection(sceneId, cameraControlMode) {
+  const noScene = !sceneId;
+  const description = noScene
+    ? localize("ui.config.sections.sceneDescNoScene")
+    : localize("ui.config.sections.sceneDesc");
+  return sectionHtml(localize("ui.config.sections.scene"), description, [
+    rowHtml(
+      `${localize("ui.config.fields.cameraControlMode")}${helpText("cameraControlMode")}`,
+      cameraControlModeSelect(cameraControlMode, noScene)
+    )
+  ]);
+}
+
 function geometrySection(formData, cameraControlMode, users, selectedUserId) {
   const moduleOwned = cameraControlMode === "module";
   const disabledAttr = moduleOwned ? "" : " disabled";
@@ -136,6 +165,7 @@ function buildHtml(context) {
     `<p class="charlemos-section-desc">${foundry.utils.escapeHTML(context.playerName)}</p>`,
     `<form id="${appId("layout-form")}" class="charlemos-config-form">`,
     `<div class="charlemos-config-scroll">`,
+    sceneSection(context.sceneId, context.cameraControlMode),
     geometrySection(context.formData, context.cameraControlMode, context.users, context.selectedUserId),
     layoutSection(context.formData),
     `</div>`,
@@ -190,10 +220,17 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
   async _onRender() {
     const form = document.getElementById(appId("layout-form"));
     if (!form) return;
-    const cameraControlMode = getSceneCameraControlMode();
-    syncLayoutModeFieldState(form, cameraControlMode);
+    syncLayoutModeFieldState(form, getSceneCameraControlMode());
+    form.elements.namedItem("cameraControlMode")?.addEventListener("change", async (event) => {
+      const sceneId = currentSceneId();
+      if (!sceneId) return;
+      await setSceneCameraControlMode(sceneId, event.currentTarget.value);
+      applyCameraLayoutsNow();
+      syncLayoutModeFieldState(form, getSceneCameraControlMode());
+      if (this.onSaved) this.onSaved();
+    });
     form.elements.namedItem("layoutMode")?.addEventListener("change", () => {
-      syncLayoutModeFieldState(form, cameraControlMode);
+      syncLayoutModeFieldState(form, getSceneCameraControlMode());
     });
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
