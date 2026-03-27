@@ -28,7 +28,7 @@ import {
   usersForConfig
 } from "./camera-config-shared.js";
 import { getAllPlayerLayouts } from "./camera-style-service.js";
-import { getSceneProfile } from "./scene-camera.js";
+import { getSceneCameraControlMode, getSceneProfile } from "./scene-camera.js";
 
 function titleKey() {
   return `${MODULE_ID}.ui.config.title`;
