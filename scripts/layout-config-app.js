@@ -1,10 +1,21 @@
 import { MODULE_ID } from "./constants.js";
-import { buildFormData, buildLayoutPatch } from "./camera-config-model.js";
+import { buildFormData, buildLayoutPatch, validateLayoutFormData } from "./camera-config-model.js";
 import { replaceAppContent } from "./dom-replace.js";
 import { appId, helpText, rowHtml, rowWithHelp, sectionHtml, textInput } from "./camera-config-ui.js";
-import { currentSceneId, loadLayoutForUser, localize, saveLayoutPatchForUser, selectedUser, usersForConfig } from "./camera-config-shared.js";
+import {
+  currentSceneId,
+  loadLayoutForUser,
+  loadedDraftCameraControlMode,
+  loadedDraftLayouts,
+  localize,
+  saveLayoutPatchForUser,
+  sanitizeLayouts,
+  selectedUser,
+  usersForConfig
+} from "./camera-config-shared.js";
+import { getAllPlayerLayouts } from "./camera-style-service.js";
 import { applyCameraLayoutsNow } from "./live-camera-renderer.js";
-import { getSceneCameraControlMode, setSceneCameraControlMode } from "./scene-camera.js";
+import { getSceneCameraControlMode, getSceneProfile, setSceneCameraControlMode } from "./scene-camera.js";
 
 function titleKey() {
   return `${MODULE_ID}.ui.layout.title`;
@@ -116,6 +127,19 @@ function relationPlacementSelect(value, disabled) {
   return `<select name="relativePlacement"${disabledAttr}>${options}</select>`;
 }
 
+function validationMessagesHtml(validation) {
+  const normalized = {
+    errors: validation?.errors ?? [],
+    warnings: validation?.warnings ?? []
+  };
+  const items = [
+    ...normalized.errors.map((code) => `<li class="charlemos-validation-item charlemos-validation-item-error">${foundry.utils.escapeHTML(localize(`ui.config.validation.${code}`))}</li>`),
+    ...normalized.warnings.map((code) => `<li class="charlemos-validation-item charlemos-validation-item-warning">${foundry.utils.escapeHTML(localize(`ui.config.validation.${code}`))}</li>`)
+  ].join("");
+  if (!items) return "";
+  return `<div id="${appId("layout-validation")}" class="charlemos-validation"><ul class="charlemos-validation-list">${items}</ul></div>`;
+}
+
 function sceneSection(sceneId, cameraControlMode) {
   const noScene = !sceneId;
   const description = noScene
@@ -130,7 +154,7 @@ function sceneSection(sceneId, cameraControlMode) {
   ]);
 }
 
-function geometrySection(formData, cameraControlMode, users, selectedUserId) {
+function geometrySection(formData, cameraControlMode, users, selectedUserId, validation) {
   const moduleOwned = cameraControlMode === "module";
   const disabledAttr = moduleOwned ? "" : " disabled";
   const description = moduleOwned
@@ -146,7 +170,8 @@ function geometrySection(formData, cameraControlMode, users, selectedUserId) {
     rowWithHelp("height", `<input type="text" name="height" value="${foundry.utils.escapeHTML(String(formData.height ?? ""))}"${absoluteDisabledAttr}>`, "height"),
     rowWithHelp("relativeTargetUserId", relationTargetSelect(users, selectedUserId, formData.relativeTargetUserId, relativeDisabled), "relativeTargetUserId"),
     rowWithHelp("relativePlacement", relationPlacementSelect(formData.relativePlacement, relativeDisabled), "relativePlacement"),
-    rowWithHelp("relativeGap", `<input type="text" name="relativeGap" value="${foundry.utils.escapeHTML(String(formData.relativeGap ?? ""))}"${relativeDisabled ? " disabled" : ""}>`, "relativeGap")
+    rowWithHelp("relativeGap", `<input type="text" name="relativeGap" value="${foundry.utils.escapeHTML(String(formData.relativeGap ?? ""))}"${relativeDisabled ? " disabled" : ""}>`, "relativeGap"),
+    `<div id="${appId("layout-validation-shell")}">${validationMessagesHtml(validation)}</div>`
   ]);
 }
 
@@ -167,7 +192,7 @@ function buildHtml(context) {
     `<form id="${appId("layout-form")}" class="charlemos-config-form">`,
     `<div class="charlemos-config-scroll">`,
     sceneSection(context.sceneId, context.cameraControlMode),
-    geometrySection(context.formData, context.cameraControlMode, context.users, context.selectedUserId),
+    geometrySection(context.formData, context.cameraControlMode, context.users, context.selectedUserId, context.validation),
     layoutSection(context.formData),
     `</div>`,
     `<div class="charlemos-actions"><button type="submit">${localize("ui.config.actions.save")}</button></div>`,
@@ -200,13 +225,16 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
     const selected = selectedUser(users, this.selectedUserId);
     this.selectedUserId = selected?.id ?? null;
     const layout = loadLayoutForUser(this.selectedUserId);
+    const formData = buildFormData(layout);
     return {
       title: game.i18n.localize(titleKey()),
       playerName: selected?.name ?? "",
       users,
       sceneId: currentSceneId(),
       cameraControlMode: getSceneCameraControlMode(),
-      formData: buildFormData(layout)
+      formData,
+      selectedUserId: this.selectedUserId,
+      validation: this.getValidationState(formData, users, getSceneCameraControlMode())
     };
   }
 
@@ -222,16 +250,25 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
     const form = document.getElementById(appId("layout-form"));
     if (!form) return;
     syncLayoutModeFieldState(form, getSceneCameraControlMode());
+    this.syncValidationState(form);
     form.elements.namedItem("cameraControlMode")?.addEventListener("change", async (event) => {
       const sceneId = currentSceneId();
       if (!sceneId) return;
       await setSceneCameraControlMode(sceneId, event.currentTarget.value);
       applyCameraLayoutsNow();
       syncLayoutModeFieldState(form, getSceneCameraControlMode());
+      this.syncValidationState(form);
       if (this.onSaved) this.onSaved();
     });
     form.elements.namedItem("layoutMode")?.addEventListener("change", () => {
       syncLayoutModeFieldState(form, getSceneCameraControlMode());
+      this.syncValidationState(form);
+    });
+    form.addEventListener("input", () => {
+      this.syncValidationState(form);
+    });
+    form.addEventListener("change", () => {
+      this.syncValidationState(form);
     });
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -239,8 +276,45 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
     });
   }
 
+  getLayoutsForValidation() {
+    const sceneId = currentSceneId();
+    const draftLayouts = loadedDraftLayouts(sceneId);
+    if (draftLayouts) {
+      const draftCameraControl = loadedDraftCameraControlMode(sceneId) ?? getSceneCameraControlMode();
+      return sanitizeLayouts(draftLayouts, draftCameraControl);
+    }
+    const sceneLayouts = getSceneProfile()?.layouts;
+    return sceneLayouts ?? getAllPlayerLayouts();
+  }
+
+  getValidationState(formData, users, cameraControlMode = getSceneCameraControlMode()) {
+    if (cameraControlMode !== "module") return { errors: [], warnings: [] };
+    const validation = validateLayoutFormData(this.selectedUserId, formData, this.getLayoutsForValidation(), users);
+    const targetUserId = String(formData?.relativeTargetUserId ?? "").trim();
+    if (!targetUserId) return validation;
+    const targetUser = (users ?? []).find((user) => user.id === targetUserId);
+    if (targetUser?.active && !globalThis.document?.querySelector?.(`.camera-view[data-user="${targetUserId}"], .camera-view[data-user-id="${targetUserId}"]`)) {
+      validation.warnings = [...new Set([...validation.warnings, "relativeTargetNotVisible"])];
+    }
+    return validation;
+  }
+
+  syncValidationState(form) {
+    const validation = this.getValidationState(readFormData(form), usersForConfig(), form.elements.namedItem("cameraControlMode")?.value ?? getSceneCameraControlMode());
+    const shell = document.getElementById(appId("layout-validation-shell"));
+    if (shell) shell.innerHTML = validationMessagesHtml(validation);
+    const submit = form.querySelector('button[type="submit"]');
+    if (submit) submit.disabled = validation.errors.length > 0;
+    return validation;
+  }
+
   async saveForm(form) {
     if (!this.selectedUserId) return;
+    const validation = this.syncValidationState(form);
+    if (validation.errors.length > 0) {
+      ui.notifications.error(localize(`ui.config.validation.${validation.errors[0]}`));
+      return;
+    }
     const patch = buildLayoutPatch(readFormData(form));
     if (getSceneCameraControlMode() !== "module") {
       delete patch.layoutMode;

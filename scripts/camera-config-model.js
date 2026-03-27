@@ -166,6 +166,21 @@ function relativeTargetFrom(layout) {
   return nullableText(layout?.relative?.targetUserId) ?? "";
 }
 
+function cycleDetectedFrom(startUserId, layoutsByUserId) {
+  const visited = new Set();
+  let currentUserId = startUserId;
+  while (currentUserId) {
+    if (visited.has(currentUserId)) return true;
+    visited.add(currentUserId);
+    const layout = layoutsByUserId?.[currentUserId];
+    if (inferLayoutMode(layout) !== "relative") return false;
+    const targetUserId = relativeTargetFrom(layout);
+    if (!targetUserId) return false;
+    currentUserId = targetUserId;
+  }
+  return false;
+}
+
 export function inferLayoutMode(layout) {
   const explicit = normalizedLayoutMode(layout?.layoutMode);
   if (layout?.layoutMode) return explicit;
@@ -180,6 +195,38 @@ function normalizedRelativePlacement(value) {
   if (!text) return "none";
   if (RELATIVE_PLACEMENT_VALUES.has(text)) return text;
   return "none";
+}
+
+export function validateLayoutFormData(selectedUserId, formData, layoutsByUserId = {}, users = []) {
+  const errors = [];
+  const warnings = [];
+  if (normalizedLayoutMode(formData?.layoutMode) !== "relative") return { errors, warnings };
+
+  const targetUserId = nullableText(formData?.relativeTargetUserId);
+  const placement = normalizedRelativePlacement(formData?.relativePlacement);
+  const usersById = new Map((users ?? []).map((user) => [user.id, user]));
+
+  if (!targetUserId) errors.push("relativeTargetRequired");
+  if (targetUserId && selectedUserId && targetUserId === selectedUserId) errors.push("relativeTargetSelf");
+  if (placement === "none") errors.push("relativePlacementRequired");
+  if (targetUserId && !usersById.has(targetUserId)) warnings.push("relativeTargetMissing");
+  if (targetUserId && usersById.get(targetUserId)?.active === false) warnings.push("relativeTargetOffline");
+
+  if (selectedUserId && targetUserId && targetUserId !== selectedUserId) {
+    const nextLayouts = {
+      ...(layoutsByUserId ?? {}),
+      [selectedUserId]: {
+        ...((layoutsByUserId ?? {})[selectedUserId] ?? {}),
+        ...buildLayoutPatch(formData)
+      }
+    };
+    if (cycleDetectedFrom(selectedUserId, nextLayouts)) errors.push("relativeCycle");
+  }
+
+  return {
+    errors: [...new Set(errors)],
+    warnings: [...new Set(warnings)]
+  };
 }
 
 export function buildFormData(layout) {

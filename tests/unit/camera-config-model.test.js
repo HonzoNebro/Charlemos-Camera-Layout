@@ -1,6 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildFormData, buildLayoutPatch, buildNameStylePatch, inferLayoutMode, normalizedLayoutMode } from "../../scripts/camera-config-model.js";
+import {
+  buildFormData,
+  buildLayoutPatch,
+  buildNameStylePatch,
+  inferLayoutMode,
+  normalizedLayoutMode,
+  validateLayoutFormData
+} from "../../scripts/camera-config-model.js";
 
 test("buildFormData maps stored layout to UI fields", () => {
   const formData = buildFormData({
@@ -335,4 +342,48 @@ test("buildNameStylePatch only returns nameStyle payload", () => {
   assert.deepEqual(Object.keys(patch), ["nameStyle"]);
   assert.equal(patch.nameStyle.position, "top");
   assert.equal(patch.nameStyle.textAlign, "center");
+});
+
+test("validateLayoutFormData rejects self target and missing placement", () => {
+  const validation = validateLayoutFormData(
+    "u1",
+    {
+      layoutMode: "relative",
+      relativeTargetUserId: "u1",
+      relativePlacement: "none"
+    },
+    {},
+    [{ id: "u1", active: true, name: "GM" }]
+  );
+
+  assert.deepEqual(validation.errors, ["relativeTargetSelf", "relativePlacementRequired"]);
+  assert.deepEqual(validation.warnings, []);
+});
+
+test("validateLayoutFormData detects dependency cycles and offline targets", () => {
+  const validation = validateLayoutFormData(
+    "u1",
+    {
+      layoutMode: "relative",
+      relativeTargetUserId: "u2",
+      relativePlacement: "below-center"
+    },
+    {
+      u2: {
+        layoutMode: "relative",
+        relative: {
+          targetUserId: "u1",
+          placement: "below-center",
+          gap: "12px"
+        }
+      }
+    },
+    [
+      { id: "u1", active: true, name: "GM" },
+      { id: "u2", active: false, name: "Player" }
+    ]
+  );
+
+  assert.deepEqual(validation.errors, ["relativeCycle"]);
+  assert.deepEqual(validation.warnings, ["relativeTargetOffline"]);
 });
