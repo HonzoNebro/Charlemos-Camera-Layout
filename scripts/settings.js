@@ -1,5 +1,12 @@
 import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
 import { CameraConfigApp } from "./camera-config-app.js";
+import { requestCameraLayoutsApply } from "./live-camera-renderer.js";
+import { getApp } from "./state.js";
+
+export function handleSharedLayoutSettingChange({ requestApply = requestCameraLayoutsApply, app = getApp() } = {}) {
+  requestApply();
+  app?.refreshIfOpen?.();
+}
 
 function registerPlayerLayoutsSetting() {
   game.settings.register(MODULE_ID, SETTINGS_KEYS.PLAYER_LAYOUTS, {
@@ -8,7 +15,8 @@ function registerPlayerLayoutsSetting() {
     scope: "world",
     config: false,
     type: Object,
-    default: {}
+    default: {},
+    onChange: () => handleSharedLayoutSettingChange()
   });
 }
 
@@ -19,7 +27,8 @@ function registerSceneCameraSetting() {
     scope: "world",
     config: false,
     type: Object,
-    default: {}
+    default: {},
+    onChange: () => handleSharedLayoutSettingChange()
   });
 }
 
@@ -30,7 +39,8 @@ function registerSceneProfilesSetting() {
     scope: "world",
     config: false,
     type: Object,
-    default: {}
+    default: {},
+    onChange: () => handleSharedLayoutSettingChange()
   });
 }
 

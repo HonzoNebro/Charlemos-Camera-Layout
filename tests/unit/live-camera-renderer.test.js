@@ -6,6 +6,8 @@ import {
   dumpRendererDebugSnapshot,
   isFrameOverlayPath,
   isRendererDebugEnabled,
+  requestCameraLayoutsApply,
+  requestRenderedCameraLayoutsApply,
   resolveRelativeLayout,
   resolveRelativeLayoutFromMetrics,
   resolveSceneLayouts,
@@ -233,6 +235,36 @@ test("syncOverlayMediaSource does not reset identical video source", () => {
   assert.equal(srcWrites, 0);
 });
 
+test("requestCameraLayoutsApply keeps deferred renderer scheduling", () => {
+  const delays = [];
+  globalThis.window = {
+    setTimeout: (_fn, delay) => {
+      delays.push(delay);
+      return 1;
+    },
+    clearTimeout: () => {}
+  };
+
+  requestCameraLayoutsApply();
+
+  assert.equal(delays.at(-1), 50);
+});
+
+test("requestRenderedCameraLayoutsApply schedules immediate renderer reapply", () => {
+  const delays = [];
+  globalThis.window = {
+    setTimeout: (_fn, delay) => {
+      delays.push(delay);
+      return 1;
+    },
+    clearTimeout: () => {}
+  };
+
+  requestRenderedCameraLayoutsApply();
+
+  assert.equal(delays.at(-1), 0);
+});
+
 test("isRendererDebugEnabled reads module setting", () => {
   globalThis.game = {
     settings: {
@@ -378,6 +410,33 @@ test("applyGeometryDefaults falls back to foundry-sized camera bounds when no me
   assert.equal(resolved.left, "0px");
   assert.equal(resolved.width, "320px");
   assert.equal(resolved.height, "240px");
+});
+
+test("applyGeometryDefaults preserves explicit responsive geometry values", () => {
+  const layout = {
+    layoutMode: "absolute",
+    position: "absolute",
+    top: "16.5vh",
+    left: "24.9vw",
+    width: "25vw",
+    height: "33.3vh"
+  };
+  const viewElement = {
+    offsetWidth: 849,
+    offsetHeight: 636,
+    style: {}
+  };
+  const videoElement = {
+    videoWidth: 0,
+    videoHeight: 0
+  };
+
+  const resolved = applyGeometryDefaults(layout, viewElement, videoElement);
+
+  assert.equal(resolved.top, "16.5vh");
+  assert.equal(resolved.left, "24.9vw");
+  assert.equal(resolved.width, "25vw");
+  assert.equal(resolved.height, "33.3vh");
 });
 
 test("resolveRelativeLayout places a camera below-center its target", () => {
