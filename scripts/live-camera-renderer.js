@@ -1126,6 +1126,10 @@ function queueApply(app) {
   }, RENDER_DELAY_MS);
 }
 
+export function requestCameraLayoutsApply(app) {
+  queueApply(app);
+}
+
 export function applyCameraLayoutsNow(app) {
   const cameraApp = getCameraViewsApp(app);
   if (!cameraApp) {
