@@ -819,11 +819,11 @@ export function applyGeometryDefaults(layout, viewElement, videoElement) {
   next.position = "absolute";
 
   const layoutMode = inferLayoutMode(layout);
-  const explicitTop = metricValue(layout, "top");
-  const explicitLeft = metricValue(layout, "left");
+  const explicitTop = String(layout?.top ?? "").trim();
+  const explicitLeft = String(layout?.left ?? "").trim();
   if (layoutMode === "absolute") {
-    next.top = explicitTop === null ? "0px" : next.top;
-    next.left = explicitLeft === null ? "0px" : next.left;
+    next.top = explicitTop ? next.top : "0px";
+    next.left = explicitLeft ? next.left : "0px";
   }
 
   if (!next.width) {

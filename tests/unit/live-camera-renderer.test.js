@@ -380,6 +380,33 @@ test("applyGeometryDefaults falls back to foundry-sized camera bounds when no me
   assert.equal(resolved.height, "240px");
 });
 
+test("applyGeometryDefaults preserves explicit responsive geometry values", () => {
+  const layout = {
+    layoutMode: "absolute",
+    position: "absolute",
+    top: "16.5vh",
+    left: "24.9vw",
+    width: "25vw",
+    height: "33.3vh"
+  };
+  const viewElement = {
+    offsetWidth: 849,
+    offsetHeight: 636,
+    style: {}
+  };
+  const videoElement = {
+    videoWidth: 0,
+    videoHeight: 0
+  };
+
+  const resolved = applyGeometryDefaults(layout, viewElement, videoElement);
+
+  assert.equal(resolved.top, "16.5vh");
+  assert.equal(resolved.left, "24.9vw");
+  assert.equal(resolved.width, "25vw");
+  assert.equal(resolved.height, "33.3vh");
+});
+
 test("resolveRelativeLayout places a camera below-center its target", () => {
   globalThis.foundry = {
     utils: {
