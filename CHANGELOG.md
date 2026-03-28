@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.7] - 2026-03-28
+
+### Added
+- Scene presets now expose an explicit aspect-ratio selector with `4:3`, `16:9`, `1:1`, and `Match Feed` options.
+
+### Fixed
+- Scene preset fallback sizing without live video now defaults to a `4:3` camera box instead of a square box.
+
+### Changed
+- `4:3` is now the default aspect ratio for scene presets so generated camera grids better match Foundry's default camera proportions.
+- Release metadata updated for stable distribution:
+  - module version: `1.5.7`
+  - download URL points to tag archive `v1.5.7`
+
 ## [1.5.6] - 2026-03-28
 
 ### Added
