@@ -1,4 +1,4 @@
-import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
+import { DEFAULT_CAMERA_BOUNDS, MODULE_ID, SETTINGS_KEYS } from "./constants.js";
 import { inferLayoutMode } from "./camera-config-model.js";
 import { composeTransform, nameStyle, overlayMediaKind, overlayMediaStyle, overlayStyle, overlayTintStyle } from "./camera-layout-style.js";
 import { buildCameraViewStyle } from "./camera-style-service.js";
@@ -815,12 +815,12 @@ export function applyGeometryDefaults(layout, viewElement, videoElement) {
   }
 
   if (!next.width) {
-    const width = videoMetric(videoElement, "videoWidth") ?? viewMetric(viewElement, "width", "offsetWidth");
-    if (width !== null) next.width = `${width}px`;
+    const width = videoMetric(videoElement, "videoWidth") ?? viewMetric(viewElement, "width", "offsetWidth") ?? DEFAULT_CAMERA_BOUNDS.width;
+    next.width = `${width}px`;
   }
   if (!next.height) {
-    const height = videoMetric(videoElement, "videoHeight") ?? viewMetric(viewElement, "height", "offsetHeight");
-    if (height !== null) next.height = `${height}px`;
+    const height = videoMetric(videoElement, "videoHeight") ?? viewMetric(viewElement, "height", "offsetHeight") ?? DEFAULT_CAMERA_BOUNDS.height;
+    next.height = `${height}px`;
   }
   return next;
 }

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  applyGeometryDefaults,
   applyFrameOverlayFallbackStyle,
   dumpRendererDebugSnapshot,
   isFrameOverlayPath,
@@ -349,6 +350,33 @@ test("resolveRelativeLayout places a camera below its target", () => {
   assert.equal(resolved.top, "232px");
   assert.equal(resolved.left, "100px");
   assert.equal(resolved.width, "300px");
+});
+
+test("applyGeometryDefaults falls back to foundry-sized camera bounds when no metrics are available", () => {
+  const layout = {
+    layoutMode: "absolute",
+    position: "absolute",
+    top: "",
+    left: "",
+    width: "",
+    height: ""
+  };
+  const viewElement = {
+    offsetWidth: 0,
+    offsetHeight: 0,
+    style: {}
+  };
+  const videoElement = {
+    videoWidth: 0,
+    videoHeight: 0
+  };
+
+  const resolved = applyGeometryDefaults(layout, viewElement, videoElement);
+
+  assert.equal(resolved.top, "0px");
+  assert.equal(resolved.left, "0px");
+  assert.equal(resolved.width, "320px");
+  assert.equal(resolved.height, "240px");
 });
 
 test("resolveRelativeLayout places a camera below-center its target", () => {

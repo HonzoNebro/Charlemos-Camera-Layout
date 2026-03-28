@@ -179,8 +179,8 @@ test("resetLayoutForUser preserves module camera control mode and applies safe f
       u1: {
         layoutMode: "absolute",
         position: "absolute",
-        width: "300px",
-        height: "300px"
+        width: "320px",
+        height: "240px"
       }
     }
   });

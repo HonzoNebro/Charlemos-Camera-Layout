@@ -1,4 +1,4 @@
-import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
+import { DEFAULT_CAMERA_BOUNDS, MODULE_ID, SETTINGS_KEYS } from "./constants.js";
 import { getAllPlayerLayouts, getPlayerLayout, removePlayerLayout, replacePlayerLayout, setAllPlayerLayouts } from "./camera-style-service.js";
 import { applyCameraLayoutsNow } from "./live-camera-renderer.js";
 import { applySceneProfile, getSceneCameraControlMode, getSceneProfile, getSceneProfileLayout, resetSceneProfile, sceneProfileEnabled } from "./scene-camera.js";
@@ -88,8 +88,8 @@ function buildResetLayout(cameraControlMode) {
   return {
     layoutMode: "absolute",
     position: "absolute",
-    width: "300px",
-    height: "300px"
+    width: `${DEFAULT_CAMERA_BOUNDS.width}px`,
+    height: `${DEFAULT_CAMERA_BOUNDS.height}px`
   };
 }
 
