@@ -1116,7 +1116,16 @@ function queueApply(app) {
 
 export function applyCameraLayoutsNow(app) {
   const cameraApp = getCameraViewsApp(app);
-  if (!cameraApp) return;
+  if (!cameraApp) {
+    if (isRendererDebugEnabled()) {
+      console.warn(`${MODULE_ID} | apply skipped: camera views app not found`, {
+        requestedApp: app?.constructor?.name ?? null,
+        uiWebrtc: ui?.webrtc?.constructor?.name ?? null,
+        sceneId: canvas?.scene?.id ?? null
+      });
+    }
+    return;
+  }
   applyAll(cameraApp);
 }
 
@@ -1133,6 +1142,7 @@ export function dumpRendererDebugSnapshot(userId, app) {
     stage: "snapshot",
     userId: targetUserId,
     sceneEnabled: enabled,
+    cameraControlMode: getSceneCameraControlMode(),
     liveVideo: hasLiveVideoFeed(videoElement),
     video: videoDebugState(videoElement),
     view: viewDebugState(viewElement),

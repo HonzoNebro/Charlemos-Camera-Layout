@@ -7,6 +7,7 @@ import { sanitizeLayouts } from "./camera-config-shared.js";
 import { setControlsVisibility } from "./ui-controls.js";
 import { getApp, setLoadedSceneProfileDraft } from "./state.js";
 import { applyCameraLayoutsNow, dumpRendererDebugSnapshot } from "./live-camera-renderer.js";
+import { dumpModuleDebugReport } from "./debug-report.js";
 
 function openConfig() {
   const app = getApp();
@@ -31,6 +32,7 @@ async function applySceneProfileDraft(sceneId, payload) {
   applyCameraLayoutsNow();
   const app = getApp();
   if (app) await app.render(true);
+  console.debug(`${MODULE_ID} | scene profile draft applied`, { sceneId, cameraControlMode, layoutCount: Object.keys(layouts).length });
   ui.notifications.info(game.i18n.localize(`${MODULE_ID}.ui.config.notifications.macroApplied`));
 }
 
@@ -54,6 +56,7 @@ export function createApi() {
     setSceneCamera,
     setControlsVisibility,
     dumpRendererDebugSnapshot,
+    dumpModuleDebugReport,
     openConfig
   };
 }

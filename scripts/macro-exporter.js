@@ -59,6 +59,11 @@ export async function exportSceneProfileToMacro(sceneIdOrProfile, profileOrMacro
   const command = buildSceneCommand(profile);
   const macroData = buildMacroData(name, command);
   const macro = await Macro.create(macroData);
-  console.debug(`${MODULE_ID} | scene macro exported`, { sourceSceneId, macroId: macro.id });
+  console.debug(`${MODULE_ID} | scene macro exported`, {
+    sourceSceneId,
+    macroId: macro.id,
+    cameraControlMode: profile?.cameraControlMode ?? "native",
+    layoutCount: Object.keys(profile?.layouts ?? {}).length
+  });
   return macro;
 }

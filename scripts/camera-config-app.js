@@ -338,6 +338,11 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
       macroName
     );
     ui.notifications.info(localize("ui.config.notifications.exported"));
-    console.debug(`${MODULE_ID} | scene config exported`, { sceneId, macroId: macro.id });
+    console.debug(`${MODULE_ID} | scene config exported`, {
+      sceneId,
+      macroId: macro.id,
+      cameraControlMode,
+      layoutCount: Object.keys(layouts).length
+    });
   }
 }

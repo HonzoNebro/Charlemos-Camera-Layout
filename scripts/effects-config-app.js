@@ -106,6 +106,16 @@ export class EffectsConfigApp extends foundry.applications.api.ApplicationV2 {
     await saveLayoutPatchForUser(this.selectedUserId, patch);
     if (this.onSaved) this.onSaved();
     ui.notifications.info(localize("ui.config.notifications.saved"));
-    console.debug(`${MODULE_ID} | effects config saved`, { playerId: this.selectedUserId, patch });
+    console.debug(`${MODULE_ID} | effects config saved`, {
+      playerId: this.selectedUserId,
+      sceneId: currentSceneId(),
+      patch,
+      effectFlags: {
+        transform: Boolean(patch.transform),
+        filter: Boolean(patch.filter),
+        clipPath: Boolean(patch.clipPath),
+        borderRadius: Boolean(patch.geometry?.borderRadius)
+      }
+    });
   }
 }

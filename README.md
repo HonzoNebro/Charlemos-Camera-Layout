@@ -28,6 +28,7 @@ FoundryVTT module for advanced A/V camera styling and per-scene camera profiles.
 - `tests/unit/`: unit tests only
 - `docs/ROADMAP.md`: short and long term roadmap
 - `docs/DEVELOPMENT_RULES.md`: mandatory coding rules
+- `docs/macros/dump_module_debug_report.js`: support macro for bug reports
 - `.github/workflows/release-guard-pr.yml`: validates release metadata and tests on PRs to `main`
 - `.github/workflows/release-tag-on-version-bump.yml`: auto-tags releases after version bumps reach `main`
 
@@ -36,6 +37,14 @@ FoundryVTT module for advanced A/V camera styling and per-scene camera profiles.
 ```bash
 npm test
 ```
+
+## Diagnostics
+
+- Enable `Renderer debug mode` in Foundry when investigating runtime problems.
+- Run the macro in `docs/macros/dump_module_debug_report.js` to dump a structured support report to the browser console.
+- The module API also exposes:
+  - `game.modules.get("charlemos-camera-layout")?.api?.dumpRendererDebugSnapshot(userId)`
+  - `game.modules.get("charlemos-camera-layout")?.api?.dumpModuleDebugReport(userId)`
 
 ## Foundry install
 

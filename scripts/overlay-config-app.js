@@ -210,6 +210,12 @@ export class OverlayConfigApp extends foundry.applications.api.ApplicationV2 {
     const formData = readFormData(form);
     const overlayValid = await this.validateOverlayImage(formData);
     if (!overlayValid) {
+      console.warn(`${MODULE_ID} | overlay validation failed`, {
+        playerId: this.selectedUserId,
+        sceneId: currentSceneId(),
+        overlayImage: String(formData.overlayImage ?? "").trim(),
+        kind: overlayMediaKind(formData.overlayImage)
+      });
       ui.notifications.error(localize("ui.config.notifications.overlayImageInvalid"));
       return;
     }
@@ -223,6 +229,17 @@ export class OverlayConfigApp extends foundry.applications.api.ApplicationV2 {
     await saveLayoutPatchForUser(this.selectedUserId, patch);
     if (this.onSaved) this.onSaved();
     ui.notifications.info(localize("ui.config.notifications.saved"));
-    console.debug(`${MODULE_ID} | overlay config saved`, { playerId: this.selectedUserId, patch });
+    console.debug(`${MODULE_ID} | overlay config saved`, {
+      playerId: this.selectedUserId,
+      sceneId: currentSceneId(),
+      patch,
+      overlay: {
+        enabled: Boolean(patch.overlay?.enabled),
+        imageUrl: patch.overlay?.imageUrl ?? null,
+        kind: overlayMediaKind(patch.overlay?.imageUrl),
+        fitMode: patch.overlay?.fitMode ?? "auto",
+        anchor: patch.overlay?.anchor ?? "center"
+      }
+    });
   }
 }
