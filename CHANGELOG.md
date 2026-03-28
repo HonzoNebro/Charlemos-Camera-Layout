@@ -5,6 +5,22 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.5] - 2026-03-28
+
+### Added
+- Scene presets now support disconnected users in the participant list, keeping active users preselected by default while allowing layouts to be prepared before a session starts.
+- New support diagnostics API and helper macro:
+  - `dumpModuleDebugReport(userId)`
+  - `docs/macros/dump_module_debug_report.js`
+- New GitHub bug-report template that asks for Foundry version, browser/OS, console output, and a Charlemos debug report.
+
+### Changed
+- Preset UI copy now reflects that all users can be selected, not only active ones.
+- Debug logs for macro export, scene-profile application, overlay validation, overlay save, and effects save now include more actionable context for support.
+- Release metadata updated for stable distribution:
+  - module version: `1.5.5`
+  - download URL points to tag archive `v1.5.5`
+
 ## [1.5.4] - 2026-03-28
 
 ### Fixed
