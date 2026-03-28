@@ -6,6 +6,8 @@ import {
   dumpRendererDebugSnapshot,
   isFrameOverlayPath,
   isRendererDebugEnabled,
+  requestCameraLayoutsApply,
+  requestRenderedCameraLayoutsApply,
   resolveRelativeLayout,
   resolveRelativeLayoutFromMetrics,
   resolveSceneLayouts,
@@ -231,6 +233,36 @@ test("syncOverlayMediaSource does not reset identical video source", () => {
   syncOverlayMediaSource(mediaElement, "video", "modules/jb2a_patreon/Library/1st_Level/Sleep/SleepSymbol01_01_Dark_OrangePurple_400x400.webm");
 
   assert.equal(srcWrites, 0);
+});
+
+test("requestCameraLayoutsApply keeps deferred renderer scheduling", () => {
+  const delays = [];
+  globalThis.window = {
+    setTimeout: (_fn, delay) => {
+      delays.push(delay);
+      return 1;
+    },
+    clearTimeout: () => {}
+  };
+
+  requestCameraLayoutsApply();
+
+  assert.equal(delays.at(-1), 50);
+});
+
+test("requestRenderedCameraLayoutsApply schedules immediate renderer reapply", () => {
+  const delays = [];
+  globalThis.window = {
+    setTimeout: (_fn, delay) => {
+      delays.push(delay);
+      return 1;
+    },
+    clearTimeout: () => {}
+  };
+
+  requestRenderedCameraLayoutsApply();
+
+  assert.equal(delays.at(-1), 0);
 });
 
 test("isRendererDebugEnabled reads module setting", () => {
