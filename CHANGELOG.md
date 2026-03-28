@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.10] - 2026-03-29
+
+### Fixed
+- Shared camera layout updates now reapply across connected clients when the GM changes world-scoped scene profiles or player layouts.
+- Responsive scene preset geometry now preserves explicit `vw` and `vh` values instead of collapsing affected cameras back to `0,0`.
+- Camera layouts now reapply immediately after Foundry rerenders camera views, reducing visible flicker after WebRTC rerenders and popout transitions.
+
+### Changed
+- Release metadata updated for stable distribution:
+  - module version: `1.5.10`
+  - download URL points to tag archive `v1.5.10`
+
 ## [1.5.9] - 2026-03-28
 
 ### Fixed
