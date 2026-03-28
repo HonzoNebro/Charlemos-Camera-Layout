@@ -1,5 +1,10 @@
 export const MODULE_ID = "charlemos-camera-layout";
 
+export const DEFAULT_CAMERA_BOUNDS = {
+  width: 320,
+  height: 240
+};
+
 export const SETTINGS_KEYS = {
   PLAYER_LAYOUTS: "playerLayouts",
   SCENE_CAMERA: "sceneCamera",

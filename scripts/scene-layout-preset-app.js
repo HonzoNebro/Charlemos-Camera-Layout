@@ -1,4 +1,4 @@
-import { MODULE_ID } from "./constants.js";
+import { DEFAULT_CAMERA_BOUNDS, MODULE_ID } from "./constants.js";
 import { replaceAppContent } from "./dom-replace.js";
 import { appId, checkboxInput, numberInput, rowWithHelp, sectionHtml, selectFromItems } from "./camera-config-ui.js";
 import { currentSceneId, localize, usersForConfig } from "./camera-config-shared.js";
@@ -154,7 +154,7 @@ function representativeFeedDimensions(selectedUserIds) {
       if (size) sizes.push(size);
     });
   }
-  if (sizes.length === 0) return { width: 320, height: 240 };
+  if (sizes.length === 0) return { ...DEFAULT_CAMERA_BOUNDS };
   return sizes.sort((a, b) => b.width * b.height - a.width * a.height)[0];
 }
 

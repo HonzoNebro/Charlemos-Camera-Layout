@@ -1,6 +1,29 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { normalizeImportPayload, sanitizeLayoutForCameraControlMode, sanitizeLayouts } from "../../scripts/camera-config-shared.js";
+import { normalizeImportPayload, resetLayoutForUser, sanitizeLayoutForCameraControlMode, sanitizeLayouts } from "../../scripts/camera-config-shared.js";
+import { clearLoadedSceneProfileDraft } from "../../scripts/state.js";
+
+function installSettings(initial) {
+  const store = {
+    playerLayouts: initial.playerLayouts ?? {},
+    sceneProfiles: initial.sceneProfiles ?? {},
+    sceneCamera: initial.sceneCamera ?? {},
+    debugRenderer: false
+  };
+  globalThis.canvas = { scene: { id: "scene-a" } };
+  globalThis.game = {
+    settings: {
+      get: (_moduleId, key) => store[key],
+      set: async (_moduleId, key, value) => {
+        store[key] = value;
+        return value;
+      }
+    }
+  };
+  globalThis.ui = {};
+  clearLoadedSceneProfileDraft();
+  return store;
+}
 
 test("sanitizeLayoutForCameraControlMode strips geometry ownership fields in native mode", () => {
   const result = sanitizeLayoutForCameraControlMode(
@@ -119,4 +142,69 @@ test("normalizeImportPayload preserves relative layouts in module scenes and str
   assert.deepEqual(payload.sceneProfiles["scene-native"].layouts.u1, {
     filter: "blur(1px)"
   });
+});
+
+test("resetLayoutForUser preserves module camera control mode without persisting fallback geometry", async () => {
+  const store = installSettings({
+    playerLayouts: {
+      u1: {
+        width: "960px",
+        height: "540px",
+        overlay: { enabled: true, imageUrl: "modules/example/frame.png" }
+      }
+    },
+    sceneProfiles: {
+      "scene-a": {
+        enabled: true,
+        cameraControlMode: "module",
+        layouts: {
+          u1: {
+            width: "960px",
+            height: "540px",
+            filter: "blur(1px)"
+          }
+        }
+      }
+    }
+  });
+
+  const changed = await resetLayoutForUser("u1");
+
+  assert.equal(changed, true);
+  assert.deepEqual(store.playerLayouts, {});
+  assert.deepEqual(store.sceneProfiles["scene-a"], {
+    enabled: true,
+    cameraControlMode: "module",
+    layouts: {
+      u1: {}
+    }
+  });
+});
+
+test("resetLayoutForUser keeps native scenes free of module geometry", async () => {
+  const store = installSettings({
+    playerLayouts: {
+      u1: {
+        width: "960px",
+        height: "540px"
+      }
+    },
+    sceneProfiles: {
+      "scene-a": {
+        enabled: true,
+        cameraControlMode: "native",
+        layouts: {
+          u1: {
+            filter: "blur(1px)"
+          }
+        }
+      }
+    }
+  });
+
+  const changed = await resetLayoutForUser("u1");
+
+  assert.equal(changed, true);
+  assert.deepEqual(store.playerLayouts, {});
+  assert.equal(store.sceneProfiles["scene-a"], undefined);
 });

@@ -83,6 +83,11 @@ export function sanitizeLayouts(layouts, cameraControlMode = "module") {
   return next;
 }
 
+function buildResetLayout(cameraControlMode) {
+  if (cameraControlMode !== "module") return null;
+  return {};
+}
+
 export function readText(form, name) {
   return form.elements.namedItem(name)?.value ?? "";
 }
@@ -213,7 +218,12 @@ export async function resetLayoutForUser(selectedUserId) {
     const draftLayouts = loadedDraftLayouts(sceneId);
     const sceneControlMode = loadedDraftCameraControlMode(sceneId) ?? getSceneCameraControlMode();
     const sceneLayouts = sanitizeLayouts(draftLayouts ?? getSceneProfile()?.layouts ?? {}, sceneControlMode);
-    if (selectedUserId in sceneLayouts) {
+    const resetLayout = buildResetLayout(sceneControlMode);
+    if (resetLayout) {
+      sceneLayouts[selectedUserId] = resetLayout;
+      changed = true;
+      await applySceneProfile(sceneId, sceneLayouts, { cameraControlMode: sceneControlMode });
+    } else if (selectedUserId in sceneLayouts) {
       delete sceneLayouts[selectedUserId];
       changed = true;
       if (Object.keys(sceneLayouts).length === 0) await resetSceneProfile(sceneId);

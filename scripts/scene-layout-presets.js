@@ -1,12 +1,9 @@
+import { DEFAULT_CAMERA_BOUNDS } from "./constants.js";
+
 const NARRATIVE_LAYOUT_PRESETS = {
   roleplayWide: { rows: 2, cols: 2 },
   mapBottomStrip: { rows: 1, cols: 6 },
   sideDock: { rows: 4, cols: 1 }
-};
-
-const DEFAULT_FEED_BOUNDS = {
-  width: 320,
-  height: 240
 };
 
 function normalizeNumber(value, fallback) {
@@ -49,8 +46,8 @@ function aspectRatioParts(value) {
 }
 
 function normalizeFeedDimensions(options = {}) {
-  const width = normalizePositiveNumber(options.feedWidth, DEFAULT_FEED_BOUNDS.width);
-  const height = normalizePositiveNumber(options.feedHeight, DEFAULT_FEED_BOUNDS.height);
+  const width = normalizePositiveNumber(options.feedWidth, DEFAULT_CAMERA_BOUNDS.width);
+  const height = normalizePositiveNumber(options.feedHeight, DEFAULT_CAMERA_BOUNDS.height);
   const ratio = aspectRatioParts(options.aspectRatio);
   if (!ratio) {
     return {
