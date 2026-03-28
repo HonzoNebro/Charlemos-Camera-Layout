@@ -16,6 +16,7 @@ import {
   syncResizeHandleVisibility,
   syncGeometryInteractionMode,
   syncManagedViewGeometry,
+  syncTransparentFrameMode,
   syncFoundryAvatarVisibility,
   viewSupportsModuleGeometry,
   videoStyle
@@ -343,6 +344,24 @@ test("syncGeometryInteractionMode toggles module ownership classes", () => {
   syncGeometryInteractionMode(viewElement, false);
   assert.equal(classes.has("charlemos-geometry-module"), false);
   assert.equal(classes.has("charlemos-geometry-native"), true);
+});
+
+test("syncTransparentFrameMode toggles native frame suppression class", () => {
+  const classes = new Set();
+  const viewElement = {
+    classList: {
+      toggle: (name, active) => {
+        if (active) classes.add(name);
+        else classes.delete(name);
+      }
+    }
+  };
+
+  syncTransparentFrameMode(viewElement, true);
+  assert.equal(classes.has("charlemos-transparent-frame"), true);
+
+  syncTransparentFrameMode(viewElement, false);
+  assert.equal(classes.has("charlemos-transparent-frame"), false);
 });
 
 test("resolveRelativeLayout places a camera below its target", () => {

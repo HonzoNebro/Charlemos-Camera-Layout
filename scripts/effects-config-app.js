@@ -1,7 +1,7 @@
 import { MODULE_ID } from "./constants.js";
 import { buildFormData, buildLayoutPatch } from "./camera-config-model.js";
 import { replaceAppContent } from "./dom-replace.js";
-import { appId, bindEffectEditor, effectEditor, rowWithHelp, sectionHtml, textInput } from "./camera-config-ui.js";
+import { appId, bindEffectEditor, checkboxInput, effectEditor, rowWithHelp, sectionHtml, textInput } from "./camera-config-ui.js";
 import { currentSceneId, finalizeSubwindowSave, loadLayoutForUser, localize, saveLayoutPatchForUser, selectedUser, usersForConfig } from "./camera-config-shared.js";
 
 function titleKey() {
@@ -13,7 +13,8 @@ function readFormData(form) {
     transform: form.elements.namedItem("transform")?.value ?? "",
     filter: form.elements.namedItem("filter")?.value ?? "",
     clipPath: form.elements.namedItem("clipPath")?.value ?? "",
-    geometryBorderRadius: form.elements.namedItem("geometryBorderRadius")?.value ?? ""
+    geometryBorderRadius: form.elements.namedItem("geometryBorderRadius")?.value ?? "",
+    geometryTransparentFrame: Boolean(form.elements.namedItem("geometryTransparentFrame")?.checked)
   };
 }
 
@@ -22,7 +23,8 @@ function effectsSection(formData) {
     rowWithHelp("transform", effectEditor("transform", "transform", formData.transform), "transform"),
     rowWithHelp("filter", effectEditor("filter", "filter", formData.filter), "filter"),
     rowWithHelp("clipPath", effectEditor("clipPath", "clipPath", formData.clipPath), "clipPath"),
-    rowWithHelp("geometryBorderRadius", textInput("geometryBorderRadius", formData.geometryBorderRadius), "geometryBorderRadius")
+    rowWithHelp("geometryBorderRadius", textInput("geometryBorderRadius", formData.geometryBorderRadius), "geometryBorderRadius"),
+    rowWithHelp("geometryTransparentFrame", checkboxInput("geometryTransparentFrame", formData.geometryTransparentFrame), "geometryTransparentFrame")
   ]);
 }
 
@@ -114,7 +116,8 @@ export class EffectsConfigApp extends foundry.applications.api.ApplicationV2 {
         transform: Boolean(patch.transform),
         filter: Boolean(patch.filter),
         clipPath: Boolean(patch.clipPath),
-        borderRadius: Boolean(patch.geometry?.borderRadius)
+        borderRadius: Boolean(patch.geometry?.borderRadius),
+        transparentFrame: Boolean(patch.geometry?.transparentFrame)
       }
     });
   }

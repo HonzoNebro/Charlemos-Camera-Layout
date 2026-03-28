@@ -980,10 +980,16 @@ export function syncGeometryInteractionMode(viewElement, applyGeometry) {
   viewElement.classList.toggle("charlemos-geometry-native", !applyGeometry);
 }
 
+export function syncTransparentFrameMode(viewElement, enabled) {
+  if (!viewElement?.classList) return;
+  viewElement.classList.toggle("charlemos-transparent-frame", Boolean(enabled));
+}
+
 function applyViewStyle(viewElement, layout, applyGeometry) {
   viewElement.classList.add("charlemos-camera-view");
   viewElement.classList.remove("charlemos-direct-edit");
   syncGeometryInteractionMode(viewElement, applyGeometry);
+  syncTransparentFrameMode(viewElement, applyGeometry && layout?.geometry?.transparentFrame);
   syncNativeGeometryInteractionBlock(viewElement);
   syncResizeHandleVisibility(viewElement, applyGeometry);
   assignStyle(viewElement, {
@@ -1006,6 +1012,7 @@ function resetViewStyle(viewElement, videoElement) {
   viewElement.classList.remove("charlemos-direct-edit");
   viewElement.classList.remove("charlemos-geometry-module");
   viewElement.classList.remove("charlemos-geometry-native");
+  viewElement.classList.remove("charlemos-transparent-frame");
   assignStyle(viewElement, {
     borderRadius: "",
     background: "",

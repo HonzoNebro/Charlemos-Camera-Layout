@@ -258,6 +258,7 @@ export function buildFormData(layout) {
     nameFontWeight: normalizedNameFontWeight(layout?.nameStyle?.fontWeight),
     nameFontStyle: normalizedNameFontStyle(layout?.nameStyle?.fontStyle),
     geometryBorderRadius: nullableText(layout?.geometry?.borderRadius) ?? "",
+    geometryTransparentFrame: Boolean(layout?.geometry?.transparentFrame),
     geometrySkewX: layout?.geometry?.skewX ?? 0,
     geometrySkewY: layout?.geometry?.skewY ?? 0
   };
@@ -302,7 +303,8 @@ function buildNameStylePayload(formData) {
 
 function buildGeometryPayload(formData) {
   return {
-    borderRadius: normalizeLayoutLength(formData.geometryBorderRadius)
+    borderRadius: normalizeLayoutLength(formData.geometryBorderRadius),
+    transparentFrame: Boolean(formData.geometryTransparentFrame)
   };
 }
 
