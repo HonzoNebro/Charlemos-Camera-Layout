@@ -157,3 +157,83 @@ test("camera config exportCurrentLayout exports scene macro with scene control m
   assert.equal(createdMacro.command.includes('"top": "10px"'), true);
   assert.equal(createdMacro.command.includes('"left": "20px"'), true);
 });
+
+test("camera config refreshIfOpen does not reopen the hub when it is closed", async () => {
+  globalThis.game = {
+    i18n: {
+      localize: (key) => key
+    },
+    user: {
+      id: "u1"
+    }
+  };
+  globalThis.document = {
+    getElementById: () => null
+  };
+  globalThis.foundry = {
+    utils: {
+      escapeHTML: (value) => String(value ?? "")
+    },
+    applications: {
+      api: {
+        ApplicationV2: class {
+          constructor() {
+            this.id = "app-1";
+          }
+        }
+      }
+    }
+  };
+
+  const { CameraConfigApp } = await import("../../scripts/camera-config-app.js");
+
+  const app = new CameraConfigApp();
+  let renderCount = 0;
+  app.render = async () => {
+    renderCount += 1;
+  };
+
+  await app.refreshIfOpen();
+
+  assert.equal(renderCount, 0);
+});
+
+test("camera config refreshIfOpen rerenders the hub when it is still open", async () => {
+  globalThis.game = {
+    i18n: {
+      localize: (key) => key
+    },
+    user: {
+      id: "u1"
+    }
+  };
+  globalThis.document = {
+    getElementById: () => ({})
+  };
+  globalThis.foundry = {
+    utils: {
+      escapeHTML: (value) => String(value ?? "")
+    },
+    applications: {
+      api: {
+        ApplicationV2: class {
+          constructor() {
+            this.id = "app-2";
+          }
+        }
+      }
+    }
+  };
+
+  const { CameraConfigApp } = await import("../../scripts/camera-config-app.js");
+
+  const app = new CameraConfigApp();
+  let renderCount = 0;
+  app.render = async () => {
+    renderCount += 1;
+  };
+
+  await app.refreshIfOpen();
+
+  assert.equal(renderCount, 1);
+});

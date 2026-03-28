@@ -102,6 +102,11 @@ export function setFieldValue(form, name, value) {
   field.value = String(value ?? "");
 }
 
+export async function finalizeSubwindowSave(app, onSaved) {
+  if (typeof app?.close === "function") await app.close();
+  if (typeof onSaved === "function") await onSaved();
+}
+
 export function loadLayoutForUser(selectedUserId) {
   const sceneId = currentSceneId();
   const draftLayouts = loadedDraftLayouts(sceneId);

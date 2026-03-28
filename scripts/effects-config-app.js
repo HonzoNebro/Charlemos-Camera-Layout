@@ -2,7 +2,7 @@ import { MODULE_ID } from "./constants.js";
 import { buildFormData, buildLayoutPatch } from "./camera-config-model.js";
 import { replaceAppContent } from "./dom-replace.js";
 import { appId, bindEffectEditor, effectEditor, rowWithHelp, sectionHtml, textInput } from "./camera-config-ui.js";
-import { currentSceneId, loadLayoutForUser, localize, saveLayoutPatchForUser, selectedUser, usersForConfig } from "./camera-config-shared.js";
+import { currentSceneId, finalizeSubwindowSave, loadLayoutForUser, localize, saveLayoutPatchForUser, selectedUser, usersForConfig } from "./camera-config-shared.js";
 
 function titleKey() {
   return `${MODULE_ID}.ui.effects.title`;
@@ -104,7 +104,7 @@ export class EffectsConfigApp extends foundry.applications.api.ApplicationV2 {
     delete patch.overlay;
     delete patch.nameStyle;
     await saveLayoutPatchForUser(this.selectedUserId, patch);
-    if (this.onSaved) this.onSaved();
+    await finalizeSubwindowSave(this, this.onSaved);
     ui.notifications.info(localize("ui.config.notifications.saved"));
     console.debug(`${MODULE_ID} | effects config saved`, {
       playerId: this.selectedUserId,
