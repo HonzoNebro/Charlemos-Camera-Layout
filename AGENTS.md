@@ -33,3 +33,8 @@ This repository defines mandatory behavior for coding agents.
   - stable `id` for stable releases
   - `manifest` on `main`
   - `download` on the matching release tag archive
+- Use Semantic Versioning for all version bumps:
+  - `MAJOR` when configuration already stored in a world by a previous module version, or macros saved by a previous module version, stop working because of app changes.
+  - `MAJOR` also when the module requires a new major Foundry version.
+  - `MINOR` when adding backward-compatible functionality compared to `main`.
+  - `PATCH` when delivering a backward-compatible bug fix.
