@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.6] - 2026-03-28
+
+### Added
+- New in-app support report window in `Camera Layout Config` with buttons to refresh the report, copy it to the clipboard, and open the GitHub issue tracker.
+
+### Changed
+- Support documentation and the GitHub bug template now point users to the in-app support report flow instead of relying on a hidden macro as the primary path.
+- Release metadata updated for stable distribution:
+  - module version: `1.5.6`
+  - download URL points to tag archive `v1.5.6`
+
 ## [1.5.5] - 2026-03-28
 
 ### Added

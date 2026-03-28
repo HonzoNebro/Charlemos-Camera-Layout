@@ -41,6 +41,7 @@ npm test
 ## Diagnostics
 
 - Enable `Renderer debug mode` in Foundry when investigating runtime problems.
+- Open `Camera Layout Config` and use `Open Support Report` to generate a structured report for the selected player without using the browser console.
 - Run the macro in `docs/macros/dump_module_debug_report.js` to dump a structured support report to the browser console.
 - The module API also exposes:
   - `game.modules.get("charlemos-camera-layout")?.api?.dumpRendererDebugSnapshot(userId)`

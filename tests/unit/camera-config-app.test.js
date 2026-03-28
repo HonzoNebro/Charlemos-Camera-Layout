@@ -68,6 +68,7 @@ test("camera config hub html renders player selector and actions", async () => {
 
   assert.match(html, /player-id/);
   assert.match(html, /open-layout-config/);
+  assert.match(html, /support-report/);
   assert.match(html, /reset-current-player/);
 });
 

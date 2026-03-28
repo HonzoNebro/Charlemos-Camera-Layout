@@ -260,6 +260,21 @@
   width: 100%;
 }
 
+.charlemos-support-report-player {
+  min-height: 1.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.charlemos-support-report-output {
+  width: 100%;
+  min-height: 24rem;
+  resize: vertical;
+  font-family: monospace;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
 .charlemos-scene-user-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 5rem;

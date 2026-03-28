@@ -7,6 +7,7 @@ import { LayoutConfigApp } from "./layout-config-app.js";
 import { NameConfigApp } from "./name-config-app.js";
 import { OverlayConfigApp } from "./overlay-config-app.js";
 import { SceneLayoutPresetApp } from "./scene-layout-preset-app.js";
+import { SupportReportApp } from "./support-report-app.js";
 import {
   appId,
   helpText,
@@ -158,6 +159,7 @@ function actionsHtml() {
     `<button type="button" data-action="export">${localize("ui.config.actions.export")}</button>`,
     `<button type="button" data-action="export-json">${localize("ui.config.actions.exportJson")}</button>`,
     `<button type="button" data-action="import-json">${localize("ui.config.actions.importJson")}</button>`,
+    `<button type="button" data-action="support-report">${localize("ui.config.actions.supportReport")}</button>`,
     `<button type="button" data-action="reset-current-player">${localize("ui.config.actions.resetCurrentPlayer")}</button>`,
     `</div>`
   ].join("");
@@ -256,6 +258,7 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
       if (action === "export") await this.exportCurrentLayout();
       if (action === "export-json") await this.exportJsonConfig();
       if (action === "import-json") await this.importJsonConfig();
+      if (action === "support-report") this.openSupportReport();
       if (action === "reset-current-player") await this.resetCurrentPlayer();
     });
   }
@@ -282,6 +285,10 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
 
   openScenePresets() {
     new SceneLayoutPresetApp({ onSaved: () => this.render(true) }).render(true);
+  }
+
+  openSupportReport() {
+    new SupportReportApp({ selectedUserId: this.selectedUserId }).render(true);
   }
 
   async exportJsonConfig() {

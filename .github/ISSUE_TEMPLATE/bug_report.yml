@@ -10,7 +10,7 @@ body:
         Before submitting:
         - update to the latest release
         - retry with only Charlemos enabled if possible
-        - include console output and the debug report when available
+        - include console output and the support report when available
   - type: input
     id: module_version
     attributes:
@@ -88,8 +88,8 @@ body:
   - type: textarea
     id: debug_report
     attributes:
-      label: Debug report
-      description: Run the debug macro or `game.modules.get("charlemos-camera-layout")?.api?.dumpModuleDebugReport(game.user?.id)` and paste the result.
+      label: Support report
+      description: Open `Camera Layout Config`, click `Open Support Report`, then copy and paste the result here. The module macro/API remains available as a fallback.
       render: json
   - type: textarea
     id: extra
