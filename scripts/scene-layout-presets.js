@@ -4,6 +4,11 @@ const NARRATIVE_LAYOUT_PRESETS = {
   sideDock: { rows: 4, cols: 1 }
 };
 
+const DEFAULT_FEED_BOUNDS = {
+  width: 320,
+  height: 240
+};
+
 function normalizeNumber(value, fallback) {
   const parsed = Number.parseFloat(String(value ?? ""));
   if (Number.isNaN(parsed)) return fallback;
@@ -29,12 +34,36 @@ function normalizeLayoutType(value) {
   return String(value ?? "").trim() === "narrative" ? "narrative" : "grid";
 }
 
+function normalizeAspectRatio(value) {
+  const text = String(value ?? "").trim();
+  if (text === "feed" || text === "16:9" || text === "1:1") return text;
+  return "4:3";
+}
+
+function aspectRatioParts(value) {
+  const text = normalizeAspectRatio(value);
+  if (text === "feed") return null;
+  const [width, height] = text.split(":").map((part) => Number.parseFloat(part));
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return null;
+  return { width, height };
+}
+
 function normalizeFeedDimensions(options = {}) {
-  const width = normalizePositiveNumber(options.feedWidth, 300);
-  const height = normalizePositiveNumber(options.feedHeight, 300);
+  const width = normalizePositiveNumber(options.feedWidth, DEFAULT_FEED_BOUNDS.width);
+  const height = normalizePositiveNumber(options.feedHeight, DEFAULT_FEED_BOUNDS.height);
+  const ratio = aspectRatioParts(options.aspectRatio);
+  if (!ratio) {
+    return {
+      width: Math.max(1, width),
+      height: Math.max(1, height)
+    };
+  }
+  const boundedWidth = Math.max(1, width);
+  const boundedHeight = Math.max(1, height);
+  const scale = Math.min(boundedWidth / ratio.width, boundedHeight / ratio.height);
   return {
-    width: Math.max(1, width),
-    height: Math.max(1, height)
+    width: Math.max(1, ratio.width * scale),
+    height: Math.max(1, ratio.height * scale)
   };
 }
 
@@ -168,6 +197,7 @@ export function buildSceneLayoutPreset(layoutUserIds, options = {}) {
     layouts,
     unitMode,
     layoutType,
+    aspectRatio: normalizeAspectRatio(options.aspectRatio),
     rows: preset.rows,
     cols: preset.cols
   };

@@ -33,6 +33,15 @@ function unitModeSelect(value) {
   ]);
 }
 
+function aspectRatioSelect(value) {
+  return selectFromItems("aspectRatio", value, [
+    { id: "4:3", label: localize("ui.scenePresets.aspectRatio.4:3") },
+    { id: "16:9", label: localize("ui.scenePresets.aspectRatio.16:9") },
+    { id: "1:1", label: localize("ui.scenePresets.aspectRatio.1:1") },
+    { id: "feed", label: localize("ui.scenePresets.aspectRatio.feed") }
+  ]);
+}
+
 function userRow(userState) {
   const offlineSuffix = userState.active ? "" : ` ${foundry.utils.escapeHTML(localize("ui.config.common.offline"))}`;
   return [
@@ -59,6 +68,7 @@ function readFormData(form, fallbackUsers) {
     presetId: form.elements.namedItem("presetId")?.value ?? "roleplayWide",
     rows: form.elements.namedItem("rows")?.value ?? "2",
     cols: form.elements.namedItem("cols")?.value ?? "2",
+    aspectRatio: form.elements.namedItem("aspectRatio")?.value ?? "4:3",
     unitMode: form.elements.namedItem("unitMode")?.value ?? "responsive",
     gap: form.elements.namedItem("gap")?.value ?? "2",
     marginX: form.elements.namedItem("marginX")?.value ?? "2",
@@ -80,6 +90,7 @@ function layoutModeRows(formData) {
     `<div data-scene-narrative-fields${narrativeDisplay}>`,
     rowWithHelp("scenePresetNarrativeId", narrativePresetSelect(formData.presetId), "scenePresetNarrativeId"),
     `</div>`,
+    rowWithHelp("scenePresetAspectRatio", aspectRatioSelect(formData.aspectRatio), "scenePresetAspectRatio"),
     rowWithHelp("scenePresetUnitMode", unitModeSelect(formData.unitMode), "scenePresetUnitMode"),
     rowWithHelp("scenePresetGap", numberInput("gap", formData.gap, 0, 128, 1), "scenePresetGap"),
     rowWithHelp("scenePresetMarginX", numberInput("marginX", formData.marginX, 0, 256, 1), "scenePresetMarginX"),
@@ -143,7 +154,7 @@ function representativeFeedDimensions(selectedUserIds) {
       if (size) sizes.push(size);
     });
   }
-  if (sizes.length === 0) return { width: 300, height: 300 };
+  if (sizes.length === 0) return { width: 320, height: 240 };
   return sizes.sort((a, b) => b.width * b.height - a.width * a.height)[0];
 }
 
@@ -169,6 +180,7 @@ export class SceneLayoutPresetApp extends foundry.applications.api.ApplicationV2
       presetId: "roleplayWide",
       rows: 2,
       cols: 2,
+      aspectRatio: "4:3",
       unitMode: "responsive",
       gap: 2,
       marginX: 2,
@@ -244,6 +256,7 @@ export class SceneLayoutPresetApp extends foundry.applications.api.ApplicationV2
       presetId: this.formData.presetId,
       rows: this.formData.rows,
       cols: this.formData.cols,
+      aspectRatio: this.formData.aspectRatio,
       unitMode: this.formData.unitMode,
       gap: this.formData.gap,
       marginX: this.formData.marginX,

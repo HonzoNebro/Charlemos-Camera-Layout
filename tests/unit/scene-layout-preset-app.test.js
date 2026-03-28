@@ -59,4 +59,5 @@ test("scene preset app includes offline users but only preselects active ones", 
   assert.match(html, /Bruno \(offline\)/);
   assert.match(html, /name="include-u1" checked/);
   assert.doesNotMatch(html, /name="include-u2" checked/);
+  assert.match(html, /name="aspectRatio"/);
 });
