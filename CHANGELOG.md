@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.9] - 2026-03-28
+
+### Fixed
+- Saving from `Layout`, `Effects`, `Overlay`, `Name`, and `Scene Presets` subwindows no longer reopens `Camera Layout Config` when the hub was already closed.
+- Those subwindows now close cleanly after a successful save while still refreshing the main hub when it is already open.
+
+### Changed
+- Release metadata updated for stable distribution:
+  - module version: `1.5.9`
+  - download URL points to tag archive `v1.5.9`
+
 ## [1.5.8] - 2026-03-28
 
 ### Fixed
