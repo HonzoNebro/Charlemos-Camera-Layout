@@ -270,26 +270,27 @@ test("syncManagedViewGeometry only clears geometry previously managed by module"
 
   const moduleView = {
     style: {
-      position: "",
-      top: "",
-      left: "",
-      width: "",
-      height: ""
+      position: "fixed",
+      top: "100px",
+      left: "200px",
+      width: "849px",
+      height: "636px"
     },
     dataset: {}
   };
 
   syncManagedViewGeometry(moduleView, { position: "absolute", top: "8px", left: "12px", width: "300px", height: "160px" }, true);
   assert.equal(moduleView.dataset.charlemosGeometryManaged, "1");
+  assert.equal(moduleView.dataset.charlemosNativeWidth, "849px");
   assert.equal(moduleView.style.top, "8px");
 
   syncManagedViewGeometry(moduleView, {}, false);
   assert.equal(moduleView.dataset.charlemosGeometryManaged, undefined);
-  assert.equal(moduleView.style.position, "");
-  assert.equal(moduleView.style.top, "");
-  assert.equal(moduleView.style.left, "");
-  assert.equal(moduleView.style.width, "");
-  assert.equal(moduleView.style.height, "");
+  assert.equal(moduleView.style.position, "fixed");
+  assert.equal(moduleView.style.top, "100px");
+  assert.equal(moduleView.style.left, "200px");
+  assert.equal(moduleView.style.width, "849px");
+  assert.equal(moduleView.style.height, "636px");
 });
 
 test("syncGeometryInteractionMode toggles module ownership classes", () => {
@@ -362,8 +363,8 @@ test("applyGeometryDefaults falls back to foundry-sized camera bounds when no me
     height: ""
   };
   const viewElement = {
-    offsetWidth: 0,
-    offsetHeight: 0,
+    offsetWidth: 849,
+    offsetHeight: 636,
     style: {}
   };
   const videoElement = {

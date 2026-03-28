@@ -1,4 +1,4 @@
-import { DEFAULT_CAMERA_BOUNDS, MODULE_ID, SETTINGS_KEYS } from "./constants.js";
+import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
 import { getAllPlayerLayouts, getPlayerLayout, removePlayerLayout, replacePlayerLayout, setAllPlayerLayouts } from "./camera-style-service.js";
 import { applyCameraLayoutsNow } from "./live-camera-renderer.js";
 import { applySceneProfile, getSceneCameraControlMode, getSceneProfile, getSceneProfileLayout, resetSceneProfile, sceneProfileEnabled } from "./scene-camera.js";
@@ -85,12 +85,7 @@ export function sanitizeLayouts(layouts, cameraControlMode = "module") {
 
 function buildResetLayout(cameraControlMode) {
   if (cameraControlMode !== "module") return null;
-  return {
-    layoutMode: "absolute",
-    position: "absolute",
-    width: `${DEFAULT_CAMERA_BOUNDS.width}px`,
-    height: `${DEFAULT_CAMERA_BOUNDS.height}px`
-  };
+  return {};
 }
 
 export function readText(form, name) {

@@ -737,12 +737,17 @@ function applyOverlay(viewElement, layout) {
 function clearManagedViewGeometry(viewElement) {
   if (!viewElement?.dataset || viewElement.dataset.charlemosGeometryManaged !== "1") return;
   assignStyle(viewElement, {
-    position: "",
-    top: "",
-    left: "",
-    width: "",
-    height: ""
+    position: viewElement.dataset.charlemosNativePosition ?? "",
+    top: viewElement.dataset.charlemosNativeTop ?? "",
+    left: viewElement.dataset.charlemosNativeLeft ?? "",
+    width: viewElement.dataset.charlemosNativeWidth ?? "",
+    height: viewElement.dataset.charlemosNativeHeight ?? ""
   });
+  delete viewElement.dataset.charlemosNativePosition;
+  delete viewElement.dataset.charlemosNativeTop;
+  delete viewElement.dataset.charlemosNativeLeft;
+  delete viewElement.dataset.charlemosNativeWidth;
+  delete viewElement.dataset.charlemosNativeHeight;
   delete viewElement.dataset.charlemosGeometryManaged;
 }
 
@@ -751,6 +756,13 @@ export function syncManagedViewGeometry(viewElement, layout, applyGeometry) {
   if (!applyGeometry) {
     clearManagedViewGeometry(viewElement);
     return;
+  }
+  if (viewElement.dataset && viewElement.dataset.charlemosGeometryManaged !== "1") {
+    viewElement.dataset.charlemosNativePosition = viewElement.style.position ?? "";
+    viewElement.dataset.charlemosNativeTop = viewElement.style.top ?? "";
+    viewElement.dataset.charlemosNativeLeft = viewElement.style.left ?? "";
+    viewElement.dataset.charlemosNativeWidth = viewElement.style.width ?? "";
+    viewElement.dataset.charlemosNativeHeight = viewElement.style.height ?? "";
   }
   assignStyle(viewElement, buildCameraViewStyle(layout));
   if (viewElement.dataset) viewElement.dataset.charlemosGeometryManaged = "1";
@@ -815,11 +827,11 @@ export function applyGeometryDefaults(layout, viewElement, videoElement) {
   }
 
   if (!next.width) {
-    const width = videoMetric(videoElement, "videoWidth") ?? viewMetric(viewElement, "width", "offsetWidth") ?? DEFAULT_CAMERA_BOUNDS.width;
+    const width = videoMetric(videoElement, "videoWidth") ?? DEFAULT_CAMERA_BOUNDS.width;
     next.width = `${width}px`;
   }
   if (!next.height) {
-    const height = videoMetric(videoElement, "videoHeight") ?? viewMetric(viewElement, "height", "offsetHeight") ?? DEFAULT_CAMERA_BOUNDS.height;
+    const height = videoMetric(videoElement, "videoHeight") ?? DEFAULT_CAMERA_BOUNDS.height;
     next.height = `${height}px`;
   }
   return next;

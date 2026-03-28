@@ -144,7 +144,7 @@ test("normalizeImportPayload preserves relative layouts in module scenes and str
   });
 });
 
-test("resetLayoutForUser preserves module camera control mode and applies safe fallback geometry", async () => {
+test("resetLayoutForUser preserves module camera control mode without persisting fallback geometry", async () => {
   const store = installSettings({
     playerLayouts: {
       u1: {
@@ -176,12 +176,7 @@ test("resetLayoutForUser preserves module camera control mode and applies safe f
     enabled: true,
     cameraControlMode: "module",
     layouts: {
-      u1: {
-        layoutMode: "absolute",
-        position: "absolute",
-        width: "320px",
-        height: "240px"
-      }
+      u1: {}
     }
   });
 });
