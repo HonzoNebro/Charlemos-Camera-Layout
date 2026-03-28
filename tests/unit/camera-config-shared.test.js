@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { normalizeImportPayload, resetLayoutForUser, sanitizeLayoutForCameraControlMode, sanitizeLayouts } from "../../scripts/camera-config-shared.js";
+import { finalizeSubwindowSave, normalizeImportPayload, resetLayoutForUser, sanitizeLayoutForCameraControlMode, sanitizeLayouts } from "../../scripts/camera-config-shared.js";
 import { clearLoadedSceneProfileDraft } from "../../scripts/state.js";
 
 function installSettings(initial) {
@@ -207,4 +207,19 @@ test("resetLayoutForUser keeps native scenes free of module geometry", async () 
   assert.equal(changed, true);
   assert.deepEqual(store.playerLayouts, {});
   assert.equal(store.sceneProfiles["scene-a"], undefined);
+});
+
+test("finalizeSubwindowSave closes the subwindow and then refreshes the hub callback", async () => {
+  const events = [];
+  const app = {
+    close: async () => {
+      events.push("close");
+    }
+  };
+
+  await finalizeSubwindowSave(app, async () => {
+    events.push("saved");
+  });
+
+  assert.deepEqual(events, ["close", "saved"]);
 });

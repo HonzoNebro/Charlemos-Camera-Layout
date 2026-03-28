@@ -2,7 +2,7 @@ import { MODULE_ID } from "./constants.js";
 import { buildFormData, buildNameStylePatch } from "./camera-config-model.js";
 import { replaceAppContent } from "./dom-replace.js";
 import { appId, checkboxInput, colorInput, rowWithHelp, sectionHtml, selectFromItems, textInput } from "./camera-config-ui.js";
-import { loadLayoutForUser, localize, readChecked, readText, saveLayoutPatchForUser, selectedUser, usersForConfig } from "./camera-config-shared.js";
+import { finalizeSubwindowSave, loadLayoutForUser, localize, readChecked, readText, saveLayoutPatchForUser, selectedUser, usersForConfig } from "./camera-config-shared.js";
 
 function titleKey() {
   return `${MODULE_ID}.ui.name.title`;
@@ -273,7 +273,7 @@ export class NameConfigApp extends foundry.applications.api.ApplicationV2 {
     if (!this.selectedUserId) return;
     const patch = buildNameStylePatch(readFormData(form));
     await saveLayoutPatchForUser(this.selectedUserId, patch);
-    if (this.onSaved) this.onSaved();
+    await finalizeSubwindowSave(this, this.onSaved);
     ui.notifications.info(localize("ui.config.notifications.saved"));
     console.debug(`${MODULE_ID} | name config saved`, { playerId: this.selectedUserId, patch });
   }

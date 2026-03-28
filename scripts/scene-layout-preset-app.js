@@ -1,7 +1,7 @@
 import { DEFAULT_CAMERA_BOUNDS, MODULE_ID } from "./constants.js";
 import { replaceAppContent } from "./dom-replace.js";
 import { appId, checkboxInput, numberInput, rowWithHelp, sectionHtml, selectFromItems } from "./camera-config-ui.js";
-import { currentSceneId, localize, usersForConfig } from "./camera-config-shared.js";
+import { currentSceneId, finalizeSubwindowSave, localize, usersForConfig } from "./camera-config-shared.js";
 import { getAllPlayerLayouts } from "./camera-style-service.js";
 import { applyCameraLayoutsNow } from "./live-camera-renderer.js";
 import { buildSceneLayoutPreset, getNarrativeSceneLayoutPresetIds } from "./scene-layout-presets.js";
@@ -274,7 +274,7 @@ export class SceneLayoutPresetApp extends foundry.applications.api.ApplicationV2
 
     await applySceneProfile(sceneId, baseLayouts, { cameraControlMode: "module" });
     applyCameraLayoutsNow();
-    if (this.onSaved) this.onSaved();
+    await finalizeSubwindowSave(this, this.onSaved);
 
     if (built.ignoredUserIds.length > 0) {
       ui.notifications.warn(localize("ui.scenePresets.notifications.partial").replace("{count}", String(built.ignoredUserIds.length)));

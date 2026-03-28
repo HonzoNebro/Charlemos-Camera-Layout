@@ -4,6 +4,7 @@ import { replaceAppContent } from "./dom-replace.js";
 import { appId, helpText, rowHtml, rowWithHelp, sectionHtml, textInput } from "./camera-config-ui.js";
 import {
   currentSceneId,
+  finalizeSubwindowSave,
   loadLayoutForUser,
   loadedDraftCameraControlMode,
   loadedDraftLayouts,
@@ -339,7 +340,7 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
     delete patch.nameStyle;
     delete patch.geometry;
     await saveLayoutPatchForUser(this.selectedUserId, patch);
-    if (this.onSaved) this.onSaved();
+    await finalizeSubwindowSave(this, this.onSaved);
     ui.notifications.info(localize("ui.config.notifications.saved"));
     console.debug(`${MODULE_ID} | layout config saved`, { playerId: this.selectedUserId, patch });
   }

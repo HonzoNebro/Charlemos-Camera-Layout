@@ -263,28 +263,33 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
     });
   }
 
+  async refreshIfOpen() {
+    if (!document.getElementById(this.scopedId("hub-form"))) return;
+    await this.render(true);
+  }
+
   openLayoutConfig() {
     if (!this.selectedUserId) return;
-    new LayoutConfigApp({ selectedUserId: this.selectedUserId, onSaved: () => this.render(true) }).render(true);
+    new LayoutConfigApp({ selectedUserId: this.selectedUserId, onSaved: () => this.refreshIfOpen() }).render(true);
   }
 
   openEffectsConfig() {
     if (!this.selectedUserId) return;
-    new EffectsConfigApp({ selectedUserId: this.selectedUserId, onSaved: () => this.render(true) }).render(true);
+    new EffectsConfigApp({ selectedUserId: this.selectedUserId, onSaved: () => this.refreshIfOpen() }).render(true);
   }
 
   openOverlayConfig() {
     if (!this.selectedUserId) return;
-    new OverlayConfigApp({ selectedUserId: this.selectedUserId, onSaved: () => this.render(true) }).render(true);
+    new OverlayConfigApp({ selectedUserId: this.selectedUserId, onSaved: () => this.refreshIfOpen() }).render(true);
   }
 
   openNameConfig() {
     if (!this.selectedUserId) return;
-    new NameConfigApp({ selectedUserId: this.selectedUserId, onSaved: () => this.render(true) }).render(true);
+    new NameConfigApp({ selectedUserId: this.selectedUserId, onSaved: () => this.refreshIfOpen() }).render(true);
   }
 
   openScenePresets() {
-    new SceneLayoutPresetApp({ onSaved: () => this.render(true) }).render(true);
+    new SceneLayoutPresetApp({ onSaved: () => this.refreshIfOpen() }).render(true);
   }
 
   openSupportReport() {

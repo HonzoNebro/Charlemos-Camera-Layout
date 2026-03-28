@@ -18,6 +18,7 @@ import {
 } from "./camera-config-ui.js";
 import {
   currentSceneId,
+  finalizeSubwindowSave,
   loadLayoutForUser,
   localize,
   readText,
@@ -227,7 +228,7 @@ export class OverlayConfigApp extends foundry.applications.api.ApplicationV2 {
     delete patch.nameStyle;
     delete patch.geometry;
     await saveLayoutPatchForUser(this.selectedUserId, patch);
-    if (this.onSaved) this.onSaved();
+    await finalizeSubwindowSave(this, this.onSaved);
     ui.notifications.info(localize("ui.config.notifications.saved"));
     console.debug(`${MODULE_ID} | overlay config saved`, {
       playerId: this.selectedUserId,
