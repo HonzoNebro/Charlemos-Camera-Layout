@@ -105,7 +105,25 @@ test("nameStyle resolves text and position", () => {
         text: "GM",
         color: "#ffffff",
         fontFamily: "Lora",
+        fontSize: "1rem",
+        lineHeight: "1.4",
         position: "top",
+        offset: "12px",
+        padding: {
+          x: "1rem",
+          y: "0.4rem"
+        },
+        background: {
+          enabled: true,
+          color: "#112233",
+          opacity: 0.6
+        },
+        border: {
+          enabled: true,
+          color: "#445566",
+          width: "2px",
+          radius: "10px"
+        },
         textAlign: "left",
         fontWeight: "500",
         fontStyle: "italic"
@@ -117,9 +135,18 @@ test("nameStyle resolves text and position", () => {
     display: "block",
     color: "#ffffff",
     fontFamily: "Lora",
+    fontSize: "1rem",
+    lineHeight: "1.4",
     textAlign: "left",
     fontWeight: "500",
     fontStyle: "italic",
+    padding: "0.4rem 1rem",
+    background: "rgba(17, 34, 51, 0.6)",
+    border: "2px solid #445566",
+    borderTop: "",
+    borderBottom: "",
+    borderRadius: "10px",
+    offset: "12px",
     text: "GM",
     position: "top"
   });
@@ -144,6 +171,8 @@ test("nameStyle can use user color and alternate source", () => {
   );
   assert.equal(style.color, "#123456");
   assert.equal(style.text, "User");
+  assert.equal(style.background, "linear-gradient(to top, rgba(0, 0, 0, 0.86), rgba(0, 0, 0, 0.56), rgba(0, 0, 0, 0.2))");
+  assert.equal(style.borderTop, "1px solid rgba(255, 255, 255, 0.08)");
 });
 
 test("nameStyle falls back to safe typography defaults", () => {
@@ -163,4 +192,8 @@ test("nameStyle falls back to safe typography defaults", () => {
   assert.equal(style.fontWeight, "600");
   assert.equal(style.fontStyle, "normal");
   assert.equal(style.position, "bottom");
+  assert.equal(style.fontSize, "0.85rem");
+  assert.equal(style.lineHeight, "1.2");
+  assert.equal(style.padding, "0.3rem 0.5rem");
+  assert.equal(style.offset, "0px");
 });

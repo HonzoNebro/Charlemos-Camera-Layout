@@ -44,7 +44,25 @@ test("buildFormData maps stored layout to UI fields", () => {
       colorFromUser: true,
       color: "#00ff00",
       fontFamily: "Lora",
+      fontSize: "1rem",
+      lineHeight: "1.4",
       position: "top",
+      offset: "12px",
+      padding: {
+        x: "1rem",
+        y: "0.4rem"
+      },
+      background: {
+        enabled: true,
+        color: "#112233",
+        opacity: 0.65
+      },
+      border: {
+        enabled: true,
+        color: "#445566",
+        width: "2px",
+        radius: "14px"
+      },
       textAlign: "right",
       fontWeight: "700",
       fontStyle: "italic"
@@ -87,7 +105,19 @@ test("buildFormData maps stored layout to UI fields", () => {
     nameColorFromUser: true,
     nameColor: "#00ff00",
     nameFont: "Lora",
+    nameFontSize: "1rem",
+    nameLineHeight: "1.4",
     namePosition: "top",
+    nameOffset: "12px",
+    namePaddingX: "1rem",
+    namePaddingY: "0.4rem",
+    nameCustomBackground: true,
+    nameBackgroundColor: "#112233",
+    nameBackgroundOpacity: 0.65,
+    nameCustomBorder: true,
+    nameBorderColor: "#445566",
+    nameBorderWidth: "2px",
+    nameBorderRadius: "14px",
     nameTextAlign: "right",
     nameFontWeight: "700",
     nameFontStyle: "italic",
@@ -134,7 +164,19 @@ test("buildLayoutPatch normalizes empty form values", () => {
     nameColorFromUser: true,
     nameColor: "#ffffff",
     nameFont: "",
+    nameFontSize: "16",
+    nameLineHeight: "1.5",
     namePosition: "bottom",
+    nameOffset: "8",
+    namePaddingX: "12",
+    namePaddingY: "6",
+    nameCustomBackground: true,
+    nameBackgroundColor: "#112233",
+    nameBackgroundOpacity: "0.4",
+    nameCustomBorder: true,
+    nameBorderColor: "#334455",
+    nameBorderWidth: "2",
+    nameBorderRadius: "10",
     nameTextAlign: "left",
     nameFontWeight: "500",
     nameFontStyle: "italic",
@@ -191,7 +233,25 @@ test("buildLayoutPatch normalizes empty form values", () => {
       colorFromUser: true,
       color: "#ffffff",
       fontFamily: null,
+      fontSize: "16px",
+      lineHeight: "1.5",
       position: "bottom",
+      offset: "8px",
+      padding: {
+        x: "12px",
+        y: "6px"
+      },
+      background: {
+        enabled: true,
+        color: "#112233",
+        opacity: 0.4
+      },
+      border: {
+        enabled: true,
+        color: "#334455",
+        width: "2px",
+        radius: "10px"
+      },
       textAlign: "left",
       fontWeight: "500",
       fontStyle: "italic"
@@ -376,7 +436,19 @@ test("buildNameStylePatch only returns nameStyle payload", () => {
     nameColorFromUser: false,
     nameColor: "#ffffff",
     nameFont: "",
+    nameFontSize: "",
+    nameLineHeight: "",
     namePosition: "top",
+    nameOffset: "",
+    namePaddingX: "",
+    namePaddingY: "",
+    nameCustomBackground: false,
+    nameBackgroundColor: "#000000",
+    nameBackgroundOpacity: 0.86,
+    nameCustomBorder: false,
+    nameBorderColor: "#ffffff",
+    nameBorderWidth: "",
+    nameBorderRadius: "",
     nameTextAlign: "center",
     nameFontWeight: "600",
     nameFontStyle: "normal"
@@ -384,6 +456,8 @@ test("buildNameStylePatch only returns nameStyle payload", () => {
   assert.deepEqual(Object.keys(patch), ["nameStyle"]);
   assert.equal(patch.nameStyle.position, "top");
   assert.equal(patch.nameStyle.textAlign, "center");
+  assert.equal(patch.nameStyle.background.enabled, false);
+  assert.equal(patch.nameStyle.border.enabled, false);
 });
 
 test("validateLayoutFormData rejects self target and missing placement", () => {
