@@ -1,8 +1,8 @@
 {
-  "id": "charlemos-camera-layout",
-  "title": "Charlemos Camera Layout",
+  "id": "charlemos-camera-layout-stabilization-scene-scoped-contract",
+  "title": "Charlemos Camera Layout (Scene-Scoped Contract Test)",
   "description": "Configurable camera layout and styling for Foundry VTT A/V.",
-  "version": "1.7.0",
+  "version": "2.0.0-scene-scoped.1",
   "compatibility": {
     "minimum": "13",
     "verified": "13"
@@ -36,7 +36,7 @@
     "styles/module.css"
   ],
   "url": "https://github.com/HonzoNebro/Charlemos-Camera-Layout",
-  "manifest": "https://raw.githubusercontent.com/HonzoNebro/Charlemos-Camera-Layout/main/module.json",
-  "download": "https://github.com/HonzoNebro/Charlemos-Camera-Layout/archive/refs/tags/v1.7.0.zip",
+  "manifest": "https://raw.githubusercontent.com/HonzoNebro/Charlemos-Camera-Layout/stabilization-scene-scoped-contract/module.json",
+  "download": "https://github.com/HonzoNebro/Charlemos-Camera-Layout/archive/refs/heads/stabilization-scene-scoped-contract.zip",
   "license": "LICENSE"
 }

@@ -1,4 +1,4 @@
-const MODULE_ID = "charlemos-camera-layout";
+const MODULE_ID = "charlemos-camera-layout-stabilization-scene-scoped-contract";
 
 const sceneId = canvas?.scene?.id;
 const profiles = game.settings.get(MODULE_ID, "sceneProfiles") || {};

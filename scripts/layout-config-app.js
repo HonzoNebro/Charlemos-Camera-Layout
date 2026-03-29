@@ -14,7 +14,6 @@ import {
   selectedUser,
   usersForConfig
 } from "./camera-config-shared.js";
-import { getAllPlayerLayouts } from "./camera-style-service.js";
 import { applyCameraLayoutsNow } from "./live-camera-renderer.js";
 import { getSceneCameraControlMode, getSceneProfile, setSceneCameraControlMode } from "./scene-camera.js";
 
@@ -185,7 +184,18 @@ function layoutSection(formData) {
   ]);
 }
 
+function noSceneHtml(context) {
+  return [
+    `<div class="charlemos-config-shell">`,
+    `<h2>${context.title}</h2>`,
+    `<p class="charlemos-section-desc">${foundry.utils.escapeHTML(context.playerName)}</p>`,
+    sectionHtml(localize("ui.config.noScene.title"), localize("ui.config.noScene.description"), []),
+    `</div>`
+  ].join("");
+}
+
 function buildHtml(context) {
+  if (!context.sceneId) return noSceneHtml(context);
   return [
     `<div class="charlemos-config-shell">`,
     `<h2>${context.title}</h2>`,
@@ -292,7 +302,7 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
       return sanitizeLayouts(draftLayouts, draftCameraControl);
     }
     const sceneLayouts = getSceneProfile()?.layouts;
-    return sceneLayouts ?? getAllPlayerLayouts();
+    return sceneLayouts ?? {};
   }
 
   getValidationState(formData, users, cameraControlMode = getSceneCameraControlMode()) {
@@ -318,6 +328,10 @@ export class LayoutConfigApp extends foundry.applications.api.ApplicationV2 {
 
   async saveForm(form) {
     if (!this.selectedUserId) return;
+    if (!currentSceneId()) {
+      ui.notifications.warn(localize("ui.config.notifications.sceneRequired"));
+      return;
+    }
     const validation = this.syncValidationState(form);
     if (validation.errors.length > 0) {
       ui.notifications.error(localize(`ui.config.validation.${validation.errors[0]}`));

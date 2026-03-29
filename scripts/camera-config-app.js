@@ -18,6 +18,8 @@ import {
 import {
   configExportPayload,
   currentSceneId,
+  hasLegacyGlobalLayouts,
+  importLegacyLayoutsIntoCurrentScene,
   importJsonConfigFile,
   loadLayoutForUser,
   localize,
@@ -28,7 +30,6 @@ import {
   selectedUser,
   usersForConfig
 } from "./camera-config-shared.js";
-import { getAllPlayerLayouts } from "./camera-style-service.js";
 import { getSceneCameraControlMode, getSceneProfile } from "./scene-camera.js";
 
 function titleKey() {
@@ -103,7 +104,8 @@ function nameSummary(formData) {
   ].join(" · ");
 }
 
-function buttonCard(action, title, description, summary) {
+function buttonCard(action, title, description, summary, disabled = false) {
+  const disabledAttr = disabled ? " disabled" : "";
   return [
     `<section class="charlemos-config-card">`,
     `<div class="charlemos-config-card-copy">`,
@@ -111,70 +113,84 @@ function buttonCard(action, title, description, summary) {
     `<p class="charlemos-section-desc">${foundry.utils.escapeHTML(description)}</p>`,
     `<p class="charlemos-config-card-summary">${foundry.utils.escapeHTML(summary)}</p>`,
     `</div>`,
-    `<button type="button" data-action="${action}">${foundry.utils.escapeHTML(title)}</button>`,
+    `<button type="button" data-action="${action}"${disabledAttr}>${foundry.utils.escapeHTML(title)}</button>`,
     `</section>`
   ].join("");
 }
 
-function toolsSection(formData) {
+function noSceneSection(hasLegacyLayouts) {
+  const hint = hasLegacyLayouts ? `<p class="charlemos-section-desc">${foundry.utils.escapeHTML(localize("ui.config.noScene.legacyHint"))}</p>` : "";
+  return sectionHtml(localize("ui.config.noScene.title"), localize("ui.config.noScene.description"), [hint]);
+}
+
+function toolsSection(formData, sceneReady) {
   return sectionHtml(localize("ui.config.sections.tools"), localize("ui.config.sections.toolsDesc"), [
     `<div class="charlemos-config-grid">`,
     buttonCard(
       "open-layout-config",
       localize("ui.config.actions.openLayoutConfig"),
       localize("ui.config.sections.layoutDesc"),
-      layoutSummary(formData)
+      layoutSummary(formData),
+      !sceneReady
     ),
     buttonCard(
       "open-effects-config",
       localize("ui.config.actions.openEffectsConfig"),
       localize("ui.config.sections.effectsDesc"),
-      effectsSummary(formData)
+      effectsSummary(formData),
+      !sceneReady
     ),
     buttonCard(
       "open-overlay-config",
       localize("ui.config.actions.openOverlayConfig"),
       localize("ui.config.sections.overlayDesc"),
-      overlaySummary(formData)
+      overlaySummary(formData),
+      !sceneReady
     ),
     buttonCard(
       "open-scene-presets",
       localize("ui.scenePresets.actions.open"),
       localize("ui.scenePresets.cardDesc"),
-      localize("ui.scenePresets.cardSummary")
+      localize("ui.scenePresets.cardSummary"),
+      !sceneReady
     ),
     buttonCard(
       "open-name-config",
       localize("ui.config.actions.openNameConfig"),
       localize("ui.config.sections.nameDesc"),
-      nameSummary(formData)
+      nameSummary(formData),
+      !sceneReady
     ),
     `</div>`
   ]);
 }
 
-function actionsHtml() {
+function actionsHtml(sceneReady, legacyLayoutsAvailable) {
+  const sceneRequiredAttr = sceneReady ? "" : " disabled";
   return [
     `<div class="charlemos-actions">`,
-    `<button type="button" data-action="export">${localize("ui.config.actions.export")}</button>`,
+    `<button type="button" data-action="export"${sceneRequiredAttr}>${localize("ui.config.actions.export")}</button>`,
     `<button type="button" data-action="export-json">${localize("ui.config.actions.exportJson")}</button>`,
     `<button type="button" data-action="import-json">${localize("ui.config.actions.importJson")}</button>`,
     `<button type="button" data-action="support-report">${localize("ui.config.actions.supportReport")}</button>`,
-    `<button type="button" data-action="reset-current-player">${localize("ui.config.actions.resetCurrentPlayer")}</button>`,
+    legacyLayoutsAvailable ? `<button type="button" data-action="import-legacy-layouts"${sceneRequiredAttr}>${localize("ui.config.actions.importLegacyLayouts")}</button>` : "",
+    `<button type="button" data-action="reset-current-player"${sceneRequiredAttr}>${localize("ui.config.actions.resetCurrentPlayer")}</button>`,
     `</div>`
   ].join("");
 }
 
 export function buildHtml(context) {
+  const sceneReady = Boolean(context.sceneId);
   return [
     `<div class="charlemos-config-shell" id="${context.shellId}">`,
     `<h2>${context.title}</h2>`,
     rowHtml(`${localize("ui.config.fields.player")}${helpText("player")}`, playerSelectHtml(context.users, context.selectedUserId, context.playerSelectId)),
     `<form id="${context.formId}" class="charlemos-config-form">`,
     `<div class="charlemos-config-scroll">`,
-    toolsSection(context.formData),
+    sceneReady ? "" : noSceneSection(context.hasLegacyGlobalLayouts),
+    toolsSection(context.formData, sceneReady),
     `</div>`,
-    actionsHtml(),
+    actionsHtml(sceneReady, context.hasLegacyGlobalLayouts),
     `</form>`,
     `</div>`
   ].join("");
@@ -215,6 +231,7 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
       playerSelectId: this.scopedId("player-select"),
       users,
       sceneId: currentSceneId(),
+      hasLegacyGlobalLayouts: hasLegacyGlobalLayouts(),
       selectedUserId: this.selectedUserId,
       formData: buildFormData(layout)
     };
@@ -259,6 +276,7 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
       if (action === "export-json") await this.exportJsonConfig();
       if (action === "import-json") await this.importJsonConfig();
       if (action === "support-report") this.openSupportReport();
+      if (action === "import-legacy-layouts") await this.importLegacyLayouts();
       if (action === "reset-current-player") await this.resetCurrentPlayer();
     });
   }
@@ -268,27 +286,51 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
     await this.render(true);
   }
 
+  notifySceneRequired() {
+    ui.notifications.warn(localize("ui.config.notifications.sceneRequired"));
+  }
+
   openLayoutConfig() {
     if (!this.selectedUserId) return;
+    if (!currentSceneId()) {
+      this.notifySceneRequired();
+      return;
+    }
     new LayoutConfigApp({ selectedUserId: this.selectedUserId, onSaved: () => this.refreshIfOpen() }).render(true);
   }
 
   openEffectsConfig() {
     if (!this.selectedUserId) return;
+    if (!currentSceneId()) {
+      this.notifySceneRequired();
+      return;
+    }
     new EffectsConfigApp({ selectedUserId: this.selectedUserId, onSaved: () => this.refreshIfOpen() }).render(true);
   }
 
   openOverlayConfig() {
     if (!this.selectedUserId) return;
+    if (!currentSceneId()) {
+      this.notifySceneRequired();
+      return;
+    }
     new OverlayConfigApp({ selectedUserId: this.selectedUserId, onSaved: () => this.refreshIfOpen() }).render(true);
   }
 
   openNameConfig() {
     if (!this.selectedUserId) return;
+    if (!currentSceneId()) {
+      this.notifySceneRequired();
+      return;
+    }
     new NameConfigApp({ selectedUserId: this.selectedUserId, onSaved: () => this.refreshIfOpen() }).render(true);
   }
 
   openScenePresets() {
+    if (!currentSceneId()) {
+      this.notifySceneRequired();
+      return;
+    }
     new SceneLayoutPresetApp({ onSaved: () => this.refreshIfOpen() }).render(true);
   }
 
@@ -322,6 +364,10 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
 
   async resetCurrentPlayer() {
     if (!this.selectedUserId) return;
+    if (!currentSceneId()) {
+      this.notifySceneRequired();
+      return;
+    }
     const confirmed = window.confirm(localize("ui.config.prompts.resetCurrentPlayer"));
     if (!confirmed) return;
     const ok = await resetLayoutForUser(this.selectedUserId);
@@ -332,7 +378,10 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
 
   async exportCurrentLayout() {
     const sceneId = currentSceneId();
-    if (!this.selectedUserId || !sceneId) return;
+    if (!this.selectedUserId || !sceneId) {
+      this.notifySceneRequired();
+      return;
+    }
     const defaultName = game.i18n.localize(`${MODULE_ID}.macro.sceneDefaultName`);
     const entered = window.prompt(localize("ui.config.prompts.macroName"), defaultName);
     if (entered === null) return;
@@ -341,7 +390,7 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
     const draftCameraControlMode = loadedDraftCameraControlMode(sceneId);
     const currentSceneLayouts = getSceneProfile()?.layouts;
     const cameraControlMode = draftCameraControlMode ?? getSceneCameraControlMode();
-    const layouts = sanitizeLayouts(draftLayouts ?? currentSceneLayouts ?? getAllPlayerLayouts(), cameraControlMode);
+    const layouts = sanitizeLayouts(draftLayouts ?? currentSceneLayouts ?? {}, cameraControlMode);
     const macro = await exportSceneProfileToMacro(
       {
         cameraControlMode,
@@ -356,5 +405,19 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
       cameraControlMode,
       layoutCount: Object.keys(layouts).length
     });
+  }
+
+  async importLegacyLayouts() {
+    if (!currentSceneId()) {
+      this.notifySceneRequired();
+      return;
+    }
+    const importedCount = await importLegacyLayoutsIntoCurrentScene();
+    if (importedCount === 0) {
+      ui.notifications.warn(localize("ui.config.notifications.noLegacyLayouts"));
+      return;
+    }
+    await this.render(true);
+    ui.notifications.info(localize("ui.config.notifications.importedLegacyLayouts").replace("{count}", String(importedCount)));
   }
 }
