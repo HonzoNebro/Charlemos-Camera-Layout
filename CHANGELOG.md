@@ -5,6 +5,21 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-03-29
+
+### Added
+- New `Transparent Native Frame` option in `Effects Config` for cameras controlled in `module` mode.
+
+### Fixed
+- Saving `Effects Config` no longer wipes existing camera geometry when the transparent-frame option is toggled.
+- Transparent-frame mode now clears residual native camera chrome layers instead of leaving the Foundry shell visible behind custom overlays.
+- Transparent-frame mode now mirrors `clip-path` onto the visual camera layers so non-rectangular camera shapes do not keep a rectangular background box.
+
+### Changed
+- Release metadata updated for stable distribution:
+  - module version: `1.6.0`
+  - download URL points to tag archive `v1.6.0`
+
 ## [1.5.10] - 2026-03-29
 
 ### Fixed
