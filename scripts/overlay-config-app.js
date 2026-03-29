@@ -50,6 +50,24 @@ function readFormData(form) {
   };
 }
 
+export function buildOverlayPatch(formData) {
+  const patch = buildLayoutPatch(formData);
+  delete patch.layoutMode;
+  delete patch.position;
+  delete patch.top;
+  delete patch.left;
+  delete patch.width;
+  delete patch.height;
+  delete patch.relative;
+  delete patch.crop;
+  delete patch.transform;
+  delete patch.filter;
+  delete patch.clipPath;
+  delete patch.nameStyle;
+  delete patch.geometry;
+  return patch;
+}
+
 function overlaySection(formData) {
   return sectionHtml(localize("ui.config.sections.overlay"), localize("ui.config.sections.overlayDesc"), [
     rowWithHelp("overlayEnabled", checkboxInput("overlayEnabled", formData.overlayEnabled), "overlayEnabled"),
@@ -220,13 +238,7 @@ export class OverlayConfigApp extends foundry.applications.api.ApplicationV2 {
       ui.notifications.error(localize("ui.config.notifications.overlayImageInvalid"));
       return;
     }
-    const patch = buildLayoutPatch(formData);
-    delete patch.crop;
-    delete patch.transform;
-    delete patch.filter;
-    delete patch.clipPath;
-    delete patch.nameStyle;
-    delete patch.geometry;
+    const patch = buildOverlayPatch(formData);
     await saveLayoutPatchForUser(this.selectedUserId, patch);
     await finalizeSubwindowSave(this, this.onSaved);
     ui.notifications.info(localize("ui.config.notifications.saved"));
