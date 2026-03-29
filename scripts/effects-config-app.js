@@ -18,6 +18,21 @@ function readFormData(form) {
   };
 }
 
+export function buildEffectsPatch(formData) {
+  const patch = buildLayoutPatch(formData);
+  delete patch.layoutMode;
+  delete patch.position;
+  delete patch.top;
+  delete patch.left;
+  delete patch.width;
+  delete patch.height;
+  delete patch.relative;
+  delete patch.crop;
+  delete patch.overlay;
+  delete patch.nameStyle;
+  return patch;
+}
+
 function effectsSection(formData) {
   return sectionHtml(localize("ui.config.sections.effects"), localize("ui.config.sections.effectsDesc"), [
     rowWithHelp("transform", effectEditor("transform", "transform", formData.transform), "transform"),
@@ -101,10 +116,7 @@ export class EffectsConfigApp extends foundry.applications.api.ApplicationV2 {
 
   async saveForm(form) {
     if (!this.selectedUserId) return;
-    const patch = buildLayoutPatch(readFormData(form));
-    delete patch.crop;
-    delete patch.overlay;
-    delete patch.nameStyle;
+    const patch = buildEffectsPatch(readFormData(form));
     await saveLayoutPatchForUser(this.selectedUserId, patch);
     await finalizeSubwindowSave(this, this.onSaved);
     ui.notifications.info(localize("ui.config.notifications.saved"));
