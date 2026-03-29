@@ -2,7 +2,6 @@ import { DEFAULT_CAMERA_BOUNDS, MODULE_ID } from "./constants.js";
 import { replaceAppContent } from "./dom-replace.js";
 import { appId, checkboxInput, numberInput, rowWithHelp, sectionHtml, selectFromItems } from "./camera-config-ui.js";
 import { currentSceneId, finalizeSubwindowSave, localize, usersForConfig } from "./camera-config-shared.js";
-import { getAllPlayerLayouts } from "./camera-style-service.js";
 import { applyCameraLayoutsNow } from "./live-camera-renderer.js";
 import { buildSceneLayoutPreset, getNarrativeSceneLayoutPresetIds } from "./scene-layout-presets.js";
 import { applySceneProfile, getSceneProfile } from "./scene-camera.js";
@@ -99,6 +98,14 @@ function layoutModeRows(formData) {
 }
 
 function buildHtml(context) {
+  if (!context.sceneId) {
+    return [
+      `<div class="charlemos-config-shell">`,
+      `<h2>${context.title}</h2>`,
+      sectionHtml(localize("ui.config.noScene.title"), localize("ui.config.noScene.description"), []),
+      `</div>`
+    ].join("");
+  }
   return [
     `<div class="charlemos-config-shell">`,
     `<h2>${context.title}</h2>`,
@@ -208,6 +215,7 @@ export class SceneLayoutPresetApp extends foundry.applications.api.ApplicationV2
     return {
       title: game.i18n.localize(titleKey()),
       description: localize("ui.scenePresets.description"),
+      sceneId: currentSceneId(),
       formId: this.scopedId("scene-preset-form"),
       formData: this.formData
     };
@@ -266,7 +274,7 @@ export class SceneLayoutPresetApp extends foundry.applications.api.ApplicationV2
       viewportHeight: window.innerHeight
     });
 
-    const baseLayouts = foundry.utils.deepClone(getSceneProfile()?.layouts ?? getAllPlayerLayouts() ?? {});
+    const baseLayouts = foundry.utils.deepClone(getSceneProfile()?.layouts ?? {});
     for (const [userId, patch] of Object.entries(built.layouts)) {
       const current = baseLayouts[userId] ?? {};
       baseLayouts[userId] = foundry.utils.mergeObject(current, patch, { inplace: false });

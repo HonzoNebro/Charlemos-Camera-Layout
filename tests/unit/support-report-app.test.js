@@ -124,7 +124,7 @@ test("support report copies current report to clipboard", async () => {
   await app.copyReport();
 
   assert.equal(copiedText, "{\"ok\":true}");
-  assert.equal(infoMessage, "charlemos-camera-layout.ui.supportReport.notifications.copied");
+  assert.equal(infoMessage.endsWith(".ui.supportReport.notifications.copied"), true);
 });
 
 test("support report opens issue tracker", async () => {

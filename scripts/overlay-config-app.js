@@ -86,7 +86,18 @@ function overlaySection(formData) {
   ]);
 }
 
+function noSceneHtml(context) {
+  return [
+    `<div class="charlemos-config-shell">`,
+    `<h2>${context.title}</h2>`,
+    `<p class="charlemos-section-desc">${foundry.utils.escapeHTML(context.playerName)}</p>`,
+    sectionHtml(localize("ui.config.noScene.title"), localize("ui.config.noScene.description"), []),
+    `</div>`
+  ].join("");
+}
+
 function buildHtml(context) {
+  if (!context.sceneId) return noSceneHtml(context);
   return [
     `<div class="charlemos-config-shell">`,
     `<h2>${context.title}</h2>`,
@@ -226,6 +237,10 @@ export class OverlayConfigApp extends foundry.applications.api.ApplicationV2 {
 
   async saveForm(form) {
     if (!this.selectedUserId) return;
+    if (!currentSceneId()) {
+      ui.notifications.warn(localize("ui.config.notifications.sceneRequired"));
+      return;
+    }
     const formData = readFormData(form);
     const overlayValid = await this.validateOverlayImage(formData);
     if (!overlayValid) {

@@ -276,9 +276,7 @@ export function buildFormData(layout) {
     nameFontWeight: normalizedNameFontWeight(layout?.nameStyle?.fontWeight),
     nameFontStyle: normalizedNameFontStyle(layout?.nameStyle?.fontStyle),
     geometryBorderRadius: nullableText(layout?.geometry?.borderRadius) ?? "",
-    geometryTransparentFrame: Boolean(layout?.geometry?.transparentFrame),
-    geometrySkewX: layout?.geometry?.skewX ?? 0,
-    geometrySkewY: layout?.geometry?.skewY ?? 0
+    geometryTransparentFrame: Boolean(layout?.geometry?.transparentFrame)
   };
 }
 

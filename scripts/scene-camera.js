@@ -106,6 +106,15 @@ export async function resetSceneProfile(sceneId) {
   return true;
 }
 
+export async function resetSceneCamera(sceneId) {
+  const sceneCameras = readSceneCameraSetting();
+  if (!(sceneId in sceneCameras)) return false;
+  delete sceneCameras[sceneId];
+  await writeSceneCameraSetting(sceneCameras);
+  console.debug(`${MODULE_ID} | scene camera reset`, { sceneId });
+  return true;
+}
+
 export async function updateSceneProfileLayout(sceneId, playerId, patch) {
   const sceneData = readSceneProfilesSetting();
   const current = sceneData[sceneId] ?? { enabled: false, layouts: {} };
@@ -141,4 +150,42 @@ export async function migrateLegacySceneProfiles() {
   await writeSceneCameraSetting(sceneCameras);
   console.debug(`${MODULE_ID} | legacy scene profiles migrated`);
   return true;
+}
+
+export async function pruneMissingSceneState(validSceneIds = []) {
+  const validIds = new Set((validSceneIds ?? []).filter(Boolean));
+  const sceneProfiles = readSceneProfilesSetting();
+  const sceneCameras = readSceneCameraSetting();
+  const removedSceneProfiles = [];
+  const removedSceneCameras = [];
+
+  Object.keys(sceneProfiles).forEach((sceneId) => {
+    if (validIds.has(sceneId)) return;
+    delete sceneProfiles[sceneId];
+    removedSceneProfiles.push(sceneId);
+  });
+
+  Object.keys(sceneCameras).forEach((sceneId) => {
+    if (validIds.has(sceneId)) return;
+    delete sceneCameras[sceneId];
+    removedSceneCameras.push(sceneId);
+  });
+
+  if (removedSceneProfiles.length === 0 && removedSceneCameras.length === 0) {
+    return {
+      removedSceneProfiles,
+      removedSceneCameras
+    };
+  }
+
+  await writeSceneProfilesSetting(sceneProfiles);
+  await writeSceneCameraSetting(sceneCameras);
+  console.debug(`${MODULE_ID} | missing scene state pruned`, {
+    removedSceneProfiles,
+    removedSceneCameras
+  });
+  return {
+    removedSceneProfiles,
+    removedSceneCameras
+  };
 }

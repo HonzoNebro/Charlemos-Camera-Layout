@@ -6,6 +6,8 @@ import {
   getSceneCamera,
   getSceneProfile,
   migrateLegacySceneProfiles,
+  pruneMissingSceneState,
+  resetSceneCamera,
   resetSceneProfile,
   sceneProfileEnabled,
   setSceneCameraControlMode,
@@ -79,6 +81,20 @@ test("resetSceneProfile removes scene profile entry", async () => {
   assert.equal(getSceneCameraControlMode({ id: "scene-a" }), "native");
 });
 
+test("resetSceneCamera removes scene camera entry", async () => {
+  installSettings({
+    sceneCamera: {
+      "scene-a": { playerId: "u1" }
+    },
+    sceneProfiles: {}
+  });
+
+  const reset = await resetSceneCamera("scene-a");
+
+  assert.equal(reset, true);
+  assert.equal(getSceneCamera({ id: "scene-a" }), null);
+});
+
 test("setSceneCameraControlMode stores normalized mode on the scene profile", async () => {
   const store = installSettings({
     sceneCamera: {},
@@ -106,5 +122,31 @@ test("applySceneProfile preserves existing camera control mode", async () => {
     enabled: true,
     cameraControlMode: "module",
     layouts: { u2: { filter: "blur(1px)" } }
+  });
+});
+
+test("pruneMissingSceneState removes orphaned scene profiles and scene camera entries", async () => {
+  const store = installSettings({
+    sceneCamera: {
+      "scene-a": { playerId: "u1" },
+      "scene-missing": { playerId: "u2" }
+    },
+    sceneProfiles: {
+      "scene-a": { enabled: true, layouts: {} },
+      "scene-missing": { enabled: true, layouts: { u2: { filter: "blur(1px)" } } }
+    }
+  });
+
+  const result = await pruneMissingSceneState(["scene-a"]);
+
+  assert.deepEqual(result, {
+    removedSceneProfiles: ["scene-missing"],
+    removedSceneCameras: ["scene-missing"]
+  });
+  assert.deepEqual(store.sceneProfiles, {
+    "scene-a": { enabled: true, layouts: {} }
+  });
+  assert.deepEqual(store.sceneCamera, {
+    "scene-a": { playerId: "u1" }
   });
 });

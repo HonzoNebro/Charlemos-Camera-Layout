@@ -2,7 +2,7 @@ import { MODULE_ID } from "./constants.js";
 import { buildFormData, buildNameStylePatch } from "./camera-config-model.js";
 import { replaceAppContent } from "./dom-replace.js";
 import { appId, checkboxInput, colorInput, numberInput, rowWithHelp, sectionHtml, selectFromItems, textInput } from "./camera-config-ui.js";
-import { finalizeSubwindowSave, loadLayoutForUser, localize, readChecked, readText, saveLayoutPatchForUser, selectedUser, usersForConfig } from "./camera-config-shared.js";
+import { currentSceneId, finalizeSubwindowSave, loadLayoutForUser, localize, readChecked, readText, saveLayoutPatchForUser, selectedUser, usersForConfig } from "./camera-config-shared.js";
 
 function titleKey() {
   return `${MODULE_ID}.ui.name.title`;
@@ -203,7 +203,18 @@ function namePlateSection(formData) {
   ]);
 }
 
+function noSceneHtml(context) {
+  return [
+    `<div class="charlemos-config-shell">`,
+    `<h2>${context.title}</h2>`,
+    `<p class="charlemos-section-desc">${foundry.utils.escapeHTML(context.playerName)}</p>`,
+    sectionHtml(localize("ui.config.noScene.title"), localize("ui.config.noScene.description"), []),
+    `</div>`
+  ].join("");
+}
+
 function buildHtml(context) {
+  if (!context.sceneId) return noSceneHtml(context);
   return [
     `<div class="charlemos-config-shell">`,
     `<h2>${context.title}</h2>`,
@@ -251,6 +262,7 @@ export class NameConfigApp extends foundry.applications.api.ApplicationV2 {
     return {
       title: game.i18n.localize(titleKey()),
       playerName: selected?.name ?? "",
+      sceneId: currentSceneId(),
       formId: this.scopedId("name-form"),
       formData: buildFormData(layout)
     };
@@ -331,6 +343,10 @@ export class NameConfigApp extends foundry.applications.api.ApplicationV2 {
 
   async saveForm(form) {
     if (!this.selectedUserId) return;
+    if (!currentSceneId()) {
+      ui.notifications.warn(localize("ui.config.notifications.sceneRequired"));
+      return;
+    }
     const patch = buildNameStylePatch(readFormData(form));
     await saveLayoutPatchForUser(this.selectedUserId, patch);
     await finalizeSubwindowSave(this, this.onSaved);

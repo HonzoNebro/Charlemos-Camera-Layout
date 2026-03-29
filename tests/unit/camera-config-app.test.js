@@ -38,6 +38,8 @@ test("camera config hub html renders player selector and actions", async () => {
     formId: "form-id",
     playerSelectId: "player-id",
     title: "Config",
+    sceneId: "scene-a",
+    hasLegacyGlobalLayouts: false,
     users: [{ id: "u1", name: "GM", active: true }],
     selectedUserId: "u1",
     formData: {
@@ -70,6 +72,66 @@ test("camera config hub html renders player selector and actions", async () => {
   assert.match(html, /open-layout-config/);
   assert.match(html, /support-report/);
   assert.match(html, /reset-current-player/);
+});
+
+test("camera config hub disables scene-scoped actions when there is no active scene", async () => {
+  globalThis.game = {
+    i18n: {
+      localize: (key) => key
+    }
+  };
+  globalThis.foundry = {
+    utils: {
+      escapeHTML: (value) => String(value ?? "")
+    },
+    applications: {
+      api: {
+        ApplicationV2: class {}
+      }
+    }
+  };
+  const { buildHtml } = await import("../../scripts/camera-config-app.js");
+
+  const html = buildHtml({
+    shellId: "shell-id",
+    formId: "form-id",
+    playerSelectId: "player-id",
+    title: "Config",
+    sceneId: null,
+    hasLegacyGlobalLayouts: true,
+    users: [{ id: "u1", name: "GM", active: true }],
+    selectedUserId: "u1",
+    formData: {
+      layoutMode: "absolute",
+      top: "",
+      left: "",
+      width: "",
+      height: "",
+      relativePlacement: "none",
+      relativeTargetUserId: "",
+      cropTop: "",
+      cropRight: "",
+      cropBottom: "",
+      cropLeft: "",
+      transform: "",
+      filter: "",
+      clipPath: "",
+      geometryBorderRadius: "",
+      overlayEnabled: false,
+      overlayImage: "",
+      overlayFitMode: "auto",
+      overlayAnchor: "center",
+      nameVisible: true,
+      nameSource: "user",
+      namePosition: "bottom"
+    }
+  });
+
+  assert.match(html, /ui\.config\.noScene\.title/);
+  assert.match(html, /data-action="open-layout-config" disabled/);
+  assert.match(html, /data-action="export" disabled/);
+  assert.match(html, /data-action="import-legacy-layouts" disabled/);
+  assert.doesNotMatch(html, /data-action="support-report" disabled/);
 });
 
 test("camera config exportCurrentLayout exports scene macro with scene control mode", async () => {

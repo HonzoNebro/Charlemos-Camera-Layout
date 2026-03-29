@@ -12,7 +12,7 @@ function installScenePresetEnv() {
   };
   globalThis.game = {
     i18n: {
-      localize: (key) => key === "charlemos-camera-layout.ui.config.common.offline" ? "(offline)" : key
+      localize: (key) => key.endsWith(".ui.config.common.offline") ? "(offline)" : key
     },
     users: {
       contents: [
@@ -39,6 +39,13 @@ function installScenePresetEnv() {
   };
 }
 
+function installScenePresetNoSceneEnv() {
+  installScenePresetEnv();
+  globalThis.canvas = {
+    scene: null
+  };
+}
+
 test("scene preset app includes offline users but only preselects active ones", async () => {
   installScenePresetEnv();
   const { SceneLayoutPresetApp } = await import("../../scripts/scene-layout-preset-app.js");
@@ -60,4 +67,18 @@ test("scene preset app includes offline users but only preselects active ones", 
   assert.match(html, /name="include-u1" checked/);
   assert.doesNotMatch(html, /name="include-u2" checked/);
   assert.match(html, /name="aspectRatio"/);
+});
+
+test("scene preset app shows a no-scene state instead of an editable form", async () => {
+  installScenePresetNoSceneEnv();
+  const { SceneLayoutPresetApp } = await import("../../scripts/scene-layout-preset-app.js");
+
+  const app = new SceneLayoutPresetApp();
+  app.id = "scene-preset-app";
+  const context = await app._prepareContext();
+  const html = await app._renderHTML(context);
+
+  assert.equal(context.sceneId, null);
+  assert.match(html, /ui\.config\.noScene\.title/);
+  assert.doesNotMatch(html, /scene-preset-form/);
 });
