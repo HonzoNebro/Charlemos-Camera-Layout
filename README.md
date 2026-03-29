@@ -1,10 +1,10 @@
 # Charlemos Camera Layout
 
-FoundryVTT module for advanced A/V camera styling and per-scene camera profiles.
+FoundryVTT module for advanced A/V camera styling with scene-scoped camera profiles.
 
 ## Current capabilities
 
-- Scene-level camera control mode: `native` or `module`
+- Scene-scoped camera control mode: `native` or `module`
 - Absolute and relative camera layouts with persisted `top`, `left`, `width`, `height`, target, placement and gap
 - Scene layout presets: dynamic grid, narrative presets, responsive or fixed units
 - Per-player camera overlay with URL/path + file picker
@@ -14,8 +14,17 @@ FoundryVTT module for advanced A/V camera styling and per-scene camera profiles.
 - Name styles: source, color, font family (Foundry fonts), position, alignment, weight and italic
 - Reusable scene profile macros that apply to the active scene
 - Offline-player editing support
+- Explicit legacy import action to copy old global layouts into the current scene
 - JSON config export/import
 - Runtime renderer diagnostics mode
+
+## Scene-scoped contract
+
+- An active scene is required before editing layout, effects, overlays, name styles or scene presets.
+- New scenes start empty by design.
+- Camera styling is stored on the current scene profile.
+- Reusing a composition across scenes is explicit: use scene macros, JSON import, or import legacy global layouts into the current scene.
+- Legacy `playerLayouts` can still exist in settings, but they are no longer applied automatically at runtime.
 
 ## Structure
 
@@ -44,8 +53,8 @@ npm test
 - Open `Camera Layout Config` and use `Open Support Report` to generate a structured report for the selected player without using the browser console.
 - Run the macro in `docs/macros/dump_module_debug_report.js` to dump a structured support report to the browser console.
 - The module API also exposes:
-  - `game.modules.get("charlemos-camera-layout")?.api?.dumpRendererDebugSnapshot(userId)`
-  - `game.modules.get("charlemos-camera-layout")?.api?.dumpModuleDebugReport(userId)`
+  - `game.modules.get("<module-id>")?.api?.dumpRendererDebugSnapshot(userId)`
+  - `game.modules.get("<module-id>")?.api?.dumpModuleDebugReport(userId)`
 
 ## Foundry install
 

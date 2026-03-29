@@ -122,9 +122,7 @@ test("buildFormData maps stored layout to UI fields", () => {
     nameFontWeight: "700",
     nameFontStyle: "italic",
     geometryBorderRadius: "8px",
-    geometryTransparentFrame: true,
-    geometrySkewX: 4,
-    geometrySkewY: -2
+    geometryTransparentFrame: true
   });
 });
 
@@ -181,9 +179,7 @@ test("buildLayoutPatch normalizes empty form values", () => {
     nameFontWeight: "500",
     nameFontStyle: "italic",
     geometryBorderRadius: " 10px ",
-    geometryTransparentFrame: true,
-    geometrySkewX: "",
-    geometrySkewY: "-6"
+    geometryTransparentFrame: true
   });
 
   assert.deepEqual(patch, {
