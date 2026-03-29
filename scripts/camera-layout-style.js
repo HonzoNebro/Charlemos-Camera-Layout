@@ -125,6 +125,9 @@ const ALTERNATE_NAME_INTERVAL_MS = 4000;
 const NAME_TEXT_ALIGN_VALUES = new Set(["left", "center", "right", "justify"]);
 const NAME_FONT_WEIGHT_VALUES = new Set(["400", "500", "600", "700"]);
 const NAME_FONT_STYLE_VALUES = new Set(["normal", "italic"]);
+const DEFAULT_NAME_EDGE_BORDER = "rgba(255, 255, 255, 0.08)";
+const DEFAULT_NAME_BACKGROUND_TOP = "linear-gradient(to bottom, rgba(0, 0, 0, 0.86), rgba(0, 0, 0, 0.56), rgba(0, 0, 0, 0.2))";
+const DEFAULT_NAME_BACKGROUND_BOTTOM = "linear-gradient(to top, rgba(0, 0, 0, 0.86), rgba(0, 0, 0, 0.56), rgba(0, 0, 0, 0.2))";
 
 function alternateName(userName, characterName, nowMs) {
   const period = Math.floor(nowMs / ALTERNATE_NAME_INTERVAL_MS) % 2;
@@ -166,6 +169,63 @@ function resolvedFontStyle(layout) {
   if (!value) return "normal";
   if (!NAME_FONT_STYLE_VALUES.has(value)) return "normal";
   return value;
+}
+
+function resolvedNameFontSize(layout) {
+  return cssLength(layout?.nameStyle?.fontSize, "0.85rem");
+}
+
+function resolvedNameLineHeight(layout) {
+  return cssLength(layout?.nameStyle?.lineHeight, "1.2");
+}
+
+function resolvedNameOffset(layout) {
+  return cssLength(layout?.nameStyle?.offset, "0px");
+}
+
+function resolvedNamePadding(layout) {
+  const vertical = cssLength(layout?.nameStyle?.padding?.y, "0.3rem");
+  const horizontal = cssLength(layout?.nameStyle?.padding?.x, "0.5rem");
+  return `${vertical} ${horizontal}`;
+}
+
+function resolvedNameBorderRadius(layout) {
+  return cssLength(layout?.nameStyle?.border?.radius, "0");
+}
+
+function resolvedNameBackground(layout, position) {
+  if (!layout?.nameStyle?.background?.enabled) {
+    return position === "top" ? DEFAULT_NAME_BACKGROUND_TOP : DEFAULT_NAME_BACKGROUND_BOTTOM;
+  }
+  const channels = parseHexColor(layout?.nameStyle?.background?.color);
+  if (!channels) return position === "top" ? DEFAULT_NAME_BACKGROUND_TOP : DEFAULT_NAME_BACKGROUND_BOTTOM;
+  const opacity = clamp(numeric(layout?.nameStyle?.background?.opacity, 0.86), 0, 1);
+  return `rgba(${channels.r}, ${channels.g}, ${channels.b}, ${opacity})`;
+}
+
+function resolvedNameBorder(layout, position) {
+  const customBorder = layout?.nameStyle?.border;
+  if (customBorder?.enabled) {
+    const width = cssLength(customBorder?.width, "1px");
+    const color = String(customBorder?.color ?? "").trim() || "#ffffff";
+    return {
+      border: `${width} solid ${color}`,
+      borderTop: "",
+      borderBottom: ""
+    };
+  }
+  if (layout?.nameStyle?.background?.enabled) {
+    return {
+      border: "",
+      borderTop: "",
+      borderBottom: ""
+    };
+  }
+  return {
+    border: "",
+    borderTop: position === "bottom" ? `1px solid ${DEFAULT_NAME_EDGE_BORDER}` : "",
+    borderBottom: position === "top" ? `1px solid ${DEFAULT_NAME_EDGE_BORDER}` : ""
+  };
 }
 
 export function composeTransform(baseTransform, geometry) {
@@ -244,13 +304,23 @@ export function overlayTintStyle(layout) {
 export function nameStyle(layout, context = {}) {
   const visible = layout?.nameStyle?.visible !== false;
   const position = layout?.nameStyle?.position === "top" ? "top" : "bottom";
+  const border = resolvedNameBorder(layout, position);
   return {
     display: visible ? "block" : "none",
     color: resolvedColor(layout, context),
     fontFamily: layout?.nameStyle?.fontFamily ?? "",
+    fontSize: resolvedNameFontSize(layout),
+    lineHeight: resolvedNameLineHeight(layout),
     textAlign: resolvedTextAlign(layout),
     fontWeight: resolvedFontWeight(layout),
     fontStyle: resolvedFontStyle(layout),
+    padding: resolvedNamePadding(layout),
+    background: resolvedNameBackground(layout, position),
+    border: border.border,
+    borderTop: border.borderTop,
+    borderBottom: border.borderBottom,
+    borderRadius: resolvedNameBorderRadius(layout),
+    offset: resolvedNameOffset(layout),
     text: resolvedName(layout, context),
     position
   };

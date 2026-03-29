@@ -97,7 +97,7 @@ test("config windows expose larger resizable defaults", async () => {
     { App: LayoutConfigApp, width: 760, height: 620 },
     { App: EffectsConfigApp, width: 760, height: 700 },
     { App: OverlayConfigApp, width: 760, height: 780 },
-    { App: NameConfigApp, width: 720, height: 700 },
+    { App: NameConfigApp, width: 760, height: 840 },
     { App: SceneLayoutPresetApp, width: 760, height: 780 }
   ];
 

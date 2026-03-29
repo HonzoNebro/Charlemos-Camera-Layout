@@ -695,9 +695,19 @@ function applyName(viewElement, layout, user) {
     display: style.display,
     color: style.color,
     fontFamily: style.fontFamily,
+    fontSize: style.fontSize,
+    lineHeight: style.lineHeight,
     textAlign: style.textAlign,
     fontWeight: style.fontWeight,
-    fontStyle: style.fontStyle
+    fontStyle: style.fontStyle,
+    padding: style.padding,
+    background: style.background,
+    border: style.border,
+    borderTop: style.borderTop,
+    borderBottom: style.borderBottom,
+    borderRadius: style.borderRadius,
+    top: style.position === "top" ? style.offset : "",
+    bottom: style.position === "top" ? "" : style.offset
   });
   applyNameplateControlAvoidance(viewElement, element, style.position);
 }

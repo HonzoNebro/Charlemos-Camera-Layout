@@ -1,7 +1,7 @@
 import { MODULE_ID } from "./constants.js";
 import { buildFormData, buildNameStylePatch } from "./camera-config-model.js";
 import { replaceAppContent } from "./dom-replace.js";
-import { appId, checkboxInput, colorInput, rowWithHelp, sectionHtml, selectFromItems, textInput } from "./camera-config-ui.js";
+import { appId, checkboxInput, colorInput, numberInput, rowWithHelp, sectionHtml, selectFromItems, textInput } from "./camera-config-ui.js";
 import { finalizeSubwindowSave, loadLayoutForUser, localize, readChecked, readText, saveLayoutPatchForUser, selectedUser, usersForConfig } from "./camera-config-shared.js";
 
 function titleKey() {
@@ -16,7 +16,19 @@ function readFormData(form) {
     nameColorFromUser: readChecked(form, "nameColorFromUser"),
     nameColor: readText(form, "nameColor"),
     nameFont: readText(form, "nameFont"),
+    nameFontSize: readText(form, "nameFontSize"),
+    nameLineHeight: readText(form, "nameLineHeight"),
     namePosition: readText(form, "namePosition"),
+    nameOffset: readText(form, "nameOffset"),
+    namePaddingX: readText(form, "namePaddingX"),
+    namePaddingY: readText(form, "namePaddingY"),
+    nameCustomBackground: readChecked(form, "nameCustomBackground"),
+    nameBackgroundColor: readText(form, "nameBackgroundColor"),
+    nameBackgroundOpacity: readText(form, "nameBackgroundOpacity"),
+    nameCustomBorder: readChecked(form, "nameCustomBorder"),
+    nameBorderColor: readText(form, "nameBorderColor"),
+    nameBorderWidth: readText(form, "nameBorderWidth"),
+    nameBorderRadius: readText(form, "nameBorderRadius"),
     nameTextAlign: readText(form, "nameTextAlign"),
     nameFontWeight: readText(form, "nameFontWeight"),
     nameFontStyle: readText(form, "nameFontStyle")
@@ -159,7 +171,7 @@ function nameFontSelect(value) {
   return `<select name="nameFont">${optionTags}</select>`;
 }
 
-function nameSection(formData) {
+function nameTextSection(formData) {
   return sectionHtml(localize("ui.config.sections.name"), localize("ui.config.sections.nameDesc"), [
     rowWithHelp("nameVisible", checkboxInput("nameVisible", formData.nameVisible), "nameVisible"),
     rowWithHelp("nameSource", nameSourceSelect(formData.nameSource), "nameSource"),
@@ -167,10 +179,27 @@ function nameSection(formData) {
     rowWithHelp("nameColorFromUser", checkboxInput("nameColorFromUser", formData.nameColorFromUser), "nameColorFromUser"),
     rowWithHelp("nameColor", colorInput("nameColor", formData.nameColor), "nameColor"),
     rowWithHelp("nameFont", nameFontSelect(formData.nameFont), "nameFont"),
+    rowWithHelp("nameFontSize", textInput("nameFontSize", formData.nameFontSize), "nameFontSize"),
+    rowWithHelp("nameLineHeight", textInput("nameLineHeight", formData.nameLineHeight), "nameLineHeight"),
     rowWithHelp("nameFontWeight", nameFontWeightSelect(formData.nameFontWeight), "nameFontWeight"),
     rowWithHelp("nameFontStyle", nameFontStyleSelect(formData.nameFontStyle), "nameFontStyle"),
-    rowWithHelp("nameTextAlign", nameTextAlignSelect(formData.nameTextAlign), "nameTextAlign"),
-    rowWithHelp("namePosition", namePositionSelect(formData.namePosition), "namePosition")
+    rowWithHelp("nameTextAlign", nameTextAlignSelect(formData.nameTextAlign), "nameTextAlign")
+  ]);
+}
+
+function namePlateSection(formData) {
+  return sectionHtml(localize("ui.config.sections.namePlate"), localize("ui.config.sections.namePlateDesc"), [
+    rowWithHelp("namePosition", namePositionSelect(formData.namePosition), "namePosition"),
+    rowWithHelp("nameOffset", textInput("nameOffset", formData.nameOffset), "nameOffset"),
+    rowWithHelp("namePaddingX", textInput("namePaddingX", formData.namePaddingX), "namePaddingX"),
+    rowWithHelp("namePaddingY", textInput("namePaddingY", formData.namePaddingY), "namePaddingY"),
+    rowWithHelp("nameCustomBackground", checkboxInput("nameCustomBackground", formData.nameCustomBackground), "nameCustomBackground"),
+    rowWithHelp("nameBackgroundColor", colorInput("nameBackgroundColor", formData.nameBackgroundColor), "nameBackgroundColor"),
+    rowWithHelp("nameBackgroundOpacity", numberInput("nameBackgroundOpacity", formData.nameBackgroundOpacity, 0, 1, 0.05), "nameBackgroundOpacity"),
+    rowWithHelp("nameCustomBorder", checkboxInput("nameCustomBorder", formData.nameCustomBorder), "nameCustomBorder"),
+    rowWithHelp("nameBorderColor", colorInput("nameBorderColor", formData.nameBorderColor), "nameBorderColor"),
+    rowWithHelp("nameBorderWidth", textInput("nameBorderWidth", formData.nameBorderWidth), "nameBorderWidth"),
+    rowWithHelp("nameBorderRadius", textInput("nameBorderRadius", formData.nameBorderRadius), "nameBorderRadius")
   ]);
 }
 
@@ -181,7 +210,8 @@ function buildHtml(context) {
     `<p class="charlemos-section-desc">${foundry.utils.escapeHTML(context.playerName)}</p>`,
     `<form id="${context.formId}" class="charlemos-config-form">`,
     `<div class="charlemos-config-scroll">`,
-    nameSection(context.formData),
+    nameTextSection(context.formData),
+    namePlateSection(context.formData),
     `</div>`,
     `<div class="charlemos-actions"><button type="submit">${localize("ui.config.actions.save")}</button></div>`,
     `</form>`,
@@ -198,8 +228,8 @@ export class NameConfigApp extends foundry.applications.api.ApplicationV2 {
       resizable: true
     },
     position: {
-      width: 720,
-      height: 700
+      width: 760,
+      height: 840
     }
   };
 
@@ -243,6 +273,8 @@ export class NameConfigApp extends foundry.applications.api.ApplicationV2 {
     });
     this.bindNameSourceMode(form);
     this.bindNameColorMode(form);
+    this.bindNameBackgroundMode(form);
+    this.bindNameBorderMode(form);
   }
 
   bindNameSourceMode(form) {
@@ -264,6 +296,34 @@ export class NameConfigApp extends foundry.applications.api.ApplicationV2 {
       const colorInput = form.elements.namedItem("nameColor");
       if (!colorInput) return;
       colorInput.disabled = readChecked(form, "nameColorFromUser");
+    };
+    source.addEventListener("change", sync);
+    sync();
+  }
+
+  bindNameBackgroundMode(form) {
+    const source = form.elements.namedItem("nameCustomBackground");
+    if (!source) return;
+    const sync = () => {
+      const enabled = readChecked(form, "nameCustomBackground");
+      const colorInput = form.elements.namedItem("nameBackgroundColor");
+      const opacityInput = form.elements.namedItem("nameBackgroundOpacity");
+      if (colorInput) colorInput.disabled = !enabled;
+      if (opacityInput) opacityInput.disabled = !enabled;
+    };
+    source.addEventListener("change", sync);
+    sync();
+  }
+
+  bindNameBorderMode(form) {
+    const source = form.elements.namedItem("nameCustomBorder");
+    if (!source) return;
+    const sync = () => {
+      const enabled = readChecked(form, "nameCustomBorder");
+      const colorInput = form.elements.namedItem("nameBorderColor");
+      const widthInput = form.elements.namedItem("nameBorderWidth");
+      if (colorInput) colorInput.disabled = !enabled;
+      if (widthInput) widthInput.disabled = !enabled;
     };
     source.addEventListener("change", sync);
     sync();

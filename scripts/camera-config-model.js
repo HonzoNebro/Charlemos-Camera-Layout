@@ -139,6 +139,12 @@ function normalizedNameFontStyle(value) {
   return "normal";
 }
 
+function normalizedOpacity(value, fallback) {
+  const parsed = parseFloatNumber(value);
+  if (parsed === null) return fallback;
+  return Math.min(1, Math.max(0, parsed));
+}
+
 export function normalizedLayoutMode(value) {
   const text = String(value ?? "").trim();
   if (!text) return "absolute";
@@ -253,7 +259,19 @@ export function buildFormData(layout) {
     nameColorFromUser: nameColorFromUser(layout),
     nameColor: nullableText(layout?.nameStyle?.color) ?? "#ffffff",
     nameFont: nullableText(layout?.nameStyle?.fontFamily) ?? "",
+    nameFontSize: nullableText(layout?.nameStyle?.fontSize) ?? "",
+    nameLineHeight: nullableText(layout?.nameStyle?.lineHeight) ?? "",
     namePosition: nullableText(layout?.nameStyle?.position) ?? "bottom",
+    nameOffset: nullableText(layout?.nameStyle?.offset) ?? "",
+    namePaddingX: nullableText(layout?.nameStyle?.padding?.x) ?? "",
+    namePaddingY: nullableText(layout?.nameStyle?.padding?.y) ?? "",
+    nameCustomBackground: Boolean(layout?.nameStyle?.background?.enabled),
+    nameBackgroundColor: nullableText(layout?.nameStyle?.background?.color) ?? "#000000",
+    nameBackgroundOpacity: normalizedOpacity(layout?.nameStyle?.background?.opacity, 0.86),
+    nameCustomBorder: Boolean(layout?.nameStyle?.border?.enabled),
+    nameBorderColor: nullableText(layout?.nameStyle?.border?.color) ?? "#ffffff",
+    nameBorderWidth: nullableText(layout?.nameStyle?.border?.width) ?? "",
+    nameBorderRadius: nullableText(layout?.nameStyle?.border?.radius) ?? "",
     nameTextAlign: normalizedNameTextAlign(layout?.nameStyle?.textAlign),
     nameFontWeight: normalizedNameFontWeight(layout?.nameStyle?.fontWeight),
     nameFontStyle: normalizedNameFontStyle(layout?.nameStyle?.fontStyle),
@@ -294,7 +312,25 @@ function buildNameStylePayload(formData) {
     colorFromUser: Boolean(formData.nameColorFromUser),
     color: nullableText(formData.nameColor),
     fontFamily: nullableText(formData.nameFont),
+    fontSize: normalizeLayoutLength(formData.nameFontSize),
+    lineHeight: nullableCss(formData.nameLineHeight),
     position: nullableText(formData.namePosition) ?? "bottom",
+    offset: normalizeLayoutLength(formData.nameOffset),
+    padding: {
+      x: normalizeLayoutLength(formData.namePaddingX),
+      y: normalizeLayoutLength(formData.namePaddingY)
+    },
+    background: {
+      enabled: Boolean(formData.nameCustomBackground),
+      color: nullableText(formData.nameBackgroundColor) ?? "#000000",
+      opacity: normalizedOpacity(formData.nameBackgroundOpacity, 0.86)
+    },
+    border: {
+      enabled: Boolean(formData.nameCustomBorder),
+      color: nullableText(formData.nameBorderColor) ?? "#ffffff",
+      width: normalizeLayoutLength(formData.nameBorderWidth),
+      radius: normalizeLayoutLength(formData.nameBorderRadius)
+    },
     textAlign: normalizedNameTextAlign(formData.nameTextAlign),
     fontWeight: normalizedNameFontWeight(formData.nameFontWeight),
     fontStyle: normalizedNameFontStyle(formData.nameFontStyle)
