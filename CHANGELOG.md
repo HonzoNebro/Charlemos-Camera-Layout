@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-03-29
+
+### Added
+- New name plate style controls in `Name Config` for font size, line height, edge offset, padding, custom background, and custom border styling.
+
+### Fixed
+- Transparent custom name plate backgrounds no longer leave a residual default edge line behind.
+- Saving `Overlay Config` no longer wipes camera geometry in `module` mode, preventing cameras from jumping back to `0,0`.
+
+### Changed
+- Release metadata updated for stable distribution:
+  - module version: `1.7.0`
+  - download URL points to tag archive `v1.7.0`
+
 ## [1.6.0] - 2026-03-29
 
 ### Added
