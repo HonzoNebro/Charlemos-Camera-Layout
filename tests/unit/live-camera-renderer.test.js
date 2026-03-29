@@ -154,7 +154,7 @@ test("syncFoundryAvatarVisibility restores marked avatar when stream stops", () 
 
 test("isFrameOverlayPath detects frame asset paths", () => {
   assert.equal(isFrameOverlayPath("modules/falemos/assets/img/frames/elegant.png"), true);
-  assert.equal(isFrameOverlayPath("assets/overlays/neon-corners.svg"), false);
+  assert.equal(isFrameOverlayPath("assets/overlays/particles.svg"), false);
 });
 
 test("applyFrameOverlayFallbackStyle enforces frame-safe background sizing", () => {

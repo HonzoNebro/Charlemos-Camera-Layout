@@ -22,5 +22,6 @@ SOFTWARE.
 
 AI Usage Notice
 
-This repository includes AI-assisted code and asset generation.
+This repository includes AI-assisted code generation.
+Bundled overlay assets are documented separately in `docs/ASSET_PROVENANCE.md`.
 The notice above does not alter the MIT License terms.

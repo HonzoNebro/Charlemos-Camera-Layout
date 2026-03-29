@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-03-29
+
+### Changed
+- Replaced bundled AI-assisted overlay assets with human-authored licensed overlays suitable for publication review.
+- Removed the bundled `film-strip.svg` and `neon-corners.svg` overlays from the published asset set.
+- Added `ornamental-oval-frame.svg` as a bundled human-authored overlay.
+- Updated asset provenance and license notices to reflect the published human-authored overlay set.
+
+### Fixed
+- Release metadata updated for stable distribution:
+  - module version: `2.0.1`
+  - download URL points to tag archive `v2.0.1`
+
 ## [2.0.0] - 2026-03-29
 
 ### Added
