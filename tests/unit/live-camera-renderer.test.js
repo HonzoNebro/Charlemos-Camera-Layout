@@ -16,6 +16,8 @@ import {
   syncResizeHandleVisibility,
   syncGeometryInteractionMode,
   syncManagedViewGeometry,
+  syncTransparentFrameClipPath,
+  syncTransparentFrameMode,
   syncFoundryAvatarVisibility,
   viewSupportsModuleGeometry,
   videoStyle
@@ -343,6 +345,45 @@ test("syncGeometryInteractionMode toggles module ownership classes", () => {
   syncGeometryInteractionMode(viewElement, false);
   assert.equal(classes.has("charlemos-geometry-module"), false);
   assert.equal(classes.has("charlemos-geometry-native"), true);
+});
+
+test("syncTransparentFrameMode toggles native frame suppression class", () => {
+  const classes = new Set();
+  const viewElement = {
+    classList: {
+      toggle: (name, active) => {
+        if (active) classes.add(name);
+        else classes.delete(name);
+      }
+    }
+  };
+
+  syncTransparentFrameMode(viewElement, true);
+  assert.equal(classes.has("charlemos-transparent-frame"), true);
+
+  syncTransparentFrameMode(viewElement, false);
+  assert.equal(classes.has("charlemos-transparent-frame"), false);
+});
+
+test("syncTransparentFrameClipPath mirrors clip-path onto visual camera layers", () => {
+  const container = { style: {} };
+  const overlay = { style: {} };
+  const avatar = { style: {} };
+  const viewElement = {
+    querySelectorAll: () => [container, overlay, avatar]
+  };
+
+  syncTransparentFrameClipPath(viewElement, { clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)" }, true);
+
+  assert.equal(container.style.clipPath, "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)");
+  assert.equal(overlay.style.clipPath, "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)");
+  assert.equal(avatar.style.clipPath, "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)");
+
+  syncTransparentFrameClipPath(viewElement, null, false);
+
+  assert.equal(container.style.clipPath, "");
+  assert.equal(overlay.style.clipPath, "");
+  assert.equal(avatar.style.clipPath, "");
 });
 
 test("resolveRelativeLayout places a camera below its target", () => {

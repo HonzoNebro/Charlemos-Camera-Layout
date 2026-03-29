@@ -130,6 +130,15 @@ function getOrCreateCropMask(viewElement, side) {
   return mask;
 }
 
+function transparentFrameClipTargets(viewElement) {
+  if (!viewElement?.querySelectorAll) return [];
+  return Array.from(
+    viewElement.querySelectorAll(
+      ".video-container, .camera-container-popout, .camera-container, .charlemos-camera-overlay, .user-avatar, img.user-avatar, img.avatar, .camera-fallback, .video-fallback, .webrtc-fallback, .no-video"
+    )
+  );
+}
+
 function assignStyle(element, style) {
   Object.entries(style).forEach(([key, value]) => {
     element.style[key] = value ?? "";
@@ -980,10 +989,25 @@ export function syncGeometryInteractionMode(viewElement, applyGeometry) {
   viewElement.classList.toggle("charlemos-geometry-native", !applyGeometry);
 }
 
+export function syncTransparentFrameMode(viewElement, enabled) {
+  if (!viewElement?.classList) return;
+  viewElement.classList.toggle("charlemos-transparent-frame", Boolean(enabled));
+}
+
+export function syncTransparentFrameClipPath(viewElement, layout, enabled) {
+  const clipPath = enabled ? String(layout?.clipPath ?? "").trim() : "";
+  transparentFrameClipTargets(viewElement).forEach((element) => {
+    assignStyle(element, { clipPath });
+  });
+}
+
 function applyViewStyle(viewElement, layout, applyGeometry) {
   viewElement.classList.add("charlemos-camera-view");
   viewElement.classList.remove("charlemos-direct-edit");
   syncGeometryInteractionMode(viewElement, applyGeometry);
+  const transparentFrameEnabled = applyGeometry && layout?.geometry?.transparentFrame;
+  syncTransparentFrameMode(viewElement, transparentFrameEnabled);
+  syncTransparentFrameClipPath(viewElement, layout, transparentFrameEnabled);
   syncNativeGeometryInteractionBlock(viewElement);
   syncResizeHandleVisibility(viewElement, applyGeometry);
   assignStyle(viewElement, {
@@ -1006,6 +1030,8 @@ function resetViewStyle(viewElement, videoElement) {
   viewElement.classList.remove("charlemos-direct-edit");
   viewElement.classList.remove("charlemos-geometry-module");
   viewElement.classList.remove("charlemos-geometry-native");
+  viewElement.classList.remove("charlemos-transparent-frame");
+  syncTransparentFrameClipPath(viewElement, null, false);
   assignStyle(viewElement, {
     borderRadius: "",
     background: "",

@@ -56,7 +56,8 @@ export function sanitizeLayout(layout) {
   });
   if (next.geometry) {
     next.geometry = {
-      borderRadius: next.geometry.borderRadius ?? null
+      borderRadius: next.geometry.borderRadius ?? null,
+      transparentFrame: Boolean(next.geometry.transparentFrame)
     };
   }
   return next;

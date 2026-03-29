@@ -324,6 +324,39 @@
   opacity: 0;
 }
 
+.charlemos-camera-view.charlemos-transparent-frame,
+.charlemos-camera-view.charlemos-transparent-frame .video-container,
+.charlemos-camera-view.charlemos-transparent-frame .camera-container-popout,
+.charlemos-camera-view.charlemos-transparent-frame .camera-container,
+.charlemos-camera-view.charlemos-transparent-frame .control-bar,
+.charlemos-camera-view.charlemos-transparent-frame .notification-bar,
+.charlemos-camera-view.charlemos-transparent-frame .bottom,
+.charlemos-camera-view.charlemos-transparent-frame .user-avatar,
+.charlemos-camera-view.charlemos-transparent-frame img.user-avatar,
+.charlemos-camera-view.charlemos-transparent-frame img.avatar,
+.charlemos-camera-view.charlemos-transparent-frame .camera-fallback,
+.charlemos-camera-view.charlemos-transparent-frame .video-fallback,
+.charlemos-camera-view.charlemos-transparent-frame .webrtc-fallback,
+.charlemos-camera-view.charlemos-transparent-frame .no-video {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+}
+
+.charlemos-camera-view.charlemos-transparent-frame::before,
+.charlemos-camera-view.charlemos-transparent-frame::after {
+  display: none !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
 .charlemos-camera-view.charlemos-direct-edit {
   outline: 1px dashed rgba(255, 180, 80, 0.85);
   cursor: move;

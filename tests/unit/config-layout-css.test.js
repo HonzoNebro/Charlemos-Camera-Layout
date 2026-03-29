@@ -15,3 +15,14 @@ test("config layout stacks action and picker controls vertically", () => {
   assert.match(css, /\.charlemos-effect-controls\s*\{[\s\S]*grid-template-columns:\s*1fr;/);
   assert.match(css, /\.charlemos-image-field\s*\{[\s\S]*grid-template-columns:\s*1fr;/);
 });
+
+test("transparent frame mode removes native camera chrome", () => {
+  assert.match(css, /\.charlemos-camera-view\.charlemos-transparent-frame[\s\S]*background:\s*transparent\s*!important;/);
+  assert.match(css, /\.charlemos-camera-view\.charlemos-transparent-frame[\s\S]*box-shadow:\s*none\s*!important;/);
+  assert.match(css, /\.charlemos-camera-view\.charlemos-transparent-frame[\s\S]*outline:\s*none\s*!important;/);
+  assert.match(css, /\.charlemos-camera-view\.charlemos-transparent-frame[\s\S]*background-image:\s*none\s*!important;/);
+  assert.match(css, /\.charlemos-camera-view\.charlemos-transparent-frame::before/);
+  assert.match(css, /\.charlemos-camera-view\.charlemos-transparent-frame \.bottom/);
+  assert.match(css, /\.charlemos-camera-view\.charlemos-transparent-frame \.control-bar/);
+  assert.match(css, /\.charlemos-camera-view\.charlemos-transparent-frame \.notification-bar/);
+});

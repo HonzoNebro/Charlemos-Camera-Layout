@@ -66,7 +66,11 @@ test("sanitizeLayouts preserves geometry ownership fields in module mode", () =>
           placement: "below",
           gap: "12px"
         },
-        filter: "blur(1px)"
+        filter: "blur(1px)",
+        geometry: {
+          borderRadius: "10px",
+          transparentFrame: true
+        }
       }
     },
     "module"
@@ -85,7 +89,11 @@ test("sanitizeLayouts preserves geometry ownership fields in module mode", () =>
         placement: "below",
         gap: "12px"
       },
-      filter: "blur(1px)"
+      filter: "blur(1px)",
+      geometry: {
+        borderRadius: "10px",
+        transparentFrame: true
+      }
     }
   });
 });

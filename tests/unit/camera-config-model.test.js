@@ -49,7 +49,7 @@ test("buildFormData maps stored layout to UI fields", () => {
       fontWeight: "700",
       fontStyle: "italic"
     },
-    geometry: { borderRadius: "8px", skewX: 4, skewY: -2 }
+    geometry: { borderRadius: "8px", transparentFrame: true, skewX: 4, skewY: -2 }
   });
 
   assert.deepEqual(formData, {
@@ -92,6 +92,7 @@ test("buildFormData maps stored layout to UI fields", () => {
     nameFontWeight: "700",
     nameFontStyle: "italic",
     geometryBorderRadius: "8px",
+    geometryTransparentFrame: true,
     geometrySkewX: 4,
     geometrySkewY: -2
   });
@@ -138,6 +139,7 @@ test("buildLayoutPatch normalizes empty form values", () => {
     nameFontWeight: "500",
     nameFontStyle: "italic",
     geometryBorderRadius: " 10px ",
+    geometryTransparentFrame: true,
     geometrySkewX: "",
     geometrySkewY: "-6"
   });
@@ -195,7 +197,8 @@ test("buildLayoutPatch normalizes empty form values", () => {
       fontStyle: "italic"
     },
     geometry: {
-      borderRadius: "10px"
+      borderRadius: "10px",
+      transparentFrame: true
     }
   });
 });
