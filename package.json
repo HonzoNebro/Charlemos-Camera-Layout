@@ -1,6 +1,6 @@
 {
-  "name": "charlemos-camera-layout-stabilization-scene-scoped-contract",
-  "version": "2.0.0-scene-scoped.1",
+  "name": "charlemos-camera-layout",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "scripts": {

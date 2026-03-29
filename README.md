@@ -53,8 +53,8 @@ npm test
 - Open `Camera Layout Config` and use `Open Support Report` to generate a structured report for the selected player without using the browser console.
 - Run the macro in `docs/macros/dump_module_debug_report.js` to dump a structured support report to the browser console.
 - The module API also exposes:
-  - `game.modules.get("<module-id>")?.api?.dumpRendererDebugSnapshot(userId)`
-  - `game.modules.get("<module-id>")?.api?.dumpModuleDebugReport(userId)`
+  - `game.modules.get("charlemos-camera-layout")?.api?.dumpRendererDebugSnapshot(userId)`
+  - `game.modules.get("charlemos-camera-layout")?.api?.dumpModuleDebugReport(userId)`
 
 ## Foundry install
 

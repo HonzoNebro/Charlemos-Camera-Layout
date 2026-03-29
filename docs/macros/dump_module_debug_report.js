@@ -1,4 +1,4 @@
-const MODULE_ID = "charlemos-camera-layout-stabilization-scene-scoped-contract";
+const MODULE_ID = "charlemos-camera-layout";
 const moduleApi = game.modules.get(MODULE_ID)?.api;
 
 if (!moduleApi) {

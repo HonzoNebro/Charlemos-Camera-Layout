@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-03-29
+
+### Added
+- New manual action to import legacy global layouts into the current scene when migrating older worlds.
+
+### Changed
+- Camera configuration is now strictly scene-scoped. New scenes start empty and no longer inherit saved global layouts automatically.
+- Camera configuration UI now requires an active scene before editing layouts, effects, overlays, name styles, or scene presets.
+- Legacy `playerLayouts` remain available for manual migration, but they are no longer applied automatically at runtime.
+- Release metadata updated for stable distribution:
+  - module version: `2.0.0`
+  - download URL points to tag archive `v2.0.0`
+
+### Fixed
+- Scene lifecycle cleanup now prunes orphaned scene profile data and clears deleted-scene drafts.
+- The public configuration contract no longer exposes unused geometry skew fields.
+
 ## [1.7.0] - 2026-03-29
 
 ### Added

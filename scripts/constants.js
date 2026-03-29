@@ -1,4 +1,4 @@
-export const MODULE_ID = "charlemos-camera-layout-stabilization-scene-scoped-contract";
+export const MODULE_ID = "charlemos-camera-layout";
 
 export const DEFAULT_CAMERA_BOUNDS = {
   width: 320,
