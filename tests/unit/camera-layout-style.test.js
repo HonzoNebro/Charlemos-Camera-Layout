@@ -197,3 +197,29 @@ test("nameStyle falls back to safe typography defaults", () => {
   assert.equal(style.padding, "0.3rem 0.5rem");
   assert.equal(style.offset, "0px");
 });
+
+test("nameStyle drops default edge border when using custom background without custom border", () => {
+  const style = nameStyle(
+    {
+      nameStyle: {
+        visible: true,
+        source: "user",
+        position: "bottom",
+        background: {
+          enabled: true,
+          color: "#112233",
+          opacity: 0
+        },
+        border: {
+          enabled: false
+        }
+      }
+    },
+    { userName: "Player" }
+  );
+
+  assert.equal(style.background, "rgba(17, 34, 51, 0)");
+  assert.equal(style.border, "");
+  assert.equal(style.borderTop, "");
+  assert.equal(style.borderBottom, "");
+});

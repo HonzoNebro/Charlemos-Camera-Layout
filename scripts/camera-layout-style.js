@@ -214,6 +214,13 @@ function resolvedNameBorder(layout, position) {
       borderBottom: ""
     };
   }
+  if (layout?.nameStyle?.background?.enabled) {
+    return {
+      border: "",
+      borderTop: "",
+      borderBottom: ""
+    };
+  }
   return {
     border: "",
     borderTop: position === "bottom" ? `1px solid ${DEFAULT_NAME_EDGE_BORDER}` : "",
