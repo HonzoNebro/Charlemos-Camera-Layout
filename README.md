@@ -2,6 +2,8 @@
 
 FoundryVTT module for advanced A/V camera styling with scene-scoped camera profiles.
 
+<img width="2430" height="1251" alt="image" src="https://github.com/user-attachments/assets/33cc54b0-f720-4c96-938c-b3f72f3af5f2" />
+
 ## Current capabilities
 
 - Scene-scoped camera control mode: `native` or `module`
