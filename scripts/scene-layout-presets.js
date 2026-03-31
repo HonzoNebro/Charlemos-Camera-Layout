@@ -114,15 +114,31 @@ function gridGeometry(preset, options) {
   };
 }
 
-function buildResponsiveLayouts(users, preset, options) {
+function placedLayoutEntries(layoutUserIds, capacity) {
+  const placed = [];
+  const ignoredUserIds = [];
+
+  (Array.isArray(layoutUserIds) ? layoutUserIds : []).forEach((userId, slotIndex) => {
+    if (!userId) return;
+    if (slotIndex < capacity) {
+      placed.push({ userId, slotIndex });
+      return;
+    }
+    ignoredUserIds.push(userId);
+  });
+
+  return { placed, ignoredUserIds };
+}
+
+function buildResponsiveLayouts(entries, preset, options) {
   const geometry = gridGeometry(preset, options);
   const width = (geometry.widthPx / geometry.viewportWidth) * 100;
   const height = (geometry.heightPx / geometry.viewportHeight) * 100;
 
   return Object.fromEntries(
-    users.map((userId, index) => {
-      const row = Math.floor(index / preset.cols);
-      const col = index % preset.cols;
+    entries.map(({ userId, slotIndex }) => {
+      const row = Math.floor(slotIndex / preset.cols);
+      const col = slotIndex % preset.cols;
       const topPx = geometry.startY + row * (geometry.heightPx + geometry.gap);
       const leftPx = geometry.startX + col * (geometry.widthPx + geometry.gap);
       return [
@@ -144,13 +160,13 @@ function buildResponsiveLayouts(users, preset, options) {
   );
 }
 
-function buildPixelLayouts(users, preset, options) {
+function buildPixelLayouts(entries, preset, options) {
   const geometry = gridGeometry(preset, options);
 
   return Object.fromEntries(
-    users.map((userId, index) => {
-      const row = Math.floor(index / preset.cols);
-      const col = index % preset.cols;
+    entries.map(({ userId, slotIndex }) => {
+      const row = Math.floor(slotIndex / preset.cols);
+      const col = slotIndex % preset.cols;
       const top = geometry.startY + row * (geometry.heightPx + geometry.gap);
       const left = geometry.startX + col * (geometry.widthPx + geometry.gap);
       return [
@@ -177,16 +193,23 @@ export function getNarrativeSceneLayoutPresetIds() {
 }
 
 export function buildSceneLayoutPreset(layoutUserIds, options = {}) {
-  const users = Array.isArray(layoutUserIds) ? layoutUserIds.filter(Boolean) : [];
   const layoutType = normalizeLayoutType(options.layoutType);
   const preset = resolvePresetDefinition(layoutType, options.presetId, options.rows, options.cols);
-  if (!preset) return { capacity: 0, ignoredUserIds: [...users], layouts: {}, unitMode: normalizeUnitMode(options.unitMode), layoutType };
+  const requestedSlots = Array.isArray(layoutUserIds) ? layoutUserIds : [];
+  if (!preset) {
+    return {
+      capacity: 0,
+      ignoredUserIds: requestedSlots.filter(Boolean),
+      layouts: {},
+      unitMode: normalizeUnitMode(options.unitMode),
+      layoutType
+    };
+  }
 
   const capacity = preset.rows * preset.cols;
-  const placedUserIds = users.slice(0, capacity);
-  const ignoredUserIds = users.slice(capacity);
+  const { placed, ignoredUserIds } = placedLayoutEntries(requestedSlots, capacity);
   const unitMode = normalizeUnitMode(options.unitMode);
-  const layouts = unitMode === "px" ? buildPixelLayouts(placedUserIds, preset, options) : buildResponsiveLayouts(placedUserIds, preset, options);
+  const layouts = unitMode === "px" ? buildPixelLayouts(placed, preset, options) : buildResponsiveLayouts(placed, preset, options);
 
   return {
     capacity,
