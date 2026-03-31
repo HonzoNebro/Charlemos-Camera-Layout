@@ -91,6 +91,29 @@ test("buildSceneLayoutPreset ignores users beyond preset capacity", () => {
   assert.deepEqual(result.ignoredUserIds, ["u3"]);
 });
 
+test("buildSceneLayoutPreset preserves empty slots instead of compacting selected users", () => {
+  const result = buildSceneLayoutPreset([null, null, "gm", null, null, "u1", "u2", "u3", "u4", "u5"], {
+    layoutType: "grid",
+    rows: 2,
+    cols: 5,
+    aspectRatio: "4:3",
+    unitMode: "px",
+    feedWidth: 320,
+    feedHeight: 240,
+    viewportWidth: 1600,
+    viewportHeight: 480,
+    gap: 0,
+    marginX: 0,
+    marginY: 0
+  });
+
+  assert.equal(result.layouts.gm.left, "640px");
+  assert.equal(result.layouts.gm.top, "1px");
+  assert.equal(result.layouts.u1.left, "1px");
+  assert.equal(result.layouts.u1.top, "240px");
+  assert.equal(result.layouts.u5.left, "1280px");
+});
+
 test("buildSceneLayoutPreset defaults to 4:3 fallback instead of square when no feed is available", () => {
   const result = buildSceneLayoutPreset(["u1"], {
     layoutType: "grid",

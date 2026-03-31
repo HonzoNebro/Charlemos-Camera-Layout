@@ -82,3 +82,19 @@ test("scene preset app shows a no-scene state instead of an editable form", asyn
   assert.match(html, /ui\.config\.noScene\.title/);
   assert.doesNotMatch(html, /scene-preset-form/);
 });
+
+test("orderedSelectedUserIds keeps explicit gaps from slot numbers", async () => {
+  installScenePresetEnv();
+  const { orderedSelectedUserIds } = await import("../../scripts/scene-layout-preset-app.js");
+
+  const ordered = orderedSelectedUserIds([
+    { id: "gm", name: "GM", include: true, order: 3 },
+    { id: "u1", name: "Ana", include: true, order: 6 },
+    { id: "u2", name: "Bruno", include: true, order: 7 },
+    { id: "u3", name: "Carla", include: true, order: 8 },
+    { id: "u4", name: "Dani", include: true, order: 9 },
+    { id: "u5", name: "Eva", include: true, order: 10 }
+  ]);
+
+  assert.deepEqual(Array.from({ length: ordered.length }, (_, index) => ordered[index] ?? null), [null, null, "gm", null, null, "u1", "u2", "u3", "u4", "u5"]);
+});

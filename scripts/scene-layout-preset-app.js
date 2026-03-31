@@ -131,11 +131,16 @@ function defaultUserStates() {
   }));
 }
 
-function orderedSelectedUserIds(userStates) {
+export function orderedSelectedUserIds(userStates) {
   return [...userStates]
     .filter((user) => user.include)
     .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
-    .map((user) => user.id);
+    .reduce((slots, user) => {
+      let slotIndex = Math.max(0, user.order - 1);
+      while (slotIndex < slots.length && slots[slotIndex]) slotIndex += 1;
+      slots[slotIndex] = user.id;
+      return slots;
+    }, []);
 }
 
 function queryUserVideo(userId) {
@@ -152,6 +157,7 @@ function liveFeedDimensions(videoElement) {
 function representativeFeedDimensions(selectedUserIds) {
   const sizes = [];
   for (const userId of selectedUserIds) {
+    if (!userId) continue;
     const size = liveFeedDimensions(queryUserVideo(userId));
     if (size) sizes.push(size);
   }
@@ -254,7 +260,11 @@ export class SceneLayoutPresetApp extends foundry.applications.api.ApplicationV2
     this.formData = readFormData(form, this.formData.users);
 
     const orderedUserIds = orderedSelectedUserIds(this.formData.users);
-    if (orderedUserIds.length === 0) {
+    const selectedUserIds = [];
+    orderedUserIds.forEach((userId) => {
+      if (userId) selectedUserIds.push(userId);
+    });
+    if (selectedUserIds.length === 0) {
       ui.notifications.warn(localize("ui.scenePresets.notifications.noUsers"));
       return;
     }
@@ -269,7 +279,7 @@ export class SceneLayoutPresetApp extends foundry.applications.api.ApplicationV2
       gap: this.formData.gap,
       marginX: this.formData.marginX,
       marginY: this.formData.marginY,
-      ...representativeFeedDimensions(orderedUserIds),
+      ...representativeFeedDimensions(selectedUserIds),
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight
     });
