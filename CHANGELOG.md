@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.2] - 2026-03-31
+
+### Fixed
+- Scene presets now preserve explicit empty grid slots instead of compacting selected users into consecutive positions.
+- Grid slot numbering can now be used to keep spotlight layouts such as a centered GM with players filling only later cells.
+
+### Changed
+- Scene preset copy now explains that slot numbers map to real grid cells and that unused numbers stay empty.
+- Release metadata updated for stable distribution:
+  - module version: `2.0.2`
+  - download URL points to tag archive `v2.0.2`
+
 ## [2.0.1] - 2026-03-29
 
 ### Changed
