@@ -22,7 +22,7 @@ function isCameraViewsApp(app) {
 
 function getCameraViewsApp(app) {
   if (isCameraViewsApp(app)) return app;
-  if (isCameraViewsApp(ui?.webrtc)) return ui.webrtc;
+  if (isCameraViewsApp(globalThis.ui?.webrtc)) return globalThis.ui.webrtc;
   return null;
 }
 
@@ -655,6 +655,15 @@ export function syncFoundryAvatarVisibility(viewElement, videoElement, forceShow
   });
 }
 
+export function bindReactiveAvatarVisibility(viewElement, videoElement) {
+  if (!viewElement?.querySelectorAll || !videoElement?.addEventListener || videoElement.__charlemosAvatarVisibilityBound === "1") return;
+  const handler = () => syncFoundryAvatarVisibility(viewElement, videoElement);
+  ["loadedmetadata", "playing", "resize"].forEach((type) => {
+    videoElement.addEventListener(type, handler);
+  });
+  videoElement.__charlemosAvatarVisibilityBound = "1";
+}
+
 export function videoStyle(layout) {
   return {
     transform: composeTransform(layout?.transform, layout?.geometry),
@@ -1107,6 +1116,7 @@ function applyPlayerLayout(app, user, options = {}) {
   applyViewStyle(viewElement, normalizedLayout, applyGeometry);
   applyVideoStyle(videoElement, normalizedLayout);
   syncFoundryAvatarVisibility(viewElement, videoElement);
+  bindReactiveAvatarVisibility(viewElement, videoElement);
   applyOverlay(viewElement, normalizedLayout);
   applyName(viewElement, normalizedLayout, user);
   applyCropMasks(viewElement, normalizedLayout);
@@ -1180,13 +1190,72 @@ export function applyCameraLayoutsNow(app) {
     if (isRendererDebugEnabled()) {
       console.warn(`${MODULE_ID} | apply skipped: camera views app not found`, {
         requestedApp: app?.constructor?.name ?? null,
-        uiWebrtc: ui?.webrtc?.constructor?.name ?? null,
+        uiWebrtc: globalThis.ui?.webrtc?.constructor?.name ?? null,
         sceneId: canvas?.scene?.id ?? null
       });
     }
     return;
   }
   applyAll(cameraApp);
+}
+
+function moduleGeometryToggleTarget(viewElement) {
+  return viewElement?.querySelector?.(
+    [
+      "[data-action='toggleDocked']",
+      "[data-action='toggleDock']",
+      "button[data-action='toggleDocked']",
+      "button[data-action='toggleDock']",
+      "[title*='Pop']",
+      "[aria-label*='Pop']"
+    ].join(", ")
+  );
+}
+
+function clickToggleTarget(target) {
+  if (!target) return false;
+  if (typeof target.click === "function") {
+    target.click();
+    return true;
+  }
+  if (typeof MouseEvent !== "undefined" && typeof target.dispatchEvent === "function") {
+    target.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    return true;
+  }
+  return false;
+}
+
+function waitForUiTick() {
+  if (typeof window !== "undefined" && typeof window.setTimeout === "function") {
+    return new Promise((resolve) => window.setTimeout(resolve, 0));
+  }
+  return Promise.resolve();
+}
+
+export async function prepareModuleGeometryForLayouts(layouts, app) {
+  const cameraApp = getCameraViewsApp(app);
+  const result = {
+    attempted: 0,
+    toggled: 0,
+    missing: []
+  };
+  if (!cameraApp) {
+    result.missing = Object.keys(layouts ?? {});
+    return result;
+  }
+  for (const userId of Object.keys(layouts ?? {})) {
+    const viewElement = getViewElement(cameraApp, userId);
+    if (!viewElement || viewSupportsModuleGeometry(viewElement)) continue;
+    result.attempted += 1;
+    const target = moduleGeometryToggleTarget(viewElement);
+    if (clickToggleTarget(target)) {
+      result.toggled += 1;
+      continue;
+    }
+    result.missing.push(userId);
+  }
+  if (result.toggled > 0) await waitForUiTick();
+  return result;
 }
 
 export function dumpRendererDebugSnapshot(userId, app) {

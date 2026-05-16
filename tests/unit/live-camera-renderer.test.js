@@ -3,9 +3,11 @@ import assert from "node:assert/strict";
 import {
   applyGeometryDefaults,
   applyFrameOverlayFallbackStyle,
+  bindReactiveAvatarVisibility,
   dumpRendererDebugSnapshot,
   isFrameOverlayPath,
   isRendererDebugEnabled,
+  prepareModuleGeometryForLayouts,
   requestCameraLayoutsApply,
   requestRenderedCameraLayoutsApply,
   resolveRelativeLayout,
@@ -145,6 +147,74 @@ test("syncFoundryAvatarVisibility restores marked avatar when stream stops", () 
   };
 
   syncFoundryAvatarVisibility(viewWith([avatar]), videoElement);
+
+  assert.equal(avatar.style.visibility, "");
+  assert.equal(avatar.style.opacity, "");
+  assert.equal(avatar.style.pointerEvents, "");
+  assert.equal(avatar.dataset.charlemosHidden, undefined);
+});
+
+test("bindReactiveAvatarVisibility hides avatar when video metadata arrives", () => {
+  let listener = null;
+  const avatar = {
+    tagName: "IMG",
+    style: { display: "" },
+    dataset: {}
+  };
+  const videoElement = {
+    videoWidth: 0,
+    videoHeight: 0,
+    ended: false,
+    addEventListener: (type, handler) => {
+      if (type === "loadedmetadata") listener = handler;
+    }
+  };
+
+  bindReactiveAvatarVisibility(viewWith([avatar]), videoElement);
+  videoElement.videoWidth = 640;
+  videoElement.videoHeight = 360;
+  listener();
+
+  assert.equal(avatar.style.visibility, "hidden");
+  assert.equal(avatar.style.opacity, "0");
+  assert.equal(avatar.dataset.charlemosHidden, "1");
+});
+
+test("bindReactiveAvatarVisibility does not duplicate video listeners", () => {
+  let listenerCount = 0;
+  const videoElement = {
+    addEventListener: () => {
+      listenerCount += 1;
+    }
+  };
+  const viewElement = viewWith([]);
+
+  bindReactiveAvatarVisibility(viewElement, videoElement);
+  bindReactiveAvatarVisibility(viewElement, videoElement);
+
+  assert.equal(listenerCount, 3);
+});
+
+test("bindReactiveAvatarVisibility restores marked avatar when reactive feed stops", () => {
+  let listener = null;
+  const avatar = {
+    tagName: "IMG",
+    style: { display: "", visibility: "hidden", opacity: "0", pointerEvents: "none" },
+    dataset: { charlemosHidden: "1" }
+  };
+  const videoElement = {
+    videoWidth: 640,
+    videoHeight: 360,
+    ended: false,
+    addEventListener: (type, handler) => {
+      if (type === "playing") listener = handler;
+    }
+  };
+
+  bindReactiveAvatarVisibility(viewWith([avatar]), videoElement);
+  videoElement.videoWidth = 0;
+  videoElement.videoHeight = 0;
+  listener();
 
   assert.equal(avatar.style.visibility, "");
   assert.equal(avatar.style.opacity, "");
@@ -759,6 +829,82 @@ test("viewSupportsModuleGeometry only returns true for popout camera views", () 
 
   assert.equal(viewSupportsModuleGeometry(popoutView), true);
   assert.equal(viewSupportsModuleGeometry(dockedView), false);
+});
+
+test("prepareModuleGeometryForLayouts clicks dock toggle for docked module cameras", async () => {
+  let clicked = 0;
+  const viewElement = {
+    classList: {
+      contains: () => false
+    },
+    closest: () => null,
+    querySelector: (selector) => (selector.includes("toggleDocked") ? { click: () => { clicked += 1; } } : null)
+  };
+  globalThis.ui = {
+    webrtc: {
+      getUserCameraView: () => viewElement,
+      getUserVideoElement: () => ({})
+    }
+  };
+  globalThis.window = {
+    setTimeout: (fn) => {
+      fn();
+      return 1;
+    }
+  };
+
+  const result = await prepareModuleGeometryForLayouts({ u1: { top: "10px" } });
+
+  assert.equal(clicked, 1);
+  assert.equal(result.attempted, 1);
+  assert.equal(result.toggled, 1);
+  assert.deepEqual(result.missing, []);
+});
+
+test("prepareModuleGeometryForLayouts skips cameras already supporting module geometry", async () => {
+  let clicked = 0;
+  const viewElement = {
+    classList: {
+      contains: (name) => name === "popout"
+    },
+    closest: () => null,
+    querySelector: () => ({ click: () => { clicked += 1; } })
+  };
+  globalThis.ui = {
+    webrtc: {
+      getUserCameraView: () => viewElement,
+      getUserVideoElement: () => ({})
+    }
+  };
+
+  const result = await prepareModuleGeometryForLayouts({ u1: { top: "10px" } });
+
+  assert.equal(clicked, 0);
+  assert.equal(result.attempted, 0);
+  assert.equal(result.toggled, 0);
+  assert.deepEqual(result.missing, []);
+});
+
+test("prepareModuleGeometryForLayouts reports docked cameras without native toggle control", async () => {
+  const viewElement = {
+    classList: {
+      contains: () => false
+    },
+    closest: () => null,
+    querySelector: () => null
+  };
+  globalThis.ui = {
+    webrtc: {
+      getUserCameraView: () => viewElement,
+      getUserVideoElement: () => ({})
+    }
+  };
+
+  const result = await prepareModuleGeometryForLayouts({ u1: { top: "10px" } });
+
+  assert.equal(result.attempted, 1);
+  assert.equal(result.toggled, 0);
+  assert.deepEqual(result.missing, ["u1"]);
 });
 
 test("resolveRelativeLayout still resolves legacy relative payloads", () => {

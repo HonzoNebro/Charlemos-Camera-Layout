@@ -61,6 +61,7 @@ npm test
 ## Foundry install
 
 - Manifest URL: `https://raw.githubusercontent.com/HonzoNebro/Charlemos-Camera-Layout/main/module.json`
+- Compatibility: Foundry VTT 13.
 
 ## Languages
 

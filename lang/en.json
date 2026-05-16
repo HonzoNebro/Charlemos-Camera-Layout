@@ -199,6 +199,7 @@
   "charlemos-camera-layout.ui.config.notifications.importFailed": "Invalid JSON config file",
   "charlemos-camera-layout.ui.config.notifications.macroLoaded": "Macro config loaded into editor. Press Save to apply.",
   "charlemos-camera-layout.ui.config.notifications.macroApplied": "Scene camera profile applied from macro",
+  "charlemos-camera-layout.ui.config.notifications.moduleGeometryUnavailable": "Some docked cameras could not be popped out automatically. Use the camera popout control and run the macro again.",
   "charlemos-camera-layout.ui.config.notifications.currentPlayerReset": "Current scene camera settings reset for the selected player",
   "charlemos-camera-layout.ui.config.notifications.sceneRequired": "Open an active scene before using scene camera configuration.",
   "charlemos-camera-layout.ui.config.notifications.noLegacyLayouts": "No legacy global layouts are stored.",

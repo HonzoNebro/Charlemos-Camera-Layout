@@ -199,6 +199,7 @@
   "charlemos-camera-layout.ui.config.notifications.importFailed": "Archivo JSON de configuración inválido",
   "charlemos-camera-layout.ui.config.notifications.macroLoaded": "Configuración de macro cargada en el editor. Pulsa Guardar para aplicar.",
   "charlemos-camera-layout.ui.config.notifications.macroApplied": "Perfil de cámaras de escena aplicado desde la macro",
+  "charlemos-camera-layout.ui.config.notifications.moduleGeometryUnavailable": "Algunas cámaras del dock no pudieron sacarse automáticamente. Usa el control de popout de cámara y ejecuta la macro de nuevo.",
   "charlemos-camera-layout.ui.config.notifications.currentPlayerReset": "Se restablecieron los ajustes de cámara del jugador seleccionado en la escena actual",
   "charlemos-camera-layout.ui.config.notifications.sceneRequired": "Abre una escena activa antes de usar la configuración de cámaras de escena.",
   "charlemos-camera-layout.ui.config.notifications.noLegacyLayouts": "No hay layouts globales heredados guardados.",

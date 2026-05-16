@@ -6,7 +6,7 @@ import { applySceneProfile, getSceneCamera, getSceneProfile, resetSceneProfile, 
 import { sanitizeLayouts } from "./camera-config-shared.js";
 import { setControlsVisibility } from "./ui-controls.js";
 import { getApp, setLoadedSceneProfileDraft } from "./state.js";
-import { applyCameraLayoutsNow, dumpRendererDebugSnapshot } from "./live-camera-renderer.js";
+import { applyCameraLayoutsNow, dumpRendererDebugSnapshot, prepareModuleGeometryForLayouts } from "./live-camera-renderer.js";
 import { dumpModuleDebugReport } from "./debug-report.js";
 
 function openConfig() {
@@ -24,6 +24,12 @@ function loadSceneProfileDraft(sceneId, payload) {
 async function applySceneProfileDraft(sceneId, payload) {
   const cameraControlMode = String(payload?.cameraControlMode ?? "native").trim() || "native";
   const layouts = sanitizeLayouts(payload?.layouts ?? {}, cameraControlMode);
+  if (cameraControlMode === "module") {
+    const geometryResult = await prepareModuleGeometryForLayouts(layouts);
+    if (geometryResult.missing.length > 0) {
+      ui.notifications.warn(game.i18n.localize(`${MODULE_ID}.ui.config.notifications.moduleGeometryUnavailable`));
+    }
+  }
   setLoadedSceneProfileDraft(sceneId, {
     cameraControlMode,
     layouts

@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.3] - 2026-05-16
+
+### Changed
+- Release metadata updated for stable distribution:
+  - module version: `2.0.3`
+  - download URL points to tag archive `v2.0.3`
+
+### Fixed
+- Scene profile macros in `module` camera control mode now try to pop docked cameras out before applying module-owned geometry.
+- Macro application now warns when Foundry's native popout control cannot be found for a docked camera instead of silently leaving it in the dock.
+- Avatar and fallback image visibility now re-syncs when Foundry restores a live video feed in the docked panel.
+
 ## [2.0.2] - 2026-03-31
 
 ### Fixed
