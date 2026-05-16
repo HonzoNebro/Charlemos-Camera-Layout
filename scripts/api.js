@@ -37,7 +37,7 @@ async function applySceneProfileDraft(sceneId, payload) {
   await applySceneProfile(sceneId, layouts, { cameraControlMode });
   applyCameraLayoutsNow();
   const app = getApp();
-  if (app) await app.render(true);
+  await app?.refreshIfOpen?.();
   console.debug(`${MODULE_ID} | scene profile draft applied`, { sceneId, cameraControlMode, layoutCount: Object.keys(layouts).length });
   ui.notifications.info(game.i18n.localize(`${MODULE_ID}.ui.config.notifications.macroApplied`));
 }

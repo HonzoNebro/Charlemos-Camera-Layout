@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.4] - 2026-05-16
+
+### Fixed
+- Running a saved scene profile macro now applies the profile without opening the camera configuration window.
+
+### Changed
+- Release metadata updated for stable distribution:
+  - module version: `2.0.4`
+  - download URL points to tag archive `v2.0.4`
+
 ## [2.0.3] - 2026-05-16
 
 ### Changed

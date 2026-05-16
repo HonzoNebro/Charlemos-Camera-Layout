@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createApi } from "../../scripts/api.js";
+import { setApp } from "../../scripts/state.js";
 
 function mockApiEnv({ toggleTarget = true } = {}) {
   const settings = new Map();
@@ -116,4 +117,35 @@ test("applySceneProfileDraft warns when docked module cameras cannot be popped o
   assert.equal(env.clicked(), 0);
   assert.equal(sceneProfiles["scene-a"].cameraControlMode, "module");
   assert.deepEqual(env.warnings, ["charlemos-camera-layout.ui.config.notifications.moduleGeometryUnavailable"]);
+});
+
+test("applySceneProfileDraft refreshes an existing config window without opening it", async () => {
+  mockApiEnv();
+  const api = createApi();
+  let refreshCount = 0;
+  let renderCount = 0;
+  setApp({
+    refreshIfOpen: async () => {
+      refreshCount += 1;
+    },
+    render: () => {
+      renderCount += 1;
+    }
+  });
+
+  try {
+    await api.applySceneProfileDraft("scene-a", {
+      cameraControlMode: "native",
+      layouts: {
+        u1: {
+          filter: "blur(1px)"
+        }
+      }
+    });
+  } finally {
+    setApp(null);
+  }
+
+  assert.equal(refreshCount, 1);
+  assert.equal(renderCount, 0);
 });
