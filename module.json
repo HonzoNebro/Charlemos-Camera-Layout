@@ -2,9 +2,9 @@
   "id": "charlemos-camera-layout",
   "title": "Charlemos Camera Layout",
   "description": "Configurable camera layout and styling for Foundry VTT A/V.",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "compatibility": {
-    "minimum": "14",
+    "minimum": "13",
     "verified": "14"
   },
   "authors": [
@@ -37,6 +37,6 @@
   ],
   "url": "https://github.com/HonzoNebro/Charlemos-Camera-Layout",
   "manifest": "https://raw.githubusercontent.com/HonzoNebro/Charlemos-Camera-Layout/main/module.json",
-  "download": "https://github.com/HonzoNebro/Charlemos-Camera-Layout/archive/refs/tags/v3.0.1.zip",
+  "download": "https://github.com/HonzoNebro/Charlemos-Camera-Layout/archive/refs/tags/v3.0.2.zip",
   "license": "LICENSE"
 }

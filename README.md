@@ -1,6 +1,6 @@
 # Charlemos Camera Layout
 
-FoundryVTT V14 module for advanced A/V camera styling with scene-scoped camera profiles.
+FoundryVTT V13-V14 module for advanced A/V camera styling with scene-scoped camera profiles.
 
 <img width="2430" height="1251" alt="image" src="https://github.com/user-attachments/assets/33cc54b0-f720-4c96-938c-b3f72f3af5f2" />
 
@@ -61,7 +61,7 @@ npm test
 ## Foundry install
 
 - Manifest URL: `https://raw.githubusercontent.com/HonzoNebro/Charlemos-Camera-Layout/main/module.json`
-- Compatibility: Foundry VTT 14 only.
+- Compatibility: Foundry VTT 13-14.
 
 ## Languages
 
