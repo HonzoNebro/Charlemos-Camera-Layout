@@ -1,7 +1,15 @@
 import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
 import { getAllPlayerLayouts } from "./camera-style-service.js";
 import { applyCameraLayoutsNow } from "./live-camera-renderer.js";
-import { applySceneProfile, getSceneCameraControlMode, getSceneProfile, getSceneProfileLayout, resetSceneProfile, sceneProfileEnabled } from "./scene-camera.js";
+import {
+  applySceneProfile,
+  getSceneCameraControlMode,
+  getSceneProfile,
+  getSceneProfileLayout,
+  resetSceneProfile,
+  sanitizeSceneCameras,
+  sceneProfileEnabled
+} from "./scene-camera.js";
 import { clearLoadedSceneProfileDraft, getLoadedSceneProfileDraft } from "./state.js";
 
 export const LEGACY_LAYOUT_KEYS = ["preset", "snap", "resize"];
@@ -166,7 +174,7 @@ export function normalizeImportPayload(json) {
           })
         )
       : {};
-  const sceneCamera = settings.sceneCamera && typeof settings.sceneCamera === "object" ? settings.sceneCamera : {};
+  const sceneCamera = sanitizeSceneCameras(settings.sceneCamera);
   return {
     playerLayouts,
     sceneProfiles,
@@ -196,7 +204,7 @@ export function configExportPayload() {
     settings: {
       playerLayouts: sanitizeLayouts(getAllPlayerLayouts(), "module"),
       sceneProfiles,
-      sceneCamera: foundry.utils.deepClone(game.settings.get(MODULE_ID, SETTINGS_KEYS.SCENE_CAMERA) ?? {})
+      sceneCamera: sanitizeSceneCameras(game.settings.get(MODULE_ID, SETTINGS_KEYS.SCENE_CAMERA))
     }
   };
 }

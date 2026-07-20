@@ -1,9 +1,15 @@
 import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
 import { CameraConfigApp } from "./camera-config-app.js";
 import { requestCameraLayoutsApply } from "./live-camera-renderer.js";
+import { requestSceneBackgroundApply } from "./scene-background-renderer.js";
 import { getApp } from "./state.js";
 
 export function handleSharedLayoutSettingChange({ requestApply = requestCameraLayoutsApply, app = getApp() } = {}) {
+  requestApply();
+  app?.refreshIfOpen?.();
+}
+
+export function handleSceneCameraSettingChange({ requestApply = requestSceneBackgroundApply, app = getApp() } = {}) {
   requestApply();
   app?.refreshIfOpen?.();
 }
@@ -28,7 +34,7 @@ function registerSceneCameraSetting() {
     config: false,
     type: Object,
     default: {},
-    onChange: () => handleSharedLayoutSettingChange()
+    onChange: () => handleSceneCameraSettingChange()
   });
 }
 

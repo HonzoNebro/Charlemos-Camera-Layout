@@ -149,3 +149,20 @@ test("applySceneProfileDraft refreshes an existing config window without opening
   assert.equal(refreshCount, 1);
   assert.equal(renderCount, 0);
 });
+
+test("public API exposes compatible scene camera set, get and reset operations", async () => {
+  const env = mockApiEnv();
+  const api = createApi();
+
+  const legacyResult = await api.setSceneCamera("scene-a", "u1");
+  const configuredResult = await api.setSceneCamera("scene-b", "u1", { fit: "contain" });
+
+  assert.deepEqual(legacyResult, { playerId: "u1", fit: "cover" });
+  assert.deepEqual(configuredResult, { playerId: "u1", fit: "contain" });
+  assert.deepEqual(api.getSceneCamera({ id: "scene-b" }), { playerId: "u1", fit: "contain" });
+  assert.equal(typeof api.resetSceneCamera, "function");
+  assert.equal(await api.resetSceneCamera("scene-a"), true);
+  assert.deepEqual(env.settings.get("charlemos-camera-layout.sceneCamera"), {
+    "scene-b": { playerId: "u1", fit: "contain" }
+  });
+});

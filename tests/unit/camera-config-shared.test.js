@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  configExportPayload,
   finalizeSubwindowSave,
+  importJsonConfigFile,
   importLegacyLayoutsIntoCurrentScene,
   loadLayoutForUser,
   normalizeImportPayload,
@@ -177,6 +179,61 @@ test("normalizeImportPayload preserves relative layouts in module scenes and str
   assert.equal(payload.sceneProfiles["scene-module"].layouts.u1.layoutMode, "relative");
   assert.deepEqual(payload.sceneProfiles["scene-native"].layouts.u1, {
     filter: "blur(1px)"
+  });
+});
+
+test("normalizeImportPayload sanitizes scene camera sources and fit values", () => {
+  const payload = normalizeImportPayload({
+    settings: {
+      sceneCamera: {
+        "scene-legacy": { playerId: "u1" },
+        "scene-contain": { playerId: "u2", fit: "contain", extra: true },
+        "scene-invalid-fit": { playerId: "u3", fit: "unexpected" },
+        "scene-invalid-source": { fit: "fill" }
+      }
+    }
+  });
+
+  assert.deepEqual(payload.sceneCamera, {
+    "scene-legacy": { playerId: "u1", fit: "cover" },
+    "scene-contain": { playerId: "u2", fit: "contain" },
+    "scene-invalid-fit": { playerId: "u3", fit: "cover" }
+  });
+});
+
+test("config export and import preserve only normalized scene camera state", async () => {
+  const store = installSettings({
+    sceneCamera: {
+      "scene-a": { playerId: "u1", fit: "fill", extra: "remove" },
+      "scene-b": { playerId: "u2" },
+      "scene-invalid": { fit: "contain" }
+    }
+  });
+
+  const exported = configExportPayload();
+
+  assert.deepEqual(exported.settings.sceneCamera, {
+    "scene-a": { playerId: "u1", fit: "fill" },
+    "scene-b": { playerId: "u2", fit: "cover" }
+  });
+
+  const imported = await importJsonConfigFile({
+    text: async () =>
+      JSON.stringify({
+        settings: {
+          sceneCamera: {
+            "scene-a": { playerId: "u3", fit: "contain", ignored: true },
+            "scene-b": { playerId: "u4", fit: "invalid" },
+            "scene-invalid": null
+          }
+        }
+      })
+  });
+
+  assert.equal(imported, true);
+  assert.deepEqual(store.sceneCamera, {
+    "scene-a": { playerId: "u3", fit: "contain" },
+    "scene-b": { playerId: "u4", fit: "cover" }
   });
 });
 

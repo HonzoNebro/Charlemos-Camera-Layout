@@ -2,6 +2,13 @@ import { DEFAULT_CAMERA_BOUNDS, MODULE_ID, SETTINGS_KEYS } from "./constants.js"
 import { inferLayoutMode } from "./camera-config-model.js";
 import { composeTransform, nameStyle, overlayMediaKind, overlayMediaStyle, overlayStyle, overlayTintStyle } from "./camera-layout-style.js";
 import { buildCameraViewStyle } from "./camera-style-service.js";
+import {
+  isCameraViewsApp,
+  isLiveCameraVideo,
+  resolveCameraVideoElement,
+  resolveCameraViewElement,
+  resolveCameraViewsApp
+} from "./camera-video-source.js";
 import { getSceneCameraControlMode, getSceneProfile, getSceneProfileLayout, sceneProfileEnabled } from "./scene-camera.js";
 
 const RENDER_DELAY_MS = 50;
@@ -14,26 +21,16 @@ let renderTimer = null;
 let alternateNameTicker = null;
 const debugTimestamps = new Map();
 
-function isCameraViewsApp(app) {
-  if (!app) return false;
-  if (app.constructor?.name === "CameraViews") return true;
-  return typeof app.getUserCameraView === "function" && typeof app.getUserVideoElement === "function";
-}
-
 function getCameraViewsApp(app) {
-  if (isCameraViewsApp(app)) return app;
-  if (isCameraViewsApp(globalThis.ui?.webrtc)) return globalThis.ui.webrtc;
-  return null;
+  return resolveCameraViewsApp(app);
 }
 
 function getViewElement(app, userId) {
-  if (typeof app.getUserCameraView === "function") return app.getUserCameraView(userId);
-  return document.querySelector(`.camera-view[data-user="${userId}"], .camera-view[data-user-id="${userId}"]`);
+  return resolveCameraViewElement(userId, app);
 }
 
 function getVideoElement(app, userId, viewElement) {
-  if (typeof app.getUserVideoElement === "function") return app.getUserVideoElement(userId);
-  return viewElement?.querySelector("video");
+  return resolveCameraVideoElement(userId, app, viewElement);
 }
 
 function getOrCreateOverlay(viewElement) {
@@ -447,8 +444,7 @@ function logRendererDebug(stage, userId, sceneEnabled, viewElement, videoElement
 }
 
 function hasLiveVideoFeed(videoElement) {
-  if (!videoElement) return false;
-  return Number(videoElement.videoWidth) > 0 && Number(videoElement.videoHeight) > 0 && videoElement.ended !== true;
+  return isLiveCameraVideo(videoElement);
 }
 
 function elementRect(element) {

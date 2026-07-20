@@ -2,7 +2,7 @@ import { MODULE_ID } from "./constants.js";
 import { getPlayerLayout, updatePlayerLayout, buildVideoStyle } from "./camera-style-service.js";
 import { setPlayerOverlay, setPlayerNameStyle, setPlayerVideoFilter, setPlayerGeometry } from "./overlay-service.js";
 import { exportLayoutToMacro, exportSceneProfileToMacro } from "./macro-exporter.js";
-import { applySceneProfile, getSceneCamera, getSceneProfile, resetSceneProfile, setSceneCamera } from "./scene-camera.js";
+import { applySceneProfile, getSceneCamera, getSceneProfile, resetSceneCamera, resetSceneProfile, setSceneCamera } from "./scene-camera.js";
 import { sanitizeLayouts } from "./camera-config-shared.js";
 import { setControlsVisibility } from "./ui-controls.js";
 import { getApp, setLoadedSceneProfileDraft } from "./state.js";
@@ -60,6 +60,7 @@ export function createApi() {
     getSceneProfile,
     getSceneCamera,
     setSceneCamera,
+    resetSceneCamera,
     setControlsVisibility,
     dumpRendererDebugSnapshot,
     dumpModuleDebugReport,

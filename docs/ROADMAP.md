@@ -1,5 +1,11 @@
 # Roadmap
 
+## Current (3.x)
+
+1. Live camera scene backgrounds
+- Use one player camera as a synchronized runtime scene background.
+- Support `cover`, `contain` and `fill` fitting with automatic native-background fallback.
+
 ## Short Term (1.0.x)
 
 1. Renderer stability and compatibility
@@ -33,7 +39,7 @@
 - Guided controls for clip-path presets and advanced overlay alignment tools.
 
 4. Foundry integration depth
-- Stronger support for using camera output as scene media source with controlled sync behavior.
+- Evaluate optional positioned pseudo-tiles that reuse the live camera background renderer.
 
 5. Automated quality gates
 - Expand automated tests around renderer/layout edge cases and regression snapshots.

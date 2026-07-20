@@ -70,6 +70,7 @@ test("camera config hub html renders player selector and actions", async () => {
 
   assert.match(html, /player-id/);
   assert.match(html, /open-layout-config/);
+  assert.match(html, /open-scene-background/);
   assert.match(html, /support-report/);
   assert.match(html, /reset-current-player/);
 });
@@ -129,6 +130,7 @@ test("camera config hub disables scene-scoped actions when there is no active sc
 
   assert.match(html, /ui\.config\.noScene\.title/);
   assert.match(html, /data-action="open-layout-config" disabled/);
+  assert.match(html, /data-action="open-scene-background" disabled/);
   assert.match(html, /data-action="export" disabled/);
   assert.match(html, /data-action="import-legacy-layouts" disabled/);
   assert.doesNotMatch(html, /data-action="support-report" disabled/);

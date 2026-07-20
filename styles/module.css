@@ -289,6 +289,32 @@
   gap: 0.5rem;
 }
 
+.charlemos-scene-background-status {
+  display: grid;
+  gap: 0.2rem;
+  margin-top: 0.65rem;
+  border: 1px solid var(--color-border-light-primary);
+  border-radius: 6px;
+  padding: 0.55rem 0.65rem;
+  font-size: 0.78rem;
+}
+
+.charlemos-scene-background-status span {
+  opacity: 0.9;
+}
+
+.charlemos-scene-background-status-active {
+  border-color: var(--color-level-success-border, #3a7);
+}
+
+.charlemos-scene-background-status-waiting {
+  border-color: var(--color-level-warning-border, #b8860b);
+}
+
+.charlemos-scene-background-status-unavailable {
+  border-color: var(--color-level-error-border, #c33);
+}
+
 .charlemos-camera-view {
   overflow: hidden;
 }

@@ -15,5 +15,6 @@ export const SETTINGS_KEYS = {
 
 export const HOOKS = {
   INIT: "init",
-  READY: "ready"
+  READY: "ready",
+  SCENE_BACKGROUND_STATUS_CHANGED: `${MODULE_ID}.sceneBackgroundStatusChanged`
 };

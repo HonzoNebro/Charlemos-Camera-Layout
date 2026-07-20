@@ -6,9 +6,11 @@ import {
   getSceneCamera,
   getSceneProfile,
   migrateLegacySceneProfiles,
+  normalizeSceneCamera,
   pruneMissingSceneState,
   resetSceneCamera,
   resetSceneProfile,
+  sanitizeSceneCameras,
   sceneProfileEnabled,
   setSceneCameraControlMode,
   setSceneCamera
@@ -45,8 +47,27 @@ test("migrateLegacySceneProfiles moves old profile payload out of sceneCamera", 
 
   assert.equal(migrated, true);
   assert.deepEqual(store.sceneProfiles["scene-a"], { enabled: true, layouts: { u1: { filter: "blur(1px)" } } });
-  assert.deepEqual(store.sceneCamera["scene-b"], { playerId: "u2" });
+  assert.deepEqual(store.sceneCamera["scene-b"], { playerId: "u2", fit: "cover" });
   assert.equal(store.sceneCamera["scene-a"], undefined);
+});
+
+test("migrateLegacySceneProfiles normalizes legacy scene camera entries", async () => {
+  const store = installSettings({
+    sceneCamera: {
+      "scene-a": { playerId: "u1" },
+      "scene-b": { playerId: "u2", fit: "invalid" },
+      "scene-invalid": { fit: "fill" }
+    },
+    sceneProfiles: {}
+  });
+
+  const migrated = await migrateLegacySceneProfiles();
+
+  assert.equal(migrated, true);
+  assert.deepEqual(store.sceneCamera, {
+    "scene-a": { playerId: "u1", fit: "cover" },
+    "scene-b": { playerId: "u2", fit: "cover" }
+  });
 });
 
 test("sceneCamera and sceneProfiles stay isolated", async () => {
@@ -55,7 +76,7 @@ test("sceneCamera and sceneProfiles stay isolated", async () => {
   await setSceneCamera("scene-a", "u1");
   await applySceneProfile("scene-a", { u1: { clipPath: "circle(45%)" } });
 
-  assert.deepEqual(getSceneCamera({ id: "scene-a" }), { playerId: "u1" });
+  assert.deepEqual(getSceneCamera({ id: "scene-a" }), { playerId: "u1", fit: "cover" });
   assert.deepEqual(getSceneProfile({ id: "scene-a" }), {
     enabled: true,
     cameraControlMode: "native",
@@ -63,6 +84,52 @@ test("sceneCamera and sceneProfiles stay isolated", async () => {
   });
   assert.equal(sceneProfileEnabled({ id: "scene-a" }), true);
   assert.equal(getSceneCameraControlMode({ id: "scene-a" }), "native");
+});
+
+test("scene cameras normalize legacy and invalid fit values to cover", () => {
+  installSettings({
+    sceneCamera: {
+      "scene-a": { playerId: "u1" },
+      "scene-b": { playerId: "u2", fit: "unexpected" }
+    },
+    sceneProfiles: {}
+  });
+
+  assert.deepEqual(getSceneCamera({ id: "scene-a" }), { playerId: "u1", fit: "cover" });
+  assert.deepEqual(getSceneCamera({ id: "scene-b" }), { playerId: "u2", fit: "cover" });
+  assert.deepEqual(normalizeSceneCamera({ playerId: "u3", fit: "contain" }), { playerId: "u3", fit: "contain" });
+});
+
+test("setSceneCamera accepts fit options and persists normalized scene camera state", async () => {
+  const store = installSettings({
+    sceneCamera: {
+      "scene-legacy": { playerId: "u1" },
+      "scene-invalid": { fit: "fill" }
+    },
+    sceneProfiles: {}
+  });
+
+  const result = await setSceneCamera("scene-a", "u2", { fit: "fill" });
+
+  assert.deepEqual(result, { playerId: "u2", fit: "fill" });
+  assert.deepEqual(store.sceneCamera, {
+    "scene-legacy": { playerId: "u1", fit: "cover" },
+    "scene-a": { playerId: "u2", fit: "fill" }
+  });
+});
+
+test("sanitizeSceneCameras rejects invalid entries and only preserves supported fits", () => {
+  assert.deepEqual(
+    sanitizeSceneCameras({
+      "scene-a": { playerId: "u1", fit: "contain", extra: true },
+      "scene-b": { playerId: "u2", fit: "invalid" },
+      "scene-c": { fit: "fill" }
+    }),
+    {
+      "scene-a": { playerId: "u1", fit: "contain" },
+      "scene-b": { playerId: "u2", fit: "cover" }
+    }
+  );
 });
 
 test("resetSceneProfile removes scene profile entry", async () => {

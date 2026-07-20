@@ -40,6 +40,27 @@ test("handleSharedLayoutSettingChange reapplies layouts and refreshes hub only i
   assert.equal(refreshCount, 1);
 });
 
+test("handleSceneCameraSettingChange reapplies the live background and refreshes the hub", async () => {
+  installBaseGlobals();
+  const { handleSceneCameraSettingChange } = await importSettingsModule();
+  let requestCount = 0;
+  let refreshCount = 0;
+
+  handleSceneCameraSettingChange({
+    requestApply: () => {
+      requestCount += 1;
+    },
+    app: {
+      refreshIfOpen: () => {
+        refreshCount += 1;
+      }
+    }
+  });
+
+  assert.equal(requestCount, 1);
+  assert.equal(refreshCount, 1);
+});
+
 test("registerSettings wires shared world settings through onChange", async () => {
   installBaseGlobals();
   const registered = new Map();
@@ -58,4 +79,7 @@ test("registerSettings wires shared world settings through onChange", async () =
   assert.equal(typeof registered.get(SETTINGS_KEYS.PLAYER_LAYOUTS)?.onChange, "function");
   assert.equal(typeof registered.get(SETTINGS_KEYS.SCENE_CAMERA)?.onChange, "function");
   assert.equal(typeof registered.get(SETTINGS_KEYS.SCENE_PROFILES)?.onChange, "function");
+  assert.match(String(registered.get(SETTINGS_KEYS.PLAYER_LAYOUTS)?.onChange), /handleSharedLayoutSettingChange/);
+  assert.match(String(registered.get(SETTINGS_KEYS.SCENE_CAMERA)?.onChange), /handleSceneCameraSettingChange/);
+  assert.match(String(registered.get(SETTINGS_KEYS.SCENE_PROFILES)?.onChange), /handleSharedLayoutSettingChange/);
 });

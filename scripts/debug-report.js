@@ -1,5 +1,6 @@
 import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
 import { dumpRendererDebugSnapshot, isRendererDebugEnabled } from "./live-camera-renderer.js";
+import { dumpSceneBackgroundSnapshot } from "./scene-background-renderer.js";
 import { getLoadedSceneProfileDraft } from "./state.js";
 
 function cloneValue(value) {
@@ -102,7 +103,8 @@ export function collectModuleDebugReport(userId, options = {}) {
     },
     users,
     targetUser: targetUserSection(targetUserId, currentSceneProfile, globalLayouts, sceneDraft),
-    rendererSnapshot: options.includeRendererSnapshot === false ? null : dumpRendererDebugSnapshot(targetUserId, options.app)
+    rendererSnapshot: options.includeRendererSnapshot === false ? null : dumpRendererDebugSnapshot(targetUserId, options.app),
+    sceneBackgroundSnapshot: options.includeSceneBackgroundSnapshot === false ? null : dumpSceneBackgroundSnapshot()
   };
 }
 

@@ -1,6 +1,7 @@
 import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
 
 const CAMERA_CONTROL_MODE_VALUES = new Set(["native", "module"]);
+const SCENE_CAMERA_FIT_VALUES = new Set(["cover", "contain", "fill"]);
 
 function normalizeCameraControlMode(value) {
   const text = String(value ?? "").trim();
@@ -8,8 +9,36 @@ function normalizeCameraControlMode(value) {
   return "native";
 }
 
+export function normalizeSceneCameraFit(value) {
+  const text = String(value ?? "").trim();
+  if (SCENE_CAMERA_FIT_VALUES.has(text)) return text;
+  return "cover";
+}
+
+export function normalizeSceneCamera(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const playerId = String(value.playerId ?? "").trim();
+  if (!playerId) return null;
+  return {
+    playerId,
+    fit: normalizeSceneCameraFit(value.fit)
+  };
+}
+
+export function sanitizeSceneCameras(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([sceneId, sceneCamera]) => {
+      const normalizedSceneId = String(sceneId ?? "").trim();
+      const normalizedSceneCamera = normalizeSceneCamera(sceneCamera);
+      if (!normalizedSceneId || !normalizedSceneCamera) return [];
+      return [[normalizedSceneId, normalizedSceneCamera]];
+    })
+  );
+}
+
 function getSceneId(scene) {
-  return scene?.id ?? canvas.scene?.id;
+  return scene?.id ?? globalThis.canvas?.scene?.id;
 }
 
 function readSceneCameraSetting() {
@@ -37,15 +66,21 @@ function cloneValue(value) {
 export function getSceneCamera(scene) {
   const sceneId = getSceneId(scene);
   const sceneCameras = readSceneCameraSetting();
-  return sceneCameras[sceneId] ?? null;
+  return normalizeSceneCamera(sceneCameras[sceneId]);
 }
 
-export async function setSceneCamera(sceneId, playerId) {
-  const sceneCameras = readSceneCameraSetting();
-  sceneCameras[sceneId] = { playerId };
+export async function setSceneCamera(sceneId, playerId, options = {}) {
+  const normalizedSceneId = String(sceneId ?? "").trim();
+  const sceneCamera = normalizeSceneCamera({
+    playerId,
+    fit: options?.fit
+  });
+  if (!normalizedSceneId || !sceneCamera) return null;
+  const sceneCameras = sanitizeSceneCameras(readSceneCameraSetting());
+  sceneCameras[normalizedSceneId] = sceneCamera;
   await writeSceneCameraSetting(sceneCameras);
-  console.debug(`${MODULE_ID} | scene camera updated`, { sceneId, playerId });
-  return sceneCameras[sceneId];
+  console.debug(`${MODULE_ID} | scene camera updated`, { sceneId: normalizedSceneId, ...sceneCamera });
+  return sceneCamera;
 }
 
 export function getSceneProfile(scene) {
@@ -145,9 +180,11 @@ export async function migrateLegacySceneProfiles() {
     delete sceneCameras[sceneId];
     changed = true;
   }
+  const normalizedSceneCameras = sanitizeSceneCameras(sceneCameras);
+  if (JSON.stringify(normalizedSceneCameras) !== JSON.stringify(sceneCameras)) changed = true;
   if (!changed) return false;
   await writeSceneProfilesSetting(sceneProfiles);
-  await writeSceneCameraSetting(sceneCameras);
+  await writeSceneCameraSetting(normalizedSceneCameras);
   console.debug(`${MODULE_ID} | legacy scene profiles migrated`);
   return true;
 }

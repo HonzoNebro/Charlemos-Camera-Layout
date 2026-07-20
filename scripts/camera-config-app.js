@@ -6,6 +6,7 @@ import { EffectsConfigApp } from "./effects-config-app.js";
 import { LayoutConfigApp } from "./layout-config-app.js";
 import { NameConfigApp } from "./name-config-app.js";
 import { OverlayConfigApp } from "./overlay-config-app.js";
+import { SceneBackgroundConfigApp, sceneBackgroundSummary } from "./scene-background-config-app.js";
 import { SceneLayoutPresetApp } from "./scene-layout-preset-app.js";
 import { SupportReportApp } from "./support-report-app.js";
 import {
@@ -30,7 +31,8 @@ import {
   selectedUser,
   usersForConfig
 } from "./camera-config-shared.js";
-import { getSceneCameraControlMode, getSceneProfile } from "./scene-camera.js";
+import { getSceneCamera, getSceneCameraControlMode, getSceneProfile } from "./scene-camera.js";
+import { getSceneBackgroundStatus } from "./scene-background-renderer.js";
 
 function titleKey() {
   return `${MODULE_ID}.ui.config.title`;
@@ -123,7 +125,7 @@ function noSceneSection(hasLegacyLayouts) {
   return sectionHtml(localize("ui.config.noScene.title"), localize("ui.config.noScene.description"), [hint]);
 }
 
-function toolsSection(formData, sceneReady) {
+function toolsSection(formData, sceneReady, backgroundSummary) {
   return sectionHtml(localize("ui.config.sections.tools"), localize("ui.config.sections.toolsDesc"), [
     `<div class="charlemos-config-grid">`,
     buttonCard(
@@ -152,6 +154,13 @@ function toolsSection(formData, sceneReady) {
       localize("ui.scenePresets.actions.open"),
       localize("ui.scenePresets.cardDesc"),
       localize("ui.scenePresets.cardSummary"),
+      !sceneReady
+    ),
+    buttonCard(
+      "open-scene-background",
+      localize("ui.sceneBackground.actions.open"),
+      localize("ui.sceneBackground.cardDesc"),
+      backgroundSummary,
       !sceneReady
     ),
     buttonCard(
@@ -188,7 +197,7 @@ export function buildHtml(context) {
     `<form id="${context.formId}" class="charlemos-config-form">`,
     `<div class="charlemos-config-scroll">`,
     sceneReady ? "" : noSceneSection(context.hasLegacyGlobalLayouts),
-    toolsSection(context.formData, sceneReady),
+    toolsSection(context.formData, sceneReady, context.sceneBackgroundSummary),
     `</div>`,
     actionsHtml(sceneReady, context.hasLegacyGlobalLayouts),
     `</form>`,
@@ -233,7 +242,8 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
       sceneId: currentSceneId(),
       hasLegacyGlobalLayouts: hasLegacyGlobalLayouts(),
       selectedUserId: this.selectedUserId,
-      formData: buildFormData(layout)
+      formData: buildFormData(layout),
+      sceneBackgroundSummary: sceneBackgroundSummary(getSceneCamera(), users, getSceneBackgroundStatus(), currentSceneId())
     };
   }
 
@@ -271,6 +281,7 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
       if (action === "open-effects-config") this.openEffectsConfig();
       if (action === "open-overlay-config") this.openOverlayConfig();
       if (action === "open-scene-presets") this.openScenePresets();
+      if (action === "open-scene-background") this.openSceneBackground();
       if (action === "open-name-config") this.openNameConfig();
       if (action === "export") await this.exportCurrentLayout();
       if (action === "export-json") await this.exportJsonConfig();
@@ -332,6 +343,14 @@ export class CameraConfigApp extends foundry.applications.api.ApplicationV2 {
       return;
     }
     new SceneLayoutPresetApp({ onSaved: () => this.refreshIfOpen() }).render(true);
+  }
+
+  openSceneBackground() {
+    if (!currentSceneId()) {
+      this.notifySceneRequired();
+      return;
+    }
+    new SceneBackgroundConfigApp({ onSaved: () => this.refreshIfOpen() }).render(true);
   }
 
   openSupportReport() {

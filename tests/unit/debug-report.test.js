@@ -57,7 +57,7 @@ function installDebugEnv() {
             }
           },
           sceneCamera: {
-            "scene-a": { playerId: "u2" }
+            "scene-a": { playerId: "u2", fit: "contain" }
           },
           debugRenderer: true
         })[key]
@@ -97,6 +97,7 @@ test("collectModuleDebugReport summarizes current scene, target user and setting
   assert.equal(report.scene.id, "scene-a");
   assert.equal(report.scene.currentSceneProfile.cameraControlMode, "module");
   assert.equal(report.scene.sceneCamera.playerId, "u2");
+  assert.equal(report.scene.sceneCamera.fit, "contain");
   assert.equal(report.settingsSummary.globalLayoutCount, 1);
   assert.equal(report.settingsSummary.sceneProfileCount, 1);
   assert.equal(report.targetUser.userId, "u2");
@@ -104,4 +105,6 @@ test("collectModuleDebugReport summarizes current scene, target user and setting
   assert.equal(report.targetUser.sceneLayout.top, "10px");
   assert.equal(report.targetUser.draftLayout.width, "300px");
   assert.equal(report.rendererSnapshot, null);
+  assert.equal(report.sceneBackgroundSnapshot.state, "disabled");
+  assert.equal(report.sceneBackgroundSnapshot.hasMesh, false);
 });

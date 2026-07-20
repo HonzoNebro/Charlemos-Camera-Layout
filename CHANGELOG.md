@@ -5,6 +5,25 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-07-20
+
+### Added
+- Scene-scoped live camera backgrounds with synchronized source selection and `cover`, `contain`, or `fill` fitting.
+- GM configuration UI with local active, waiting, unavailable, and disabled status reporting.
+- Public `resetSceneCamera(sceneId)` API and optional fit support in `setSceneCamera(sceneId, playerId, { fit })`.
+- Live background state in module support reports and renderer diagnostics.
+
+### Changed
+- Scene camera settings and JSON import/export now normalize legacy entries and sanitize source and fit values.
+- CameraViews video resolution is shared between the existing DOM renderer and the new canvas renderer.
+- Release metadata updated for stable distribution:
+  - module version: `3.1.0`
+  - download URL points to tag archive `v3.1.0`
+
+### Fixed
+- The native scene background is restored automatically when a feed is disabled, disconnected, muted, ended, or loses its video tracks.
+- Scene state migration and pruning only write world-scoped settings from a GM client.
+
 ## [3.0.2] - 2026-05-21
 
 ### Changed
