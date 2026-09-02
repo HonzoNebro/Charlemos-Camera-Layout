@@ -2,10 +2,87 @@ const CAMERA_VIEW_SELECTOR = ".camera-view[data-user], .camera-view[data-user-id
 const VIDEO_EVENTS = ["loadedmetadata", "playing", "resize", "emptied", "ended", "stalled", "abort", "loadstart"];
 const TRACK_EVENTS = ["ended", "mute", "unmute"];
 
+function asQueryableElement(value) {
+  if (!value) return null;
+  if (typeof value.querySelector === "function" || typeof value.matches === "function") return value;
+  try {
+    const first = typeof value.get === "function" ? value.get(0) : value[0];
+    if (typeof first?.querySelector === "function" || typeof first?.matches === "function") return first;
+  } catch {
+  }
+  return null;
+}
+
+function applicationElement(app) {
+  try {
+    return asQueryableElement(app?.element);
+  } catch {
+    return null;
+  }
+}
+
+function cameraViewUserId(viewElement) {
+  return String(viewElement?.dataset?.user ?? viewElement?.dataset?.userId ?? "");
+}
+
+function isCameraViewElement(element) {
+  try {
+    if (element?.matches?.(".camera-view")) return true;
+  } catch {
+  }
+  return element?.classList?.contains?.("camera-view") === true;
+}
+
+function cameraViewsIn(container) {
+  if (!container) return [];
+  const views = [];
+  if (isCameraViewElement(container)) views.push(container);
+  try {
+    if (typeof container.querySelectorAll === "function") {
+      views.push(...Array.from(container.querySelectorAll(".camera-view") ?? []));
+    } else {
+      const view = container.querySelector?.(".camera-view");
+      if (view) views.push(view);
+    }
+  } catch {
+  }
+  return Array.from(new Set(views));
+}
+
+function findCameraView(container, userId, allowUnattributed = false) {
+  const views = cameraViewsIn(container);
+  const targetUserId = String(userId ?? "");
+  const matching = views.find((view) => cameraViewUserId(view) === targetUserId);
+  if (matching) return matching;
+  if (!allowUnattributed) return null;
+  return views.find((view) => !cameraViewUserId(view)) ?? null;
+}
+
+function cameraPopoutMatchesUser(app, userId) {
+  const appUserId = String(app?.user?.id ?? "");
+  return Boolean(appUserId) && appUserId === String(userId ?? "");
+}
+
+function findVideoElement(container) {
+  try {
+    return container?.querySelector?.("video") ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function isCameraViewsApp(app) {
   if (!app) return false;
   if (app.constructor?.name === "CameraViews") return true;
   return typeof app.getUserCameraView === "function" && typeof app.getUserVideoElement === "function";
+}
+
+export function isCameraPopoutApp(app) {
+  if (!app || isCameraViewsApp(app)) return false;
+  if (app.constructor?.name === "CameraPopout") return true;
+  if (!app.user?.id) return false;
+  if (isCameraViewsApp(app.parent)) return true;
+  return Boolean(findCameraView(applicationElement(app), app.user.id, true));
 }
 
 export function resolveCameraViewsApp(app) {
@@ -14,12 +91,28 @@ export function resolveCameraViewsApp(app) {
   return null;
 }
 
-function findCameraViewInDocument(userId) {
-  const views = globalThis.document?.querySelectorAll?.(CAMERA_VIEW_SELECTOR) ?? [];
-  return Array.from(views).find((view) => String(view?.dataset?.user ?? view?.dataset?.userId ?? "") === String(userId)) ?? null;
+function findCameraViewInDocument(userId, documentElement = globalThis.document) {
+  try {
+    const views = documentElement?.querySelectorAll?.(CAMERA_VIEW_SELECTOR) ?? [];
+    return Array.from(views).find((view) => cameraViewUserId(view) === String(userId)) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function resolveCameraPopoutViewElement(userId, app) {
+  if (!cameraPopoutMatchesUser(app, userId)) return null;
+  const root = applicationElement(app);
+  const localView = findCameraView(root, userId, true);
+  if (localView) return localView;
+  if (!root?.ownerDocument) return null;
+  return findCameraViewInDocument(userId, root.ownerDocument);
 }
 
 export function resolveCameraViewElement(userId, app) {
+  if (isCameraPopoutApp(app) && cameraPopoutMatchesUser(app, userId)) {
+    return resolveCameraPopoutViewElement(userId, app);
+  }
   const cameraViews = resolveCameraViewsApp(app);
   try {
     const view = cameraViews?.getUserCameraView?.(userId);
@@ -30,6 +123,12 @@ export function resolveCameraViewElement(userId, app) {
 }
 
 export function resolveCameraVideoElement(userId, app, viewElement) {
+  if (isCameraPopoutApp(app) && cameraPopoutMatchesUser(app, userId)) {
+    const view = viewElement ?? resolveCameraPopoutViewElement(userId, app);
+    const viewVideo = findVideoElement(view);
+    if (viewVideo) return viewVideo;
+    return findVideoElement(applicationElement(app));
+  }
   const cameraViews = resolveCameraViewsApp(app);
   try {
     const video = cameraViews?.getUserVideoElement?.(userId);
@@ -37,15 +136,17 @@ export function resolveCameraVideoElement(userId, app, viewElement) {
   } catch {
   }
   const view = viewElement ?? resolveCameraViewElement(userId, cameraViews);
-  return view?.querySelector?.("video") ?? null;
+  return findVideoElement(view);
 }
 
 export function resolveCameraVideoSource(userId, app) {
-  const cameraViews = resolveCameraViewsApp(app);
-  const viewElement = resolveCameraViewElement(userId, cameraViews);
-  const videoElement = resolveCameraVideoElement(userId, cameraViews, viewElement);
+  const sourceApp = isCameraPopoutApp(app) && cameraPopoutMatchesUser(app, userId)
+    ? app
+    : resolveCameraViewsApp(app);
+  const viewElement = resolveCameraViewElement(userId, sourceApp);
+  const videoElement = resolveCameraVideoElement(userId, sourceApp, viewElement);
   return {
-    app: cameraViews,
+    app: sourceApp,
     viewElement,
     videoElement
   };

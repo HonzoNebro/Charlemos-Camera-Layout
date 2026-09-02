@@ -98,3 +98,73 @@ test("orderedSelectedUserIds keeps explicit gaps from slot numbers", async () =>
 
   assert.deepEqual(Array.from({ length: ordered.length }, (_, index) => ordered[index] ?? null), [null, null, "gm", null, null, "u1", "u2", "u3", "u4", "u5"]);
 });
+
+test("applying a scene preset preserves expanded overlay bounds", async () => {
+  installScenePresetEnv();
+  let sceneProfiles = {
+    "scene-a": {
+      enabled: true,
+      cameraControlMode: "module",
+      layouts: {
+        u1: {
+          overlay: {
+            enabled: true,
+            imageUrl: "frame.png",
+            bounds: { mode: "expanded", top: 20, right: 30, bottom: 40, left: 50 }
+          }
+        }
+      }
+    }
+  };
+  game.settings = {
+    get: (_moduleId, key) => ({ sceneProfiles, debugRenderer: false })[key] ?? {},
+    set: async (_moduleId, key, value) => {
+      if (key === "sceneProfiles") sceneProfiles = value;
+      return value;
+    }
+  };
+  globalThis.document.querySelector = () => null;
+  globalThis.document.querySelectorAll = () => [];
+  globalThis.ui = {
+    notifications: {
+      info: () => {},
+      warn: () => {}
+    },
+    webrtc: null
+  };
+  globalThis.window = {
+    innerWidth: 1200,
+    innerHeight: 800
+  };
+  const fields = new Map([
+    ["layoutType", { value: "grid" }],
+    ["rows", { value: "1" }],
+    ["cols", { value: "1" }],
+    ["aspectRatio", { value: "4:3" }],
+    ["unitMode", { value: "responsive" }],
+    ["gap", { value: "2" }],
+    ["marginX", { value: "2" }],
+    ["marginY", { value: "2" }],
+    ["include-u1", { checked: true }],
+    ["order-u1", { value: "1" }],
+    ["include-u2", { checked: false }],
+    ["order-u2", { value: "2" }]
+  ]);
+  const form = {
+    elements: {
+      namedItem: (name) => fields.get(name) ?? null
+    }
+  };
+  const { SceneLayoutPresetApp } = await import("../../scripts/scene-layout-preset-app.js");
+  const app = new SceneLayoutPresetApp();
+
+  await app.applyPreset(form);
+
+  assert.deepEqual(sceneProfiles["scene-a"].layouts.u1.overlay.bounds, {
+    mode: "expanded",
+    top: 20,
+    right: 30,
+    bottom: 40,
+    left: 50
+  });
+});

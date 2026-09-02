@@ -1,3 +1,5 @@
+import { normalizeOverlayBounds } from "./overlay-bounds.js";
+
 function parseFloatNumber(value) {
   if (value === "" || value === null || value === undefined) return null;
   const parsed = Number.parseFloat(value);
@@ -224,6 +226,7 @@ export function validateLayoutFormData(selectedUserId, formData, layoutsByUserId
 }
 
 export function buildFormData(layout) {
+  const overlayBounds = normalizeOverlayBounds(layout?.overlay?.bounds);
   return {
     layoutMode: inferLayoutMode(layout),
     top: nullableText(layout?.top) ?? "",
@@ -249,6 +252,11 @@ export function buildFormData(layout) {
     overlayRotate: overlayRotateFrom(layout),
     overlayFitMode: normalizedOverlayFitMode(layout?.overlay?.fitMode),
     overlayAnchor: normalizedOverlayAnchor(layout?.overlay?.anchor),
+    overlayBoundsMode: overlayBounds.mode,
+    overlayBoundsTop: overlayBounds.top,
+    overlayBoundsRight: overlayBounds.right,
+    overlayBoundsBottom: overlayBounds.bottom,
+    overlayBoundsLeft: overlayBounds.left,
     overlayTintEnabled: overlayTintEnabledFrom(layout),
     overlayTintColor: overlayTintColorFrom(layout),
     overlayTintOpacity: overlayTintOpacityFrom(layout),
@@ -293,6 +301,13 @@ function buildOverlayPayload(formData) {
     rotate: parseFloatNumber(formData.overlayRotate) ?? 0,
     fitMode: normalizedOverlayFitMode(formData.overlayFitMode),
     anchor: normalizedOverlayAnchor(formData.overlayAnchor),
+    bounds: normalizeOverlayBounds({
+      mode: formData.overlayBoundsMode,
+      top: formData.overlayBoundsTop,
+      right: formData.overlayBoundsRight,
+      bottom: formData.overlayBoundsBottom,
+      left: formData.overlayBoundsLeft
+    }),
     tint: {
       enabled: Boolean(formData.overlayTintEnabled),
       color: nullableText(formData.overlayTintColor) ?? "#000000",

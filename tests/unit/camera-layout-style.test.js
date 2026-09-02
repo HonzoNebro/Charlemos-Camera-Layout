@@ -16,6 +16,8 @@ test("overlayStyle disabled hides overlay", () => {
   const style = overlayStyle({ overlay: { enabled: false, imageUrl: "/x.png", opacity: 0.5 } });
   assert.deepEqual(style, {
     display: "none",
+    inset: "0",
+    overflow: "",
     backgroundImage: "",
     backgroundBlendMode: "normal",
     mixBlendMode: "normal",
@@ -49,6 +51,31 @@ test("overlayStyle applies transform and keeps overlay container media-agnostic"
   assert.equal(style.opacity, "0.6");
   assert.equal(style.transform, "translate(10px, -2%) scale(1.15) rotate(12deg)");
   assert.equal(style.transformOrigin, "center");
+  assert.equal(style.inset, "0");
+  assert.equal(style.overflow, "");
+});
+
+test("overlayStyle expands independently around the camera rectangle", () => {
+  const style = overlayStyle({
+    overlay: {
+      enabled: true,
+      imageUrl: "/x.png",
+      offset: { x: "8px", y: "-4px" },
+      scale: 1.1,
+      rotate: 5,
+      bounds: {
+        mode: "expanded",
+        top: 12.5,
+        right: 25,
+        bottom: 50.25,
+        left: 5
+      }
+    }
+  });
+
+  assert.equal(style.inset, "-12.5% -25% -50.25% -5%");
+  assert.equal(style.overflow, "visible");
+  assert.equal(style.transform, "translate(8px, -4px) scale(1.1) rotate(5deg)");
 });
 
 test("overlayStyle uses screen blend mode for frame overlays", () => {

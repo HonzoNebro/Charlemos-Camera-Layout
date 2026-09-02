@@ -1,4 +1,5 @@
 import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
+import { normalizeOverlayConfiguration } from "./overlay-bounds.js";
 
 const CAMERA_CONTROL_MODE_VALUES = new Set(["native", "module"]);
 const SCENE_CAMERA_FIT_VALUES = new Set(["cover", "contain", "fill"]);
@@ -63,6 +64,21 @@ function cloneValue(value) {
   return JSON.parse(JSON.stringify(value ?? {}));
 }
 
+function normalizeProfileLayouts(layouts) {
+  return Object.fromEntries(
+    Object.entries(cloneValue(layouts ?? {})).map(([playerId, layout]) => {
+      if (!layout?.overlay) return [playerId, layout];
+      return [
+        playerId,
+        {
+          ...layout,
+          overlay: normalizeOverlayConfiguration(layout.overlay)
+        }
+      ];
+    })
+  );
+}
+
 export function getSceneCamera(scene) {
   const sceneId = getSceneId(scene);
   const sceneCameras = readSceneCameraSetting();
@@ -86,7 +102,12 @@ export async function setSceneCamera(sceneId, playerId, options = {}) {
 export function getSceneProfile(scene) {
   const sceneId = getSceneId(scene);
   const sceneData = readSceneProfilesSetting();
-  return sceneData[sceneId] ?? null;
+  const profile = sceneData[sceneId];
+  if (!profile) return null;
+  return {
+    ...profile,
+    layouts: normalizeProfileLayouts(profile.layouts)
+  };
 }
 
 export function getSceneCameraControlMode(scene) {
@@ -111,7 +132,7 @@ export async function applySceneProfile(sceneId, layouts, options = {}) {
   sceneData[sceneId] = {
     enabled: true,
     cameraControlMode: normalizeCameraControlMode(options.cameraControlMode ?? current.cameraControlMode),
-    layouts
+    layouts: normalizeProfileLayouts(layouts)
   };
   await writeSceneProfilesSetting(sceneData);
   console.debug(`${MODULE_ID} | scene profile applied`, { sceneId });
@@ -125,7 +146,7 @@ export async function setSceneCameraControlMode(sceneId, cameraControlMode) {
     ...current,
     enabled: true,
     cameraControlMode: normalizeCameraControlMode(cameraControlMode),
-    layouts: cloneValue(current.layouts ?? {})
+    layouts: normalizeProfileLayouts(current.layouts)
   };
   await writeSceneProfilesSetting(sceneData);
   console.debug(`${MODULE_ID} | scene camera control mode updated`, { sceneId, cameraControlMode: sceneData[sceneId].cameraControlMode });
@@ -155,7 +176,9 @@ export async function updateSceneProfileLayout(sceneId, playerId, patch) {
   const current = sceneData[sceneId] ?? { enabled: false, layouts: {} };
   const layouts = foundry.utils.deepClone(current.layouts ?? {});
   const playerLayout = layouts[playerId] ?? {};
-  layouts[playerId] = foundry.utils.mergeObject(playerLayout, patch, { inplace: false });
+  layouts[playerId] = normalizeProfileLayouts({
+    [playerId]: foundry.utils.mergeObject(playerLayout, patch, { inplace: false })
+  })[playerId];
   sceneData[sceneId] = {
     ...current,
     cameraControlMode: normalizeCameraControlMode(current.cameraControlMode),

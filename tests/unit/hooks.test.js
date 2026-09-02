@@ -105,9 +105,10 @@ test("ready hook initializes the live camera and scene background renderers", as
     assert.equal(typeof environment.once.get("ready"), "function");
     await environment.once.get("ready")();
 
-    assert.equal(environment.on.get("canvasReady")?.length, 1);
-    assert.equal(environment.on.get("canvasTearDown")?.length, 1);
+    assert.equal(environment.on.get("canvasReady")?.length, 2);
+    assert.equal(environment.on.get("canvasTearDown")?.length, 2);
     assert.equal(environment.on.get("renderApplicationV2")?.length, 2);
+    assert.equal(environment.on.get("closeApplicationV2")?.length, 1);
     assert.equal(environment.on.get("charlemos-camera-layout.sceneBackgroundStatusChanged")?.length, 1);
     assert.equal(typeof environment.module.api?.resetSceneCamera, "function");
   } finally {

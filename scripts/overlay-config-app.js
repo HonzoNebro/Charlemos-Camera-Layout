@@ -43,11 +43,44 @@ function readFormData(form) {
     overlayRotate: form.elements.namedItem("overlayRotate")?.value ?? "",
     overlayFitMode: form.elements.namedItem("overlayFitMode")?.value ?? "",
     overlayAnchor: form.elements.namedItem("overlayAnchor")?.value ?? "",
+    overlayBoundsMode: form.elements.namedItem("overlayBoundsMode")?.value ?? "camera",
+    overlayBoundsTop: form.elements.namedItem("overlayBoundsTop")?.value ?? "",
+    overlayBoundsRight: form.elements.namedItem("overlayBoundsRight")?.value ?? "",
+    overlayBoundsBottom: form.elements.namedItem("overlayBoundsBottom")?.value ?? "",
+    overlayBoundsLeft: form.elements.namedItem("overlayBoundsLeft")?.value ?? "",
     overlayTintEnabled: Boolean(form.elements.namedItem("overlayTintEnabled")?.checked),
     overlayTintColor: form.elements.namedItem("overlayTintColor")?.value ?? "",
     overlayTintOpacity: form.elements.namedItem("overlayTintOpacity")?.value ?? "",
     overlayTintBlendMode: form.elements.namedItem("overlayTintBlendMode")?.value ?? ""
   };
+}
+
+function readonlyInput(value) {
+  return `<input type="text" name="overlayCameraAnchor" value="${foundry.utils.escapeHTML(String(value ?? ""))}" readonly aria-readonly="true">`;
+}
+
+function boundsModeSelect(value) {
+  const selectedValue = value === "expanded" ? "expanded" : "camera";
+  return [
+    `<select name="overlayBoundsMode">`,
+    `<option value="camera"${selectedValue === "camera" ? " selected" : ""}>${foundry.utils.escapeHTML(localize("ui.config.overlayBounds.camera"))}</option>`,
+    `<option value="expanded"${selectedValue === "expanded" ? " selected" : ""}>${foundry.utils.escapeHTML(localize("ui.config.overlayBounds.expanded"))}</option>`,
+    `</select>`
+  ].join("");
+}
+
+function boundsPercentageInput(name, value, disabled) {
+  return `<input type="number" name="${name}" value="${foundry.utils.escapeHTML(String(value ?? 0))}" min="0" max="500" step="0.1"${disabled ? " disabled" : ""}>`;
+}
+
+export function syncOverlayBoundsMode(form) {
+  const expanded = form.elements.namedItem("overlayBoundsMode")?.value === "expanded";
+  ["overlayBoundsTop", "overlayBoundsRight", "overlayBoundsBottom", "overlayBoundsLeft"].forEach((name) => {
+    const field = form.elements.namedItem(name);
+    if (field) field.disabled = !expanded;
+  });
+  const boundsFields = form.querySelector?.("[data-overlay-bounds-fields]");
+  if (boundsFields) boundsFields.dataset.enabled = expanded ? "true" : "false";
 }
 
 export function buildOverlayPatch(formData) {
@@ -68,8 +101,10 @@ export function buildOverlayPatch(formData) {
   return patch;
 }
 
-function overlaySection(formData) {
+function overlaySection(formData, playerName) {
+  const expandedBounds = formData.overlayBoundsMode === "expanded";
   return sectionHtml(localize("ui.config.sections.overlay"), localize("ui.config.sections.overlayDesc"), [
+    rowWithHelp("overlayCameraAnchor", readonlyInput(playerName), "overlayCameraAnchor"),
     rowWithHelp("overlayEnabled", checkboxInput("overlayEnabled", formData.overlayEnabled), "overlayEnabled"),
     rowWithHelp("overlayImage", overlayImageField(formData.overlayImage), "overlayImage"),
     rowWithHelp("overlayOpacity", numberInput("overlayOpacity", formData.overlayOpacity, 0, 1, 0.05), "overlayOpacity"),
@@ -79,6 +114,13 @@ function overlaySection(formData) {
     rowWithHelp("overlayRotate", numberInput("overlayRotate", formData.overlayRotate, null, null, 0.1), "overlayRotate"),
     rowWithHelp("overlayFitMode", overlayFitModeSelect(formData.overlayFitMode), "overlayFitMode"),
     rowWithHelp("overlayAnchor", overlayAnchorSelect(formData.overlayAnchor), "overlayAnchor"),
+    rowWithHelp("overlayBoundsMode", boundsModeSelect(formData.overlayBoundsMode), "overlayBoundsMode"),
+    `<div data-overlay-bounds-fields data-enabled="${expandedBounds ? "true" : "false"}">`,
+    rowWithHelp("overlayBoundsTop", boundsPercentageInput("overlayBoundsTop", formData.overlayBoundsTop, !expandedBounds), "overlayBoundsTop"),
+    rowWithHelp("overlayBoundsRight", boundsPercentageInput("overlayBoundsRight", formData.overlayBoundsRight, !expandedBounds), "overlayBoundsRight"),
+    rowWithHelp("overlayBoundsBottom", boundsPercentageInput("overlayBoundsBottom", formData.overlayBoundsBottom, !expandedBounds), "overlayBoundsBottom"),
+    rowWithHelp("overlayBoundsLeft", boundsPercentageInput("overlayBoundsLeft", formData.overlayBoundsLeft, !expandedBounds), "overlayBoundsLeft"),
+    `</div>`,
     rowWithHelp("overlayTintEnabled", checkboxInput("overlayTintEnabled", formData.overlayTintEnabled), "overlayTintEnabled"),
     rowWithHelp("overlayTintColor", colorInput("overlayTintColor", formData.overlayTintColor), "overlayTintColor"),
     rowWithHelp("overlayTintOpacity", numberInput("overlayTintOpacity", formData.overlayTintOpacity, 0, 1, 0.05), "overlayTintOpacity"),
@@ -104,7 +146,7 @@ function buildHtml(context) {
     `<p class="charlemos-section-desc">${foundry.utils.escapeHTML(context.playerName)}</p>`,
     `<form id="${context.formId}" class="charlemos-config-form">`,
     `<div class="charlemos-config-scroll">`,
-    overlaySection(context.formData),
+    overlaySection(context.formData, context.playerName),
     `</div>`,
     `<div class="charlemos-actions"><button type="submit">${localize("ui.config.actions.save")}</button></div>`,
     `</form>`,
@@ -172,6 +214,9 @@ export class OverlayConfigApp extends foundry.applications.api.ApplicationV2 {
       event.preventDefault();
       this.openOverlayFilePicker(form);
     });
+    const boundsMode = form.elements.namedItem("overlayBoundsMode");
+    boundsMode?.addEventListener("change", () => syncOverlayBoundsMode(form));
+    syncOverlayBoundsMode(form);
     bindOverlayTintMode(form);
   }
 

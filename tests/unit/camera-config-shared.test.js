@@ -237,6 +237,127 @@ test("config export and import preserve only normalized scene camera state", asy
   });
 });
 
+test("normalizeImportPayload accepts legacy, v1 and v2 overlay bounds and rejects future formats", () => {
+  const legacy = normalizeImportPayload({
+    settings: {
+      playerLayouts: {
+        u1: {
+          overlay: {
+            enabled: true,
+            imageUrl: "modules/example/legacy.png"
+          }
+        }
+      }
+    }
+  });
+  const versionOne = normalizeImportPayload({
+    version: 1,
+    settings: {
+      playerLayouts: {
+        u1: {
+          overlay: {
+            enabled: true,
+            bounds: {
+              mode: "expanded",
+              top: "12.5",
+              right: 900,
+              bottom: -10,
+              left: "invalid"
+            }
+          }
+        }
+      }
+    }
+  });
+  const versionTwo = normalizeImportPayload({
+    version: 2,
+    settings: {
+      playerLayouts: {
+        u1: {
+          overlay: {
+            enabled: true,
+            bounds: {
+              mode: "expanded",
+              top: 10.25,
+              right: 20.5,
+              bottom: 30.75,
+              left: 40
+            }
+          }
+        }
+      }
+    }
+  });
+
+  assert.deepEqual(legacy.playerLayouts.u1.overlay.bounds, {
+    mode: "camera",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0
+  });
+  assert.deepEqual(versionOne.playerLayouts.u1.overlay.bounds, {
+    mode: "expanded",
+    top: 12.5,
+    right: 500,
+    bottom: 0,
+    left: 0
+  });
+  assert.deepEqual(versionTwo.playerLayouts.u1.overlay.bounds, {
+    mode: "expanded",
+    top: 10.25,
+    right: 20.5,
+    bottom: 30.75,
+    left: 40
+  });
+  assert.equal(normalizeImportPayload({ version: 3, settings: {} }), null);
+  assert.equal(normalizeImportPayload({ version: 3, settings: null }), null);
+  assert.equal(normalizeImportPayload({ version: 3, playerLayouts: {} }), null);
+  assert.equal(normalizeImportPayload({ version: 2, settings: [] }), null);
+});
+
+test("config export writes v2 and round-trips expanded overlay bounds", () => {
+  installSettings({
+    sceneProfiles: {
+      "scene-a": {
+        enabled: true,
+        cameraControlMode: "native",
+        layouts: {
+          u1: {
+            overlay: {
+              enabled: true,
+              imageUrl: "modules/example/frame.png",
+              bounds: {
+                mode: "expanded",
+                top: 12.5,
+                right: 20,
+                bottom: 32.75,
+                left: 8
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  const exported = configExportPayload();
+  const imported = normalizeImportPayload(exported);
+
+  assert.equal(exported.version, 2);
+  assert.deepEqual(imported.sceneProfiles["scene-a"].layouts.u1.overlay, {
+    enabled: true,
+    imageUrl: "modules/example/frame.png",
+    bounds: {
+      mode: "expanded",
+      top: 12.5,
+      right: 20,
+      bottom: 32.75,
+      left: 8
+    }
+  });
+});
+
 test("loadLayoutForUser ignores legacy global layouts outside scene profiles", () => {
   const store = installSettings({
     playerLayouts: {
@@ -280,7 +401,14 @@ test("saveLayoutPatchForUser writes only to the current scene profile", async ()
       u1: {
         overlay: {
           enabled: true,
-          imageUrl: "modules/example/frame.png"
+          imageUrl: "modules/example/frame.png",
+          bounds: {
+            mode: "camera",
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0
+          }
         }
       }
     }
@@ -452,7 +580,14 @@ test("importLegacyLayoutsIntoCurrentScene merges legacy globals without overwrit
       u2: {
         overlay: {
           enabled: true,
-          imageUrl: "modules/example/frame.png"
+          imageUrl: "modules/example/frame.png",
+          bounds: {
+            mode: "camera",
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0
+          }
         }
       }
     }

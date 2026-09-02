@@ -6,6 +6,10 @@
 - Use one player camera as a synchronized runtime scene background.
 - Support `cover`, `contain` and `fill` fitting with automatic native-background fallback.
 
+2. Expanded camera overlays
+- Anchor one transparent overlay to each player camera without resizing its video.
+- Support independent top, right, bottom and left extensions in dock and popout views.
+
 ## Short Term (1.0.x)
 
 1. Renderer stability and compatibility

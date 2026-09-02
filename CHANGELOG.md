@@ -5,6 +5,28 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-09-02
+
+### Added
+- Per-camera expanded overlays with independent top, right, bottom, and left bounds from 0% to 500%.
+- Automatic outer spacing for docked cameras while preserving the original video dimensions and hitbox.
+- Read-only camera anchor and expanded-bounds controls in the overlay configuration window.
+- Expanded overlay state, anchor, and visual rectangles in renderer diagnostics.
+
+### Changed
+- Camera overlays now follow their anchored camera across dock, popout, detached-window, resize, scene, and RTC lifecycle changes.
+- JSON configuration exports now use format version 2 while continuing to accept unversioned, v1, and v2 imports.
+- `setPlayerOverlay(playerId, overlay)` writes to the active scene profile while retaining its legacy global fallback when no scene is active.
+- Release metadata updated for stable distribution:
+  - module version: `3.2.0`
+  - download URL points to tag archive `v3.2.0`
+
+### Fixed
+- Expanded artwork no longer changes or clips the native camera video; video and avatar content remain inside their own viewport.
+- Active CameraPopout instances are preserved during world-setting, RTC, connection, and canvas reconciliations.
+- Scene changes that reuse the same camera DOM no longer remove the newly applied overlay.
+- Overlay observers, dock margins, viewport styles, detached-window timers, and owned WebM resources are cleaned up without pausing or reloading the native A/V video.
+
 ## [3.1.0] - 2026-07-20
 
 ### Added

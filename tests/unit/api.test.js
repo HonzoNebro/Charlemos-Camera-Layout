@@ -166,3 +166,49 @@ test("public API exposes compatible scene camera set, get and reset operations",
     "scene-b": { playerId: "u1", fit: "contain" }
   });
 });
+
+test("public API preserves setPlayerOverlay and normalizes optional expanded bounds", async () => {
+  const env = mockApiEnv();
+  const api = createApi();
+
+  const result = await api.setPlayerOverlay("u1", {
+    enabled: true,
+    imageUrl: "frame.png",
+    userId: "legacy-copy",
+    bounds: {
+      mode: "expanded",
+      top: "12.5",
+      right: 800,
+      bottom: -5,
+      left: "invalid"
+    }
+  });
+
+  assert.deepEqual(result.overlay.bounds, {
+    mode: "expanded",
+    top: 12.5,
+    right: 500,
+    bottom: 0,
+    left: 0
+  });
+  assert.equal(result.overlay.userId, undefined);
+  assert.deepEqual(env.settings.get("charlemos-camera-layout.sceneProfiles")["scene-a"], {
+    enabled: true,
+    cameraControlMode: "native",
+    layouts: {
+      u1: result
+    }
+  });
+  assert.equal(env.settings.get("charlemos-camera-layout.playerLayouts"), undefined);
+});
+
+test("setPlayerOverlay keeps the legacy global fallback when no scene is active", async () => {
+  const env = mockApiEnv();
+  canvas.scene = null;
+  const api = createApi();
+
+  const result = await api.setPlayerOverlay("u1", { enabled: true });
+
+  assert.deepEqual(env.settings.get("charlemos-camera-layout.playerLayouts").u1, result);
+  assert.equal(result.overlay.bounds.mode, "camera");
+});

@@ -95,6 +95,11 @@ test("buildFormData maps stored layout to UI fields", () => {
     overlayRotate: 15,
     overlayFitMode: "contain",
     overlayAnchor: "top-right",
+    overlayBoundsMode: "camera",
+    overlayBoundsTop: 0,
+    overlayBoundsRight: 0,
+    overlayBoundsBottom: 0,
+    overlayBoundsLeft: 0,
     overlayTintEnabled: true,
     overlayTintColor: "#112233",
     overlayTintOpacity: 0.35,
@@ -215,6 +220,13 @@ test("buildLayoutPatch normalizes empty form values", () => {
       rotate: 0,
       fitMode: "fill",
       anchor: "bottom-left",
+      bounds: {
+        mode: "camera",
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0
+      },
       tint: {
         enabled: true,
         color: "#ff0000",
@@ -257,6 +269,56 @@ test("buildLayoutPatch normalizes empty form values", () => {
       transparentFrame: true
     }
   });
+});
+
+test("buildLayoutPatch normalizes expanded overlay bounds and clamps percentages", () => {
+  const patch = buildLayoutPatch({
+    overlayBoundsMode: "expanded",
+    overlayBoundsTop: "12.5",
+    overlayBoundsRight: "800",
+    overlayBoundsBottom: "-20",
+    overlayBoundsLeft: "invalid"
+  });
+
+  assert.deepEqual(patch.overlay.bounds, {
+    mode: "expanded",
+    top: 12.5,
+    right: 500,
+    bottom: 0,
+    left: 0
+  });
+});
+
+test("buildFormData defaults invalid legacy overlay bounds to camera mode", () => {
+  const formData = buildFormData({
+    overlay: {
+      enabled: true,
+      bounds: {
+        mode: "outside",
+        top: "not-a-number",
+        right: -1,
+        bottom: 501,
+        left: 4.25
+      }
+    }
+  });
+
+  assert.deepEqual(
+    {
+      mode: formData.overlayBoundsMode,
+      top: formData.overlayBoundsTop,
+      right: formData.overlayBoundsRight,
+      bottom: formData.overlayBoundsBottom,
+      left: formData.overlayBoundsLeft
+    },
+    {
+      mode: "camera",
+      top: 0,
+      right: 0,
+      bottom: 500,
+      left: 4.25
+    }
+  );
 });
 
 test("buildLayoutPatch clears relative payload when layout mode is absolute", () => {

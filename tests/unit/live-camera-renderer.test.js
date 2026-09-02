@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  applyCameraLayoutsNow,
   applyGeometryDefaults,
   applyFrameOverlayFallbackStyle,
   bindReactiveAvatarVisibility,
@@ -17,6 +18,7 @@ import {
   syncOverlayMediaSource,
   syncResizeHandleVisibility,
   syncGeometryInteractionMode,
+  syncExpandedVideoViewport,
   syncManagedViewGeometry,
   syncTransparentFrameClipPath,
   syncTransparentFrameMode,
@@ -29,6 +31,166 @@ function viewWith(nodes) {
   return {
     querySelectorAll: () => nodes
   };
+}
+
+function classTokens(element) {
+  return String(element.className ?? "").split(/\s+/).filter(Boolean);
+}
+
+function matchesTestSelector(element, selector) {
+  const text = selector.trim();
+  const tag = text.match(/^[a-z]+/i)?.[0];
+  if (tag && element.tagName !== tag.toUpperCase()) return false;
+  const classes = [...text.matchAll(/\.([\w-]+)/g)].map((match) => match[1]);
+  if (classes.some((name) => !element.classList.contains(name))) return false;
+  const dataMatch = text.match(/\[data-([\w-]+)=['"]([^'"]+)['"]\]/);
+  if (dataMatch) {
+    const key = dataMatch[1].replace(/-([a-z])/g, (_match, letter) => letter.toUpperCase());
+    if (element.dataset[key] !== dataMatch[2]) return false;
+  }
+  if (text.includes("[class*='") || text.includes('[class*="')) {
+    const fragment = text.match(/\[class\*=['"]([^'"]+)['"]\]/)?.[1] ?? "";
+    if (!String(element.className).includes(fragment)) return false;
+  }
+  if (text.includes("[") && !dataMatch && !text.includes("[class*=")) return false;
+  return Boolean(tag || classes.length || dataMatch);
+}
+
+class TestElement {
+  constructor(tagName, ownerDocument) {
+    this.tagName = String(tagName).toUpperCase();
+    this.ownerDocument = ownerDocument;
+    this.className = "";
+    this.dataset = {};
+    this.style = {};
+    this.children = [];
+    this.parentElement = null;
+    this.attributes = new Map();
+    this.isConnected = true;
+    this.rect = { top: 0, right: 320, bottom: 240, left: 0, width: 320, height: 240 };
+    this.classList = {
+      add: (...names) => {
+        this.className = [...new Set([...classTokens(this), ...names])].join(" ");
+      },
+      contains: (name) => classTokens(this).includes(name),
+      remove: (...names) => {
+        this.className = classTokens(this).filter((name) => !names.includes(name)).join(" ");
+      },
+      toggle: (name, force) => {
+        const active = force === undefined ? !this.classList.contains(name) : Boolean(force);
+        if (active) this.classList.add(name);
+        else this.classList.remove(name);
+        return active;
+      }
+    };
+  }
+
+  appendChild(child) {
+    child.parentElement = this;
+    child.isConnected = this.isConnected;
+    this.children.push(child);
+    return child;
+  }
+
+  insertBefore(child, before) {
+    const index = this.children.indexOf(before);
+    if (index < 0) return this.appendChild(child);
+    child.parentElement = this;
+    child.isConnected = this.isConnected;
+    this.children.splice(index, 0, child);
+    return child;
+  }
+
+  remove() {
+    if (this.parentElement) {
+      this.parentElement.children = this.parentElement.children.filter((child) => child !== this);
+    }
+    this.parentElement = null;
+    this.isConnected = false;
+  }
+
+  querySelectorAll(selector) {
+    const selectors = selector.split(",");
+    const descendants = [];
+    const visit = (element) => {
+      element.children.forEach((child) => {
+        descendants.push(child);
+        visit(child);
+      });
+    };
+    visit(this);
+    return descendants.filter((element) => selectors.some((part) => matchesTestSelector(element, part)));
+  }
+
+  querySelector(selector) {
+    return this.querySelectorAll(selector)[0] ?? null;
+  }
+
+  setAttribute(name, value) {
+    this.attributes.set(name, String(value));
+  }
+
+  getAttribute(name) {
+    if (name === "src") return this.src ?? null;
+    if (name === "style") return "";
+    return this.attributes.get(name) ?? null;
+  }
+
+  removeAttribute(name) {
+    this.attributes.delete(name);
+    if (name === "src") this.src = "";
+  }
+
+  addEventListener() {}
+
+  closest() {
+    return null;
+  }
+
+  contains(target) {
+    return this === target || this.children.some((child) => child.contains(target));
+  }
+
+  getBoundingClientRect() {
+    return this.rect;
+  }
+}
+
+function testDocument() {
+  const frames = [];
+  const ownerDocument = {
+    created: [],
+    defaultView: {
+      getComputedStyle: () => ({ marginTop: "0px", marginRight: "0px", marginBottom: "0px", marginLeft: "0px" }),
+      requestAnimationFrame: (callback) => {
+        frames.push(callback);
+        return frames.length;
+      }
+    },
+    createElement: (tagName) => {
+      const element = new TestElement(tagName, ownerDocument);
+      ownerDocument.created.push(element);
+      return element;
+    },
+    querySelectorAll: () => []
+  };
+  ownerDocument.flushFrames = () => frames.splice(0).forEach((callback) => callback());
+  return ownerDocument;
+}
+
+function cameraViewFixture(ownerDocument) {
+  const view = ownerDocument.createElement("section");
+  view.className = "camera-view";
+  const viewport = ownerDocument.createElement("div");
+  viewport.className = "video-container";
+  viewport.style.overflow = "auto";
+  viewport.style.borderRadius = "3px";
+  viewport.style.clipPath = "circle(50%)";
+  const avatar = ownerDocument.createElement("img");
+  avatar.className = "user-avatar";
+  viewport.appendChild(avatar);
+  view.appendChild(viewport);
+  return { avatar, view, viewport };
 }
 
 test("syncFoundryAvatarVisibility hides avatar images when video feed is live", () => {
@@ -337,6 +499,31 @@ test("requestRenderedCameraLayoutsApply schedules immediate renderer reapply", (
   assert.equal(delays.at(-1), 0);
 });
 
+test("popout rescheduling clears the timer from its original detached window", () => {
+  const cleared = [];
+  const firstWindow = {
+    setTimeout: () => 11,
+    clearTimeout: (timerId) => cleared.push(["first", timerId])
+  };
+  const secondWindow = {
+    setTimeout: () => 22,
+    clearTimeout: (timerId) => cleared.push(["second", timerId])
+  };
+  class CameraPopout {
+    constructor() {
+      this.user = { id: "u1" };
+      this.element = { ownerDocument: { defaultView: firstWindow } };
+    }
+  }
+  const app = new CameraPopout();
+
+  requestRenderedCameraLayoutsApply(app);
+  app.element = { ownerDocument: { defaultView: secondWindow } };
+  requestRenderedCameraLayoutsApply(app);
+
+  assert.deepEqual(cleared, [["first", 11]]);
+});
+
 test("isRendererDebugEnabled reads module setting", () => {
   globalThis.game = {
     settings: {
@@ -454,6 +641,55 @@ test("syncTransparentFrameClipPath mirrors clip-path onto visual camera layers",
   assert.equal(container.style.clipPath, "");
   assert.equal(overlay.style.clipPath, "");
   assert.equal(avatar.style.clipPath, "");
+});
+
+test("syncTransparentFrameClipPath leaves an expanded overlay outside the camera clip", () => {
+  const ownerDocument = testDocument();
+  const view = ownerDocument.createElement("section");
+  const container = ownerDocument.createElement("div");
+  container.className = "video-container";
+  const avatar = ownerDocument.createElement("img");
+  avatar.className = "user-avatar";
+  const overlay = ownerDocument.createElement("div");
+  overlay.className = "charlemos-camera-overlay";
+  overlay.style.clipPath = "circle(25%)";
+  view.appendChild(container);
+  view.appendChild(avatar);
+  view.appendChild(overlay);
+
+  syncTransparentFrameClipPath(view, { clipPath: "polygon(0 0, 100% 0, 100% 100%)" }, true, false);
+
+  assert.equal(container.style.clipPath, "polygon(0 0, 100% 0, 100% 100%)");
+  assert.equal(avatar.style.clipPath, "polygon(0 0, 100% 0, 100% 100%)");
+  assert.equal(overlay.style.clipPath, "");
+});
+
+test("syncExpandedVideoViewport preserves and restores the native viewport styles", () => {
+  const ownerDocument = testDocument();
+  const { view, viewport } = cameraViewFixture(ownerDocument);
+
+  const managed = syncExpandedVideoViewport(
+    view,
+    null,
+    {
+      clipPath: "polygon(0 0, 100% 0, 100% 80%, 0 100%)",
+      geometry: { borderRadius: "14px" }
+    },
+    true
+  );
+
+  assert.equal(managed, viewport);
+  assert.equal(viewport.classList.contains("charlemos-camera-viewport"), true);
+  assert.equal(viewport.style.overflow, "hidden");
+  assert.equal(viewport.style.borderRadius, "14px");
+  assert.equal(viewport.style.clipPath, "polygon(0 0, 100% 0, 100% 80%, 0 100%)");
+
+  syncExpandedVideoViewport(view, null, null, false);
+
+  assert.equal(viewport.classList.contains("charlemos-camera-viewport"), false);
+  assert.equal(viewport.style.overflow, "auto");
+  assert.equal(viewport.style.borderRadius, "3px");
+  assert.equal(viewport.style.clipPath, "circle(50%)");
 });
 
 test("resolveRelativeLayout places a camera below its target", () => {
@@ -943,4 +1179,220 @@ test("resolveRelativeLayout still resolves legacy relative payloads", () => {
 
   assert.equal(resolved.top, "230px");
   assert.equal(resolved.left, "160px");
+});
+
+test("expanded overlays use the camera ownerDocument and survive an avatar-only view", () => {
+  const ownerDocument = testDocument();
+  const first = cameraViewFixture(ownerDocument);
+  const second = cameraViewFixture(ownerDocument);
+  first.view.classList.add("popout");
+  second.view.classList.add("popout");
+  let currentView = first.view;
+  const profile = {
+    enabled: true,
+    cameraControlMode: "module",
+    layouts: {
+      u1: {
+        clipPath: "polygon(0 0, 100% 0, 100% 85%, 0 100%)",
+        geometry: { borderRadius: "12px", transparentFrame: true },
+        overlay: {
+          enabled: true,
+          imageUrl: "modules/example/frames/avatar-frame.png",
+          opacity: 1,
+          scale: 1,
+          rotate: 0,
+          bounds: { mode: "expanded", top: 20, right: 15, bottom: 30, left: 10 }
+        },
+        nameStyle: { enabled: false }
+      }
+    }
+  };
+  const profiles = { "scene-a": profile };
+  const app = {
+    getUserCameraView: () => currentView,
+    getUserVideoElement: () => null
+  };
+  globalThis.Element = TestElement;
+  globalThis.document = {
+    createElement: () => {
+      throw new Error("global document must not create camera overlay nodes");
+    },
+    querySelectorAll: () => []
+  };
+  globalThis.window = ownerDocument.defaultView;
+  globalThis.canvas = { scene: { id: "scene-a" } };
+  globalThis.ui = { webrtc: app };
+  globalThis.game = {
+    users: { contents: [{ id: "u1", name: "Player One" }] },
+    settings: {
+      get: (_moduleId, key) => {
+        if (key === "sceneProfiles") return profiles;
+        return false;
+      }
+    }
+  };
+
+  applyCameraLayoutsNow(app);
+  ownerDocument.flushFrames();
+
+  const firstOverlay = first.view.querySelector(".charlemos-camera-overlay");
+  const createdAfterFirstApply = ownerDocument.created.length;
+  assert.ok(firstOverlay);
+  assert.equal(firstOverlay.ownerDocument, ownerDocument);
+  assert.equal(firstOverlay.dataset.charlemosAnchorUserId, "u1");
+  assert.equal(firstOverlay.dataset.charlemosSceneId, "scene-a");
+  assert.equal(firstOverlay.getAttribute("aria-hidden"), "true");
+  firstOverlay.querySelectorAll(".charlemos-camera-overlay-media, .charlemos-camera-overlay-tint").forEach((node) => {
+    assert.equal(node.dataset.charlemosAnchorUserId, "u1");
+    assert.equal(node.dataset.charlemosSceneId, "scene-a");
+  });
+  assert.equal(first.view.querySelectorAll(".charlemos-camera-overlay").length, 1);
+  assert.equal(first.view.classList.contains("charlemos-overlay-expanded"), true);
+  assert.equal(first.viewport.classList.contains("charlemos-camera-viewport"), true);
+  assert.equal(first.avatar.parentElement, first.viewport);
+  assert.equal(first.avatar.style.visibility, undefined);
+  const snapshot = dumpRendererDebugSnapshot("u1", app);
+  assert.equal(snapshot.layout.overlayBounds.mode, "expanded");
+  assert.equal(snapshot.anchoredOverlay.userId, "u1");
+  assert.equal(snapshot.anchoredOverlay.viewRect.width, 320);
+
+  applyCameraLayoutsNow(app);
+  ownerDocument.flushFrames();
+
+  assert.equal(first.view.querySelector(".charlemos-camera-overlay"), firstOverlay);
+  assert.equal(first.view.querySelectorAll(".charlemos-camera-overlay").length, 1);
+  assert.equal(ownerDocument.created.length, createdAfterFirstApply);
+
+  profiles["scene-b"] = profile;
+  canvas.scene.id = "scene-b";
+  applyCameraLayoutsNow(app);
+  ownerDocument.flushFrames();
+
+  assert.equal(firstOverlay.parentElement, first.view);
+  assert.equal(firstOverlay.dataset.charlemosSceneId, "scene-b");
+  assert.equal(first.view.querySelectorAll(".charlemos-camera-overlay").length, 1);
+
+  currentView = second.view;
+  applyCameraLayoutsNow(app);
+  ownerDocument.flushFrames();
+
+  const secondOverlay = second.view.querySelector(".charlemos-camera-overlay");
+  assert.ok(secondOverlay);
+  assert.notEqual(secondOverlay, firstOverlay);
+  assert.equal(firstOverlay.parentElement, null);
+  assert.equal(first.viewport.classList.contains("charlemos-camera-viewport"), false);
+  assert.equal(first.viewport.style.overflow, "auto");
+  assert.equal(second.view.querySelectorAll(".charlemos-camera-overlay").length, 1);
+
+  profile.layouts.u1.overlay.bounds.mode = "camera";
+  applyCameraLayoutsNow(app);
+
+  assert.equal(second.viewport.classList.contains("charlemos-camera-viewport"), false);
+  assert.equal(second.viewport.style.clipPath, profile.layouts.u1.clipPath);
+  assert.equal(secondOverlay.style.clipPath, profile.layouts.u1.clipPath);
+
+  profile.enabled = false;
+  applyCameraLayoutsNow(app);
+
+  assert.equal(secondOverlay.parentElement, null);
+  assert.equal(second.view.querySelector(".charlemos-camera-overlay"), null);
+  assert.equal(second.viewport.classList.contains("charlemos-camera-viewport"), false);
+  assert.equal(second.viewport.style.overflow, "auto");
+});
+
+test("global reconciliation applies an active CameraPopout instead of its stale dock view", () => {
+  const ownerDocument = testDocument();
+  const dock = cameraViewFixture(ownerDocument);
+  const popped = cameraViewFixture(ownerDocument);
+  const profile = {
+    enabled: true,
+    cameraControlMode: "native",
+    layouts: {
+      u1: {
+        overlay: {
+          enabled: true,
+          imageUrl: "frame.png",
+          bounds: { mode: "expanded", top: 10, right: 10, bottom: 10, left: 10 }
+        }
+      }
+    }
+  };
+  class CameraPopout {
+    constructor() {
+      this.user = { id: "u1" };
+      this.element = popped.view;
+      this.rendered = true;
+    }
+  }
+  const popout = new CameraPopout();
+  const cameraViews = {
+    popouts: [popout],
+    getUserCameraView: () => dock.view,
+    getUserVideoElement: () => null
+  };
+  globalThis.Element = TestElement;
+  globalThis.document = ownerDocument;
+  globalThis.window = ownerDocument.defaultView;
+  globalThis.canvas = { scene: { id: "scene-popout" } };
+  globalThis.ui = { webrtc: cameraViews };
+  globalThis.game = {
+    users: { contents: [{ id: "u1", name: "Player One" }] },
+    settings: {
+      get: (_moduleId, key) => key === "sceneProfiles" ? { "scene-popout": profile } : false
+    }
+  };
+
+  applyCameraLayoutsNow(cameraViews);
+
+  assert.equal(dock.view.querySelector(".charlemos-camera-overlay"), null);
+  assert.ok(popped.view.querySelector(".charlemos-camera-overlay"));
+  assert.equal(popped.view.classList.contains("charlemos-overlay-dock-spaced"), false);
+
+  profile.enabled = false;
+  applyCameraLayoutsNow(cameraViews);
+  assert.equal(popped.view.querySelector(".charlemos-camera-overlay"), null);
+});
+
+test("a detached CameraViews dock still reserves expanded overlay spacing", () => {
+  const ownerDocument = testDocument();
+  const dock = cameraViewFixture(ownerDocument);
+  dock.view.closest = (selector) => selector === ".application.popout" ? {} : null;
+  const profile = {
+    enabled: true,
+    cameraControlMode: "native",
+    layouts: {
+      u1: {
+        overlay: {
+          enabled: true,
+          imageUrl: "frame.png",
+          bounds: { mode: "expanded", top: 10, right: 10, bottom: 10, left: 10 }
+        }
+      }
+    }
+  };
+  const cameraViews = {
+    popouts: [],
+    getUserCameraView: () => dock.view,
+    getUserVideoElement: () => null
+  };
+  globalThis.Element = TestElement;
+  globalThis.document = ownerDocument;
+  globalThis.window = ownerDocument.defaultView;
+  globalThis.canvas = { scene: { id: "scene-detached-dock" } };
+  globalThis.ui = { webrtc: cameraViews };
+  globalThis.game = {
+    users: { contents: [{ id: "u1", name: "Player One" }] },
+    settings: {
+      get: (_moduleId, key) => key === "sceneProfiles" ? { "scene-detached-dock": profile } : false
+    }
+  };
+
+  applyCameraLayoutsNow(cameraViews);
+  ownerDocument.flushFrames();
+
+  assert.equal(dock.view.classList.contains("charlemos-overlay-dock-spaced"), true);
+
+  profile.enabled = false;
+  applyCameraLayoutsNow(cameraViews);
+  assert.equal(dock.view.classList.contains("charlemos-overlay-dock-spaced"), false);
 });

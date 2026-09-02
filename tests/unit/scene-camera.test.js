@@ -192,6 +192,63 @@ test("applySceneProfile preserves existing camera control mode", async () => {
   });
 });
 
+test("scene profiles normalize legacy overlay bounds lazily without rewriting settings", () => {
+  const store = installSettings({
+    sceneCamera: {},
+    sceneProfiles: {
+      "scene-a": {
+        enabled: true,
+        layouts: {
+          u1: {
+            overlay: {
+              enabled: true,
+              imageUrl: "frame.png"
+            }
+          }
+        }
+      }
+    }
+  });
+
+  const profile = getSceneProfile({ id: "scene-a" });
+
+  assert.deepEqual(profile.layouts.u1.overlay.bounds, {
+    mode: "camera",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0
+  });
+  assert.equal(store.sceneProfiles["scene-a"].layouts.u1.overlay.bounds, undefined);
+});
+
+test("applySceneProfile persists normalized expanded overlay bounds", async () => {
+  const store = installSettings({ sceneCamera: {}, sceneProfiles: {} });
+
+  await applySceneProfile("scene-a", {
+    u1: {
+      overlay: {
+        enabled: true,
+        bounds: {
+          mode: "expanded",
+          top: "12.5",
+          right: 700,
+          bottom: -5,
+          left: "invalid"
+        }
+      }
+    }
+  });
+
+  assert.deepEqual(store.sceneProfiles["scene-a"].layouts.u1.overlay.bounds, {
+    mode: "expanded",
+    top: 12.5,
+    right: 500,
+    bottom: 0,
+    left: 0
+  });
+});
+
 test("pruneMissingSceneState removes orphaned scene profiles and scene camera entries", async () => {
   const store = installSettings({
     sceneCamera: {

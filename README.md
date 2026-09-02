@@ -11,7 +11,7 @@ FoundryVTT V13-V14 module for advanced A/V camera styling with scene-scoped came
 - Scene layout presets: dynamic grid, narrative presets, responsive or fixed units
 - Scene-scoped live camera backgrounds with synchronized source selection and `cover`, `contain` or `fill` fitting
 - Per-player camera overlay with URL/path + file picker
-- Overlay controls: opacity, move, scale, rotate, fit mode, anchor, tint, blend mode
+- Overlay controls: opacity, move, scale, rotate, fit mode, anchor, tint, blend mode and independent bounds
 - Video effects: transform, filter, clip-path, border radius
 - Camera crop masks (top/right/bottom/left)
 - Name styles: source, color, font family (Foundry fonts), position, alignment, weight and italic
@@ -37,6 +37,14 @@ FoundryVTT V13-V14 module for advanced A/V camera styling with scene-scoped came
 - The native scene background remains underneath for `contain` bands and immediate fallback. Turning off, losing or disconnecting the source removes only the runtime mesh and preserves the scene configuration for automatic recovery.
 - The renderer does not duplicate audio or control the source video, and scene profile macros do not change the background.
 - The public API supports `setSceneCamera(sceneId, playerId, { fit })`, the compatible two-argument form, and `resetSceneCamera(sceneId)`.
+
+## Expanded camera overlays
+
+- Each scene overlay is anchored to its player's camera and follows it through resize, dock and popout changes.
+- `Inside Camera` preserves the original clipped behavior. `Expanded` adds independent top, right, bottom and left percentages without resizing the camera video.
+- Transparent PNG or WebM media defines the visible silhouette. Docked cameras reserve enough outer spacing for the expanded artwork; popouts can draw outside their camera rectangle up to the browser viewport.
+- Existing offset, scale, rotation, fit, anchor and tint controls remain available as fine adjustments.
+- `setPlayerOverlay(playerId, overlay)` keeps its existing signature and writes to the active scene profile; `overlay.bounds` accepts `camera` or `expanded` plus `top`, `right`, `bottom` and `left` percentages.
 
 ## Structure
 

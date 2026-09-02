@@ -43,7 +43,18 @@ test("exportSceneProfileToMacro also supports profile-first signature", async ()
   const env = mockMacroEnv();
 
   await exportSceneProfileToMacro(
-    { cameraControlMode: "module", layouts: { u1: { top: "10px" } } },
+    {
+      cameraControlMode: "module",
+      layouts: {
+        u1: {
+          top: "10px",
+          overlay: {
+            enabled: true,
+            bounds: { mode: "expanded", top: 25, right: 10, bottom: 15, left: 20 }
+          }
+        }
+      }
+    },
     "Scene Draft"
   );
   const created = env.getCreated();
@@ -51,4 +62,6 @@ test("exportSceneProfileToMacro also supports profile-first signature", async ()
   assert.equal(created.name, "Scene Draft");
   assert.equal(created.command.includes('"cameraControlMode": "module"'), true);
   assert.equal(created.command.includes('"top": "10px"'), true);
+  assert.equal(created.command.includes('"mode": "expanded"'), true);
+  assert.equal(created.command.includes('"right": 10'), true);
 });

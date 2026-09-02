@@ -3,6 +3,7 @@ import { inferLayoutMode } from "./camera-config-model.js";
 import { composeTransform, nameStyle, overlayMediaKind, overlayMediaStyle, overlayStyle, overlayTintStyle } from "./camera-layout-style.js";
 import { buildCameraViewStyle } from "./camera-style-service.js";
 import {
+  isCameraPopoutApp,
   isCameraViewsApp,
   isLiveCameraVideo,
   resolveCameraVideoElement,
@@ -10,6 +11,14 @@ import {
   resolveCameraViewsApp
 } from "./camera-video-source.js";
 import { getSceneCameraControlMode, getSceneProfile, getSceneProfileLayout, sceneProfileEnabled } from "./scene-camera.js";
+import { expandedOverlayBounds } from "./overlay-bounds.js";
+import {
+  anchoredOverlaySnapshot,
+  cleanupAnchoredOverlays,
+  clearAnchoredOverlays,
+  reconcileAnchoredOverlay,
+  removeAnchoredOverlay
+} from "./overlay-runtime.js";
 
 const RENDER_DELAY_MS = 50;
 const ALTERNATE_NAME_TICK_MS = 1000;
@@ -20,9 +29,51 @@ const DEBUG_LOG_THROTTLE_MS = 1200;
 let renderTimer = null;
 let alternateNameTicker = null;
 const debugTimestamps = new Map();
+const popoutRenderTimers = new WeakMap();
+
+function createOwnedElement(ownerElement, tagName) {
+  const ownerDocument = ownerElement?.ownerDocument ?? globalThis.document;
+  return ownerDocument?.createElement?.(tagName) ?? null;
+}
+
+function expandedOverlay(layout) {
+  return Boolean(layout?.overlay?.enabled && expandedOverlayBounds(layout.overlay));
+}
 
 function getCameraViewsApp(app) {
   return resolveCameraViewsApp(app);
+}
+
+function getCameraRendererApp(app) {
+  if (isCameraPopoutApp(app)) return app;
+  return getCameraViewsApp(app);
+}
+
+function cameraPopouts(app) {
+  if (!isCameraViewsApp(app)) return [];
+  let candidates = [];
+  try {
+    candidates = Array.from(app.popouts ?? []);
+  } catch (_error) {
+    return [];
+  }
+  const userIds = new Set();
+  return candidates.filter((popout) => {
+    const userId = String(popout?.user?.id ?? "");
+    if (!userId || userIds.has(userId) || popout?.rendered === false || !isCameraPopoutApp(popout)) return false;
+    userIds.add(userId);
+    return true;
+  });
+}
+
+function cameraApplicationWindow(app) {
+  try {
+    const value = app?.element;
+    const element = value?.ownerDocument ? value : value?.get?.(0) ?? value?.[0];
+    return element?.ownerDocument?.defaultView ?? globalThis.window;
+  } catch (_error) {
+    return globalThis.window;
+  }
 }
 
 function getViewElement(app, userId) {
@@ -33,21 +84,38 @@ function getVideoElement(app, userId, viewElement) {
   return resolveCameraVideoElement(userId, app, viewElement);
 }
 
-function getOrCreateOverlay(viewElement) {
-  let overlay = viewElement.querySelector(".charlemos-camera-overlay");
-  if (overlay) return overlay;
-  overlay = document.createElement("div");
-  overlay.className = "charlemos-camera-overlay";
-  viewElement.appendChild(overlay);
+function getOrCreateOverlay(viewElement, userId, sceneId) {
+  let overlay = viewElement?.querySelector?.(".charlemos-camera-overlay") ?? null;
+  if (!overlay) {
+    overlay = createOwnedElement(viewElement, "div");
+    if (!overlay) return null;
+    overlay.className = "charlemos-camera-overlay";
+    viewElement.appendChild(overlay);
+  }
+  if (overlay.dataset) {
+    overlay.dataset.charlemosAnchorUserId = String(userId ?? "");
+    overlay.dataset.charlemosSceneId = String(sceneId ?? "");
+  }
+  overlay.setAttribute?.("aria-hidden", "true");
   return overlay;
 }
 
+function markAnchoredOverlayNodes(overlayElement, userId, sceneId) {
+  const nodes = [overlayElement, ...Array.from(overlayElement?.querySelectorAll?.(".charlemos-camera-overlay-media, .charlemos-camera-overlay-tint") ?? [])];
+  nodes.forEach((node) => {
+    if (!node?.dataset) return;
+    node.dataset.charlemosAnchorUserId = String(userId ?? "");
+    node.dataset.charlemosSceneId = String(sceneId ?? "");
+  });
+}
+
 function getOverlayMediaElement(overlayElement, kind) {
-  const current = overlayElement.querySelector(".charlemos-camera-overlay-media");
+  const current = overlayElement?.querySelector?.(".charlemos-camera-overlay-media") ?? null;
   const expectedTag = kind === "video" ? "VIDEO" : "IMG";
   if (current && current.tagName === expectedTag) return current;
   if (current) current.remove();
-  const next = document.createElement(kind === "video" ? "video" : "img");
+  const next = createOwnedElement(overlayElement, kind === "video" ? "video" : "img");
+  if (!next) return null;
   next.className = `charlemos-camera-overlay-media charlemos-camera-overlay-${kind}`;
   if (kind === "video") {
     next.autoplay = true;
@@ -66,9 +134,10 @@ function getOverlayMediaElement(overlayElement, kind) {
 }
 
 function getOrCreateOverlayTint(overlayElement) {
-  let tint = overlayElement.querySelector(".charlemos-camera-overlay-tint");
+  let tint = overlayElement?.querySelector?.(".charlemos-camera-overlay-tint") ?? null;
   if (tint) return tint;
-  tint = document.createElement("div");
+  tint = createOwnedElement(overlayElement, "div");
+  if (!tint) return null;
   tint.className = "charlemos-camera-overlay-tint";
   overlayElement.appendChild(tint);
   return tint;
@@ -99,7 +168,7 @@ export function syncOverlayMediaSource(mediaElement, kind, source) {
 }
 
 function clearOverlayMedia(overlayElement) {
-  const mediaElement = overlayElement.querySelector(".charlemos-camera-overlay-media");
+  const mediaElement = overlayElement?.querySelector?.(".charlemos-camera-overlay-media") ?? null;
   if (!mediaElement) return;
   if (String(mediaElement.tagName ?? "").toUpperCase() === "VIDEO") {
     mediaElement.pause?.();
@@ -110,33 +179,45 @@ function clearOverlayMedia(overlayElement) {
 }
 
 function getOrCreateName(viewElement) {
-  let name = viewElement.querySelector(".charlemos-camera-name");
+  let name = viewElement?.querySelector?.(".charlemos-camera-name") ?? null;
   if (name) return name;
-  name = document.createElement("div");
+  name = createOwnedElement(viewElement, "div");
+  if (!name) return null;
   name.className = "charlemos-camera-name";
   viewElement.appendChild(name);
   return name;
 }
 
 function getOrCreateCropMask(viewElement, side) {
-  let mask = viewElement.querySelector(`.charlemos-crop-mask.charlemos-crop-${side}`);
+  let mask = viewElement?.querySelector?.(`.charlemos-crop-mask.charlemos-crop-${side}`) ?? null;
   if (mask) return mask;
-  mask = document.createElement("div");
+  mask = createOwnedElement(viewElement, "div");
+  if (!mask) return null;
   mask.className = `charlemos-crop-mask charlemos-crop-${side}`;
   viewElement.appendChild(mask);
   return mask;
 }
 
-function transparentFrameClipTargets(viewElement) {
+function transparentFrameClipTargets(viewElement, includeOverlay = true) {
   if (!viewElement?.querySelectorAll) return [];
-  return Array.from(
-    viewElement.querySelectorAll(
-      ".video-container, .camera-container-popout, .camera-container, .charlemos-camera-overlay, .user-avatar, img.user-avatar, img.avatar, .camera-fallback, .video-fallback, .webrtc-fallback, .no-video"
-    )
-  );
+  const selectors = [
+    ".video-container",
+    ".camera-container-popout",
+    ".camera-container",
+    ".user-avatar",
+    "img.user-avatar",
+    "img.avatar",
+    ".camera-fallback",
+    ".video-fallback",
+    ".webrtc-fallback",
+    ".no-video"
+  ];
+  if (includeOverlay) selectors.push(".charlemos-camera-overlay");
+  return Array.from(viewElement.querySelectorAll(selectors.join(", ")));
 }
 
 function assignStyle(element, style) {
+  if (!element?.style) return;
   Object.entries(style).forEach(([key, value]) => {
     element.style[key] = value ?? "";
   });
@@ -207,7 +288,7 @@ function visibleRect(element) {
 }
 
 function resetNameplateControlAvoidance(viewElement) {
-  viewElement.querySelectorAll("[data-charlemos-name-shifted='1']").forEach((element) => {
+  viewElement?.querySelectorAll?.("[data-charlemos-name-shifted='1']")?.forEach((element) => {
     if (!element?.style || !element?.dataset) return;
     element.style.marginTop = element.dataset.charlemosNameShiftMarginTop ?? "";
     element.style.marginBottom = element.dataset.charlemosNameShiftMarginBottom ?? "";
@@ -215,7 +296,7 @@ function resetNameplateControlAvoidance(viewElement) {
     delete element.dataset.charlemosNameShiftMarginTop;
     delete element.dataset.charlemosNameShiftMarginBottom;
   });
-  viewElement.querySelectorAll("[data-charlemos-name-translate-applied='1']").forEach((element) => {
+  viewElement?.querySelectorAll?.("[data-charlemos-name-translate-applied='1']")?.forEach((element) => {
     if (!element?.style || !element?.dataset) return;
     element.style.transform = element.dataset.charlemosNameTranslateBase ?? "";
     delete element.dataset.charlemosNameTranslateApplied;
@@ -423,6 +504,7 @@ function layoutDebugState(layout) {
     overlayOpacity: layout.overlay?.opacity ?? null,
     overlayFitMode: layout.overlay?.fitMode ?? "auto",
     overlayAnchor: layout.overlay?.anchor ?? "center",
+    overlayBounds: layout.overlay?.bounds ?? null,
     crop: layout.crop ?? null
   };
 }
@@ -491,6 +573,45 @@ function cameraContainer(viewElement) {
   return firstMatch(viewElement, ".video-container, .camera-container-popout, .camera-container");
 }
 
+function restoreManagedViewport(element) {
+  if (!element?.dataset || element.dataset.charlemosViewportManaged !== "1") return;
+  assignStyle(element, {
+    overflow: element.dataset.charlemosViewportOverflow ?? "",
+    borderRadius: element.dataset.charlemosViewportBorderRadius ?? "",
+    clipPath: element.dataset.charlemosViewportClipPath ?? ""
+  });
+  element.classList?.remove?.("charlemos-camera-viewport");
+  delete element.dataset.charlemosViewportManaged;
+  delete element.dataset.charlemosViewportOverflow;
+  delete element.dataset.charlemosViewportBorderRadius;
+  delete element.dataset.charlemosViewportClipPath;
+}
+
+function rememberManagedViewport(element) {
+  if (!element?.dataset || element.dataset.charlemosViewportManaged === "1") return;
+  element.dataset.charlemosViewportManaged = "1";
+  element.dataset.charlemosViewportOverflow = element.style?.overflow ?? "";
+  element.dataset.charlemosViewportBorderRadius = element.style?.borderRadius ?? "";
+  element.dataset.charlemosViewportClipPath = element.style?.clipPath ?? "";
+}
+
+export function syncExpandedVideoViewport(viewElement, videoElement, layout, enabled) {
+  const target = cameraContainer(viewElement) ?? (videoElement?.parentElement !== viewElement ? videoElement?.parentElement : null);
+  const managed = Array.from(viewElement?.querySelectorAll?.(".charlemos-camera-viewport") ?? []);
+  managed.forEach((element) => {
+    if (!enabled || element !== target) restoreManagedViewport(element);
+  });
+  if (!enabled || !target || target === viewElement) return null;
+  rememberManagedViewport(target);
+  target.classList?.add?.("charlemos-camera-viewport");
+  assignStyle(target, {
+    overflow: "hidden",
+    borderRadius: layout?.geometry?.borderRadius ?? "",
+    clipPath: layout?.clipPath ?? ""
+  });
+  return target;
+}
+
 function resizeHandle(viewElement) {
   return firstMatch(viewElement, ".window-resize-handle, .window-resizable-handle, .ui-resizable-handle");
 }
@@ -523,7 +644,7 @@ export function shouldBlockNativeGeometryInteraction(viewElement, target) {
 }
 
 function syncNativeGeometryInteractionBlock(viewElement) {
-  if (!viewElement || viewElement.__charlemosGeometryBlockBound) return;
+  if (!viewElement?.addEventListener || viewElement.__charlemosGeometryBlockBound) return;
   const handler = (event) => {
     if (!shouldBlockNativeGeometryInteraction(viewElement, event.target)) return;
     event.preventDefault();
@@ -687,6 +808,7 @@ function resolveUserColor(user) {
 
 function applyName(viewElement, layout, user) {
   const element = getOrCreateName(viewElement);
+  if (!element) return;
   const style = nameStyle(layout, {
     userName: user?.name ?? "",
     characterName: user?.character?.name ?? user?.name ?? "",
@@ -734,28 +856,34 @@ function applyCropMasks(viewElement, layout) {
   assignStyle(masks.left, { display: left ? "block" : "none", top: "0", left: "0", bottom: "0", width: left || "0" });
 }
 
-function applyOverlay(viewElement, layout) {
-  const element = getOrCreateOverlay(viewElement);
+function applyOverlay(viewElement, layout, userId, sceneId) {
+  const element = getOrCreateOverlay(viewElement, userId, sceneId);
+  if (!element) return null;
   const style = overlayStyle(layout);
   assignStyle(element, style);
   if (!layout?.overlay?.enabled) {
     clearOverlayMedia(element);
     assignStyle(getOrCreateOverlayTint(element), overlayTintStyle(null));
     applyFrameOverlayFallbackStyle(element, layout?.overlay);
-    return;
+    markAnchoredOverlayNodes(element, userId, sceneId);
+    return element;
   }
   const source = String(layout?.overlay?.imageUrl ?? "").trim();
   if (source) {
     const kind = overlayMediaKind(source);
     const mediaElement = getOverlayMediaElement(element, kind);
-    assignStyle(mediaElement, overlayMediaStyle(layout));
-    syncOverlayMediaSource(mediaElement, kind, source);
-    applyFrameOverlayFallbackStyle(mediaElement, layout?.overlay);
+    if (mediaElement) {
+      assignStyle(mediaElement, overlayMediaStyle(layout));
+      syncOverlayMediaSource(mediaElement, kind, source);
+      applyFrameOverlayFallbackStyle(mediaElement, layout?.overlay);
+    }
   } else {
     clearOverlayMedia(element);
   }
   assignStyle(getOrCreateOverlayTint(element), overlayTintStyle(layout));
   applyFrameOverlayFallbackStyle(element, layout?.overlay);
+  markAnchoredOverlayNodes(element, userId, sceneId);
+  return element;
 }
 
 function clearManagedViewGeometry(viewElement) {
@@ -999,30 +1127,33 @@ export function resolveSceneLayouts(layouts, options = {}) {
 }
 
 export function syncGeometryInteractionMode(viewElement, applyGeometry) {
-  if (!viewElement?.classList) return;
-  viewElement.classList.toggle("charlemos-geometry-module", applyGeometry);
-  viewElement.classList.toggle("charlemos-geometry-native", !applyGeometry);
+  viewElement?.classList?.toggle?.("charlemos-geometry-module", applyGeometry);
+  viewElement?.classList?.toggle?.("charlemos-geometry-native", !applyGeometry);
 }
 
 export function syncTransparentFrameMode(viewElement, enabled) {
-  if (!viewElement?.classList) return;
-  viewElement.classList.toggle("charlemos-transparent-frame", Boolean(enabled));
+  viewElement?.classList?.toggle?.("charlemos-transparent-frame", Boolean(enabled));
 }
 
-export function syncTransparentFrameClipPath(viewElement, layout, enabled) {
+export function syncTransparentFrameClipPath(viewElement, layout, enabled, includeOverlay = true) {
   const clipPath = enabled ? String(layout?.clipPath ?? "").trim() : "";
-  transparentFrameClipTargets(viewElement).forEach((element) => {
+  transparentFrameClipTargets(viewElement, includeOverlay).forEach((element) => {
     assignStyle(element, { clipPath });
   });
+  if (!includeOverlay) assignStyle(viewElement?.querySelector?.(".charlemos-camera-overlay"), { clipPath: "" });
 }
 
-function applyViewStyle(viewElement, layout, applyGeometry) {
-  viewElement.classList.add("charlemos-camera-view");
-  viewElement.classList.remove("charlemos-direct-edit");
+function applyViewStyle(viewElement, videoElement, layout, applyGeometry) {
+  viewElement.classList?.add?.("charlemos-camera-view");
+  viewElement.classList?.remove?.("charlemos-direct-edit");
+  const overlayIsExpanded = expandedOverlay(layout);
+  viewElement.classList?.toggle?.("charlemos-overlay-expanded", overlayIsExpanded);
   syncGeometryInteractionMode(viewElement, applyGeometry);
   const transparentFrameEnabled = applyGeometry && layout?.geometry?.transparentFrame;
   syncTransparentFrameMode(viewElement, transparentFrameEnabled);
-  syncTransparentFrameClipPath(viewElement, layout, transparentFrameEnabled);
+  if (!overlayIsExpanded) syncExpandedVideoViewport(viewElement, videoElement, layout, false);
+  syncTransparentFrameClipPath(viewElement, layout, transparentFrameEnabled, !overlayIsExpanded);
+  if (overlayIsExpanded) syncExpandedVideoViewport(viewElement, videoElement, layout, true);
   syncNativeGeometryInteractionBlock(viewElement);
   syncResizeHandleVisibility(viewElement, applyGeometry);
   assignStyle(viewElement, {
@@ -1041,12 +1172,15 @@ function applyVideoStyle(videoElement, layout) {
 
 function resetViewStyle(viewElement, videoElement) {
   resetNameplateControlAvoidance(viewElement);
-  viewElement.classList.remove("charlemos-camera-view");
-  viewElement.classList.remove("charlemos-direct-edit");
-  viewElement.classList.remove("charlemos-geometry-module");
-  viewElement.classList.remove("charlemos-geometry-native");
-  viewElement.classList.remove("charlemos-transparent-frame");
+  viewElement.classList?.remove?.("charlemos-camera-view");
+  viewElement.classList?.remove?.("charlemos-direct-edit");
+  viewElement.classList?.remove?.("charlemos-geometry-module");
+  viewElement.classList?.remove?.("charlemos-geometry-native");
+  viewElement.classList?.remove?.("charlemos-transparent-frame");
+  viewElement.classList?.remove?.("charlemos-overlay-expanded");
+  viewElement.classList?.remove?.("charlemos-overlay-dock-spaced");
   syncTransparentFrameClipPath(viewElement, null, false);
+  Array.from(viewElement?.querySelectorAll?.(".charlemos-camera-viewport") ?? []).forEach(restoreManagedViewport);
   assignStyle(viewElement, {
     borderRadius: "",
     background: "",
@@ -1070,10 +1204,10 @@ function resetViewStyle(viewElement, videoElement) {
 
 function removeCharlemosNodes(viewElement) {
   viewElement
-    .querySelectorAll(
+    ?.querySelectorAll?.(
       ".charlemos-camera-overlay, .charlemos-camera-name, .charlemos-crop-mask, .charlemos-aspect-badge, .charlemos-resize-handle"
     )
-    .forEach((node) => {
+    ?.forEach((node) => {
       node.remove();
     });
 }
@@ -1083,43 +1217,55 @@ function applyPlayerLayout(app, user, options = {}) {
   const viewElement = getViewElement(app, userId);
   if (!viewElement) {
     logRendererDebug("missing-view", userId, sceneProfileEnabled(), null, null, null);
+    removeAnchoredOverlay(canvas?.scene?.id ?? null, userId);
     return;
   }
   const videoElement = getVideoElement(app, userId, viewElement);
-  if (!videoElement) {
-    logRendererDebug("missing-video", userId, sceneProfileEnabled(), viewElement, null, null);
-    return;
-  }
+  if (!videoElement) logRendererDebug("missing-video", userId, sceneProfileEnabled(), viewElement, null, null);
   const enabled = sceneProfileEnabled();
   if (!enabled) {
     logRendererDebug("scene-disabled", userId, enabled, viewElement, videoElement, null);
     removeCharlemosNodes(viewElement);
     resetViewStyle(viewElement, videoElement);
-    return;
+    removeAnchoredOverlay(canvas?.scene?.id ?? null, userId);
+    return null;
   }
   const layout = getSceneProfileLayout(userId);
   if (!layout) {
     logRendererDebug("missing-layout", userId, enabled, viewElement, videoElement, null);
     removeCharlemosNodes(viewElement);
     resetViewStyle(viewElement, videoElement);
-    return;
+    removeAnchoredOverlay(canvas?.scene?.id ?? null, userId);
+    return null;
   }
   const cameraControlMode = getSceneCameraControlMode();
   const applyGeometry = cameraControlMode === "module" && viewSupportsModuleGeometry(viewElement);
   const resolvedLayout = options.resolvedLayouts?.[userId] ?? layout;
   const normalizedLayout = applyGeometry ? applyGeometryDefaults(resolvedLayout, viewElement, videoElement) : resolvedLayout;
   logRendererDebug("before-apply", userId, enabled, viewElement, videoElement, layout);
-  applyViewStyle(viewElement, normalizedLayout, applyGeometry);
-  applyVideoStyle(videoElement, normalizedLayout);
+  applyViewStyle(viewElement, videoElement, normalizedLayout, applyGeometry);
+  if (videoElement) applyVideoStyle(videoElement, normalizedLayout);
   syncFoundryAvatarVisibility(viewElement, videoElement);
   bindReactiveAvatarVisibility(viewElement, videoElement);
-  applyOverlay(viewElement, normalizedLayout);
+  const sceneId = canvas?.scene?.id ?? null;
+  const overlayElement = applyOverlay(viewElement, normalizedLayout, userId, sceneId);
   applyName(viewElement, normalizedLayout, user);
   applyCropMasks(viewElement, normalizedLayout);
-  const overlayElement = viewElement.querySelector(".charlemos-camera-overlay");
-  const videoComputed = typeof window !== "undefined" && window.getComputedStyle ? window.getComputedStyle(videoElement) : null;
+  const runtimeKey = reconcileAnchoredOverlay({
+    sceneId,
+    userId,
+    viewElement,
+    overlayElement,
+    expanded: expandedOverlay(normalizedLayout),
+    popout: isCameraPopoutApp(app),
+    onDispose: () => {
+      removeCharlemosNodes(viewElement);
+      resetViewStyle(viewElement, videoElement);
+    }
+  });
+  const videoComputed = videoElement && typeof window !== "undefined" && window.getComputedStyle ? window.getComputedStyle(videoElement) : null;
   logRendererDebug("after-apply", userId, enabled, viewElement, videoElement, layout, {
-    videoInlineStyle: videoElement.getAttribute?.("style") ?? "",
+    videoInlineStyle: videoElement?.getAttribute?.("style") ?? "",
     viewInlineStyle: viewElement.getAttribute?.("style") ?? "",
     overlayInlineStyle: overlayElement?.getAttribute?.("style") ?? "",
     videoComputedDisplay: videoComputed?.display ?? "",
@@ -1127,12 +1273,17 @@ function applyPlayerLayout(app, user, options = {}) {
     videoComputedOpacity: videoComputed?.opacity ?? "",
     videoComputedZIndex: videoComputed?.zIndex ?? ""
   });
+  return runtimeKey;
 }
 
-function applyAll(app) {
+function applyAll(app, options = {}) {
   const sceneProfile = getSceneProfile();
   const cameraControlMode = getSceneCameraControlMode();
-  const users = game.users?.contents ?? Array.from(game.users ?? []);
+  const allUsers = game.users?.contents ?? Array.from(game.users ?? []);
+  const excludedUserIds = options.excludedUserIds ?? new Set();
+  const users = isCameraPopoutApp(app)
+    ? allUsers.filter((user) => user.id === app.user?.id)
+    : allUsers.filter((user) => !excludedUserIds.has(user.id));
   const viewElementsByUserId = Object.fromEntries(users.map((user) => [user.id, getViewElement(app, user.id)]));
   const geometryEligibleByUserId = Object.fromEntries(
     users.map((user) => [user.id, viewSupportsModuleGeometry(viewElementsByUserId[user.id])])
@@ -1147,10 +1298,24 @@ function applyAll(app) {
           }
         )
       : null;
-  users.forEach((user) => applyPlayerLayout(app, user, { resolvedLayouts }));
+  const activeKeys = new Set(users.map((user) => applyPlayerLayout(app, user, { resolvedLayouts })).filter(Boolean));
+  if (options.cleanup !== false && !isCameraPopoutApp(app)) cleanupAnchoredOverlays(activeKeys);
   if (isRendererDebugEnabled()) {
     console.debug(`${MODULE_ID} | camera layouts applied`);
   }
+  return activeKeys;
+}
+
+function applyRendererApp(app) {
+  if (!isCameraViewsApp(app)) return applyAll(app);
+  const popouts = cameraPopouts(app);
+  const popoutUserIds = new Set(popouts.map((popout) => popout.user.id));
+  const activeKeys = applyAll(app, { cleanup: false, excludedUserIds: popoutUserIds });
+  popouts.forEach((popout) => {
+    applyAll(popout, { cleanup: false }).forEach((key) => activeKeys.add(key));
+  });
+  cleanupAnchoredOverlays(activeKeys);
+  return activeKeys;
 }
 
 function clearRenderTimer() {
@@ -1164,11 +1329,24 @@ function queueApply(app) {
 }
 
 function queueApplyWithDelay(app, delayMs) {
+  if (isCameraPopoutApp(app)) {
+    const timerWindow = cameraApplicationWindow(app);
+    const currentTimer = popoutRenderTimers.get(app);
+    currentTimer?.timerWindow?.clearTimeout?.(currentTimer.timerId);
+    const timerRecord = { timerId: null, timerWindow };
+    timerRecord.timerId = timerWindow?.setTimeout?.(() => {
+      if (popoutRenderTimers.get(app) !== timerRecord) return;
+      popoutRenderTimers.delete(app);
+      applyRendererApp(app);
+    }, delayMs);
+    if (timerRecord.timerId !== undefined && timerRecord.timerId !== null) popoutRenderTimers.set(app, timerRecord);
+    return;
+  }
   clearRenderTimer();
   renderTimer = window.setTimeout(() => {
-    const cameraApp = getCameraViewsApp(app);
+    const cameraApp = getCameraRendererApp(app);
     if (!cameraApp) return;
-    applyAll(cameraApp);
+    applyRendererApp(cameraApp);
   }, delayMs);
 }
 
@@ -1181,7 +1359,7 @@ export function requestRenderedCameraLayoutsApply(app) {
 }
 
 export function applyCameraLayoutsNow(app) {
-  const cameraApp = getCameraViewsApp(app);
+  const cameraApp = getCameraRendererApp(app);
   if (!cameraApp) {
     if (isRendererDebugEnabled()) {
       console.warn(`${MODULE_ID} | apply skipped: camera views app not found`, {
@@ -1192,7 +1370,7 @@ export function applyCameraLayoutsNow(app) {
     }
     return;
   }
-  applyAll(cameraApp);
+  applyRendererApp(cameraApp);
 }
 
 function moduleGeometryToggleTarget(viewElement) {
@@ -1255,7 +1433,7 @@ export async function prepareModuleGeometryForLayouts(layouts, app) {
 }
 
 export function dumpRendererDebugSnapshot(userId, app) {
-  const cameraApp = getCameraViewsApp(app);
+  const cameraApp = getCameraRendererApp(app);
   if (!cameraApp) return null;
   const targetUserId = userId ?? game.user?.id ?? null;
   if (!targetUserId) return null;
@@ -1272,6 +1450,7 @@ export function dumpRendererDebugSnapshot(userId, app) {
     video: videoDebugState(videoElement),
     view: viewDebugState(viewElement),
     layout: layoutDebugState(layout),
+    anchoredOverlay: anchoredOverlaySnapshot(canvas?.scene?.id ?? null, targetUserId),
     diagnostics: collectRendererDiagnostics(viewElement, videoElement)
   };
   console.debug(`${MODULE_ID} | renderer snapshot`, snapshot);
@@ -1280,8 +1459,13 @@ export function dumpRendererDebugSnapshot(userId, app) {
 
 function registerRenderHook() {
   Hooks.on("renderApplicationV2", (app) => {
-    if (!isCameraViewsApp(app)) return;
+    if (!isCameraViewsApp(app) && !isCameraPopoutApp(app)) return;
     requestRenderedCameraLayoutsApply(app);
+  });
+  Hooks.on("closeApplicationV2", (app) => {
+    if (!isCameraPopoutApp(app)) return;
+    removeAnchoredOverlay(canvas?.scene?.id ?? null, app.user?.id);
+    queueApply();
   });
 }
 
@@ -1295,6 +1479,11 @@ function registerUserHook() {
   Hooks.on("userConnected", () => {
     queueApply();
   });
+}
+
+function registerCanvasHooks() {
+  Hooks.on("canvasReady", () => queueApply());
+  Hooks.on("canvasTearDown", () => clearAnchoredOverlays());
 }
 
 function hasAlternateNameLayouts() {
@@ -1317,6 +1506,7 @@ export function initializeLiveCameraRenderer() {
   registerRenderHook();
   registerRtcHook();
   registerUserHook();
+  registerCanvasHooks();
   startAlternateNameTicker();
   queueApply();
 }

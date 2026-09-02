@@ -1,3 +1,5 @@
+import { expandedOverlayBounds, overlayBoundsInset } from "./overlay-bounds.js";
+
 function numeric(value, fallback) {
   const parsed = Number(value);
   if (Number.isNaN(parsed)) return fallback;
@@ -247,9 +249,12 @@ export function overlayMediaKind(imageUrl) {
 
 export function overlayStyle(layout) {
   const enabled = Boolean(layout?.overlay?.enabled);
+  const expanded = Boolean(expandedOverlayBounds(layout?.overlay));
   if (!enabled) {
     return {
       display: "none",
+      inset: "0",
+      overflow: "",
       backgroundImage: "",
       backgroundBlendMode: "normal",
       mixBlendMode: "normal",
@@ -265,6 +270,8 @@ export function overlayStyle(layout) {
   const opacityValue = numeric(layout?.overlay?.opacity, 1);
   return {
     display: "block",
+    inset: overlayBoundsInset(layout?.overlay),
+    overflow: expanded ? "visible" : "",
     backgroundImage: "",
     backgroundSize: "",
     backgroundPosition: "",

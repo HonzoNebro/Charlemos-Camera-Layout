@@ -11,9 +11,10 @@ import {
   sceneProfileEnabled
 } from "./scene-camera.js";
 import { clearLoadedSceneProfileDraft, getLoadedSceneProfileDraft } from "./state.js";
+import { normalizeOverlayConfiguration } from "./overlay-bounds.js";
 
 export const LEGACY_LAYOUT_KEYS = ["preset", "snap", "resize"];
-export const CONFIG_EXPORT_VERSION = 1;
+export const CONFIG_EXPORT_VERSION = 2;
 
 export function localize(key) {
   return game.i18n.localize(`${MODULE_ID}.${key}`);
@@ -72,6 +73,7 @@ export function sanitizeLayout(layout) {
       transparentFrame: Boolean(next.geometry.transparentFrame)
     };
   }
+  if (next.overlay) next.overlay = normalizeOverlayConfiguration(next.overlay);
   return next;
 }
 
@@ -155,8 +157,12 @@ export async function saveLayoutPatchForUser(selectedUserId, patch) {
 }
 
 export function normalizeImportPayload(json) {
-  if (!json || typeof json !== "object") return null;
-  const settings = json.settings ?? json;
+  if (!json || typeof json !== "object" || Array.isArray(json)) return null;
+  const hasSettingsEnvelope = Object.prototype.hasOwnProperty.call(json, "settings");
+  const version = Number(json.version ?? 1);
+  if (![1, 2].includes(version)) return null;
+  const settings = hasSettingsEnvelope ? json.settings : json;
+  if (!settings || typeof settings !== "object" || Array.isArray(settings)) return null;
   const playerLayouts = sanitizeLayouts(settings.playerLayouts ?? {}, "module");
   const sceneProfiles =
     settings.sceneProfiles && typeof settings.sceneProfiles === "object"

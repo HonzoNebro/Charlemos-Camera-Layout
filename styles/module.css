@@ -143,6 +143,10 @@
   min-width: 0;
 }
 
+[data-overlay-bounds-fields][data-enabled="false"] {
+  opacity: 0.72;
+}
+
 .charlemos-inline-action {
   display: flex;
   justify-content: flex-end;
@@ -319,6 +323,14 @@
   overflow: hidden;
 }
 
+.charlemos-camera-view.charlemos-overlay-expanded {
+  overflow: visible;
+}
+
+.charlemos-camera-view .charlemos-camera-viewport {
+  overflow: hidden !important;
+}
+
 .charlemos-camera-view .window-resizable-handle,
 .charlemos-camera-view .window-resize-handle,
 .charlemos-camera-view .ui-resizable-handle {
@@ -425,6 +437,10 @@
   pointer-events: none;
   overflow: hidden;
   z-index: 3;
+}
+
+.charlemos-camera-view.charlemos-overlay-expanded .charlemos-camera-overlay {
+  overflow: visible;
 }
 
 .charlemos-camera-overlay-media,
