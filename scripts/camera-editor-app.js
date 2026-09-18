@@ -17,6 +17,10 @@ import { resolveEditorCameraView } from "./camera-video-source.js";
 import { effectCatalog } from "./css-effects.js";
 import { inspectOverlayResource } from "./editor-media.js";
 import { getSceneBackgroundStatus } from "./scene-background-renderer.js";
+import { applyFramePreset, framePresetsHtml, applyFrameBlend, frameBlendHtml } from "./editor-frame-presets.js";
+import { sceneProfileEntries, duplicateSceneComposition, uniqueCompositionMacroName } from "./editor-profiles.js";
+import { downloadModuleDebugReport } from "./debug-report.js";
+import { configurationEqual } from "./edit-session.js";
 
 function refreshPreview() {
   applyCameraLayoutsNow();
@@ -137,6 +141,8 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
       <p role="status">${esc(t("localState"))}: ${esc(t(!view ? "waitingCamera" : this.session.preview ? "preview" : layout && this.session.draft.profile.enabled ? "available" : "disabled"))}</p>
       ${this.section === "layout" ? `<p>${esc(t("dockHelp"))}</p>` : ""}
       ${this.section === "effects" ? this.basicEffectsHtml(layout) : ""}
+      ${this.section === "overlay" ? framePresetsHtml() : ""}
+      ${this.section === "overlay" ? frameBlendHtml(layout?.overlay) : ""}
       ${cameraFieldsHtml(layout, this.section, users, this.id, { geometryAvailable })}
       ${this.section === "overlay" ? `${button("pick-resource", "chooseResource")}<p data-media-status role="status">${esc(t(this.mediaState ?? "notChecked"))}</p><p>${esc(t("boundsHelp"))}</p>` : ""}
       ${button("reset-section", "resetSection")}</fieldset>`);
@@ -144,7 +150,8 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
 
   toolsHtml() {
     const legacy = game.settings.get(MODULE_ID, SETTINGS_KEYS.PLAYER_LAYOUTS) ?? {};
-    return `${button("backup", "backup")}${button("import", "import")}${button("macro", "macro", this.session ? "" : "disabled")}${button("diagnostic", "diagnostic")}
+    return `${button("backup", "backup")}${button("import", "import")}${button("macro", "macro", this.session ? "" : "disabled")}${button("diagnostic", "diagnostic")}${button("download-diagnostic", "downloadDiagnostic")}<p>${esc(t("diagnosticPrivacy"))}</p>
+      ${this.profilesHtml()}
       ${this.session && Object.keys(legacy).length ? button("legacy", "importLegacy") : ""}
       ${this.session ? this.copyHtml() : ""}
       ${this.importState ? this.importHtml() : ""}`;
@@ -160,6 +167,55 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
     const custom = ["filter", "transform"].some((kind) => parseBasicEffects(layout?.[kind], kind) === null);
     return `<fieldset><legend>${esc(t("basicEffects"))}</legend>${custom ? `<p>${esc(t("customCss"))}</p>` : ""}${controls}
       ${labeledSelect("basicShape", layout?.clipPath ?? "", [{ id: "", label: t("disabled") }, ...effectCatalog("clipPath").map((item) => ({ id: item.value, label: game.i18n.localize(`${MODULE_ID}.ui.config.effect.${item.id}`) })), ...(layout?.clipPath && !effectCatalog("clipPath").some((item) => item.value === layout.clipPath) ? [{ id: layout.clipPath, label: t("customCss") }] : [])], t("shape"))}</fieldset>`;
+  }
+
+  profilesHtml() {
+    const scenes = game.scenes?.contents ?? [];
+    const entries = sceneProfileEntries(game.settings.get(MODULE_ID, SETTINGS_KEYS.SCENE_PROFILES), scenes, usersForConfig());
+    return `<fieldset><legend>${esc(t("savedProfiles"))}</legend><p>${esc(t("profilesHelp"))}</p>
+      <ul>${entries.map((entry) => `<li><strong>${esc(entry.name)}</strong> (${esc(entry.id)}) — ${entry.cameras} ${esc(t("cameras"))}, ${esc(t(entry.enabled ? "available" : "disabled"))}, ${esc(t(entry.cameraControlMode === "module" ? "module" : "native"))}
+        ${entry.missing ? `<p>${esc(t("sceneDeleted"))}</p>` : button("open-profile", "openProfile", `data-scene="${esc(entry.id)}"`)}
+        ${entry.missingUsers.length ? `<p role="status">${esc(t("profileMissingUsers"))}: ${entry.missingUsers.map(esc).join(", ")}</p>` : ""}</li>`).join("") || `<li>${esc(t("profileEmpty"))}</li>`}</ul>
+      ${labeledSelect("duplicateSource", this.duplicateSource ?? "", [{ id: "", label: "—" }, ...entries.filter((entry) => !entry.missing).map((entry) => ({ id: entry.id, label: `${entry.name} (${entry.id})` }))], t("sourceScene"))}
+      ${labeledSelect("duplicateDestination", this.duplicateDestination ?? "", [{ id: "", label: "—" }, ...scenes.map((scene) => ({ id: scene.id, label: `${scene.name} (${scene.id})` }))], t("destinationScene"))}
+      ${button("duplicate-profile", "duplicateProfile")}</fieldset>`;
+  }
+
+  async openProfile(sceneId) {
+    if (!game.user?.isGM || !game.scenes?.get?.(sceneId)) { this.message = t("sceneDeleted"); return false; }
+    if (this.session?.sceneId !== sceneId) {
+      if (this.session?.dirty && !window.confirm(t("discardConfirm"))) return false;
+      this.visual?.destroy(); this.visual = null;
+      endEditSession();
+      beginEditSession(sceneId);
+    }
+    this.area = "scene";
+    return true;
+  }
+
+  async duplicateProfile() {
+    if (!game.user?.isGM) { this.message = t("permission"); return; }
+    const sourceId = this.duplicateSource;
+    const destinationId = this.duplicateDestination;
+    if (!game.scenes?.get?.(sourceId) || !game.scenes?.get?.(destinationId)) { this.message = t("assignDestination"); return; }
+    if (sourceId === destinationId) { this.message = t("profileSameScene"); return; }
+    if (this.session?.dirty && !window.confirm(t("discardConfirm"))) return;
+    const source = readSceneConfiguration(sourceId).profile;
+    const destination = readSceneConfiguration(destinationId).profile;
+    let result;
+    try { result = duplicateSceneComposition(source, destination, usersForConfig()); }
+    catch (error) { this.message = t(error.message); return; }
+    const description = `${game.scenes.get(sourceId).name} (${sourceId}) → ${game.scenes.get(destinationId).name} (${destinationId})`;
+    if (!window.confirm(`${t("duplicateReview")}\n${description}\n${t("added")}: ${result.added.join(", ")}\n${t("modified")}: ${result.replaced.join(", ")}`)) return;
+    if (!game.scenes.get(sourceId) || !game.scenes.get(destinationId) || !configurationEqual(source, readSceneConfiguration(sourceId).profile) || !configurationEqual(destination, readSceneConfiguration(destinationId).profile)) {
+      this.message = t("profilesChanged"); return;
+    }
+    this.visual?.destroy(); this.visual = null;
+    endEditSession();
+    const session = beginEditSession(destinationId);
+    session.edit(["profile"], result.profile);
+    session.preview = true;
+    this.area = "scene";
   }
 
   visualHtml() {
@@ -286,6 +342,7 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
     if (field.dataset.basicEffect) { this.updateBasicEffect(field); this.session.endGesture(); }
     else if (name === "basicShape") updateCameraField(this.session, this.selectedUserId, "clipPath", field.value);
     else if (name === "selectedUser") this.selectedUserId = field.value;
+    else if (name === "duplicateSource" || name === "duplicateDestination") this[name] = field.value;
     else if (name?.startsWith("preset-")) this.preset[name.slice(7)] = field.value;
     else if (name?.startsWith("slot-")) this.preset.users[Number(name.slice(5))] = field.value;
     else if (name?.startsWith("copy-category-")) this.copyCategories = field.checked ? [...this.copyCategories, name.slice(14)] : this.copyCategories.filter((id) => id !== name.slice(14));
@@ -401,6 +458,12 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
     }
     if (action.startsWith("slot-")) this.moveSlot(action, Number(target.dataset.index));
     if (action === "load-preset") this.loadPreset();
+    if (action === "frame-preset" && this.session && !editSessionProblem(this.session) && game.users.get(this.selectedUserId)) {
+      applyFramePreset(this.session, this.selectedUserId, target.dataset.preset);
+    }
+    if (action === "frame-blend" && this.session && !editSessionProblem(this.session) && game.users.get(this.selectedUserId)) {
+      applyFrameBlend(this.session, this.selectedUserId, target.dataset.mode);
+    }
     if (action === "copy-cameras" || action === "copy-scene") await this.copyComposition(action === "copy-scene");
     if (action === "remove-basic-effect") {
       const definition = BASIC_EFFECTS[target.dataset.effect];
@@ -436,6 +499,9 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
     if (action === "confirm-import") await this.confirmImport();
     if (action === "macro") await this.exportCurrentLayout();
     if (action === "diagnostic") new SupportReportApp({ selectedUserId: this.selectedUserId }).render(true);
+    if (action === "download-diagnostic") downloadModuleDebugReport(this.selectedUserId, { sceneId: this.session?.sceneId });
+    if (action === "open-profile") await this.openProfile(target.dataset.scene);
+    if (action === "duplicate-profile") await this.duplicateProfile();
     refreshPreview();
     await this.render(true);
   }
@@ -639,10 +705,12 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
     if (!this.session) return;
     const draft = this.session.dirty && window.confirm(t("exportDraftConfirm"));
     if (draft && sessionErrors(this.session, usersForConfig()).length) return;
-    const name = window.prompt(t("macroName"), t("composition"));
+    const suggested = uniqueCompositionMacroName(game.scenes?.get?.(this.session.sceneId)?.name, t(draft ? "draftValue" : "savedValue"), (game.macros?.contents ?? []).map((macro) => macro.name), t("composition"));
+    const name = window.prompt(t("macroName"), suggested);
     if (name === null) return;
+    if ((game.macros?.contents ?? []).some((macro) => macro.name === (name.trim() || suggested)) && !window.confirm(t("macroNameExists"))) return;
     const profile = draft ? this.session.draft.profile : readSceneConfiguration(this.session.sceneId).profile;
-    await exportSceneProfileToMacro({ cameraControlMode: profile.cameraControlMode, layouts: profile.layouts }, name.trim() || t("composition"));
+    await exportSceneProfileToMacro(this.session.sceneId, { cameraControlMode: profile.cameraControlMode, layouts: profile.layouts }, name.trim() || suggested);
   }
 
   async loadDraft(sceneId, payload) {

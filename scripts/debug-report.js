@@ -92,7 +92,8 @@ export function collectModuleDebugReport(userId, options = {}) {
       : null,
     scene: {
       id: sceneId,
-      name: canvas?.scene?.name ?? null,
+      name: game.scenes?.get?.(sceneId)?.name ?? (canvas?.scene?.id === sceneId ? canvas.scene.name : null),
+      viewedSceneId: canvas?.scene?.id ?? null,
       sceneCamera: sceneId ? cloneValue(sceneCamera?.[sceneId] ?? null) : null,
       currentSceneProfile,
       draft: sceneDraft
@@ -119,5 +120,12 @@ export function collectModuleDebugReport(userId, options = {}) {
 export function dumpModuleDebugReport(userId, options = {}) {
   const report = collectModuleDebugReport(userId, options);
   console.debug(`${MODULE_ID} | debug report`, report);
+  return report;
+}
+
+export function downloadModuleDebugReport(userId, options = {}) {
+  const report = collectModuleDebugReport(userId, options);
+  const stamp = report.timestamp.replace(/[:.]/g, "-");
+  saveDataToFile(JSON.stringify(report, null, 2), "application/json", `${MODULE_ID}-diagnostic-${stamp}.json`);
   return report;
 }

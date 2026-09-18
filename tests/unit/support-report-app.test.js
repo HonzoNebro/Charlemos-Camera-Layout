@@ -147,3 +147,14 @@ test("support report opens issue tracker", async () => {
     "noopener"
   ]);
 });
+
+test("support report downloads the reviewed report without changing settings", async () => {
+  installSupportEnv();
+  const { SupportReportApp } = await import("../../scripts/support-report-app.js");
+  let download;
+  globalThis.saveDataToFile = (...args) => { download = args; };
+  const app = new SupportReportApp();
+  app.reportText = '{"reviewed":true}';
+  app.downloadReport();
+  assert.deepEqual(download, [app.reportText, "application/json", "charlemos-camera-layout-diagnostic.json"]);
+});

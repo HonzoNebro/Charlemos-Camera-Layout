@@ -33,6 +33,8 @@ export function buildHtml(context) {
     `<div class="charlemos-actions">`,
     `<button type="button" data-action="refresh-report">${localize("ui.supportReport.actions.refresh")}</button>`,
     `<button type="button" data-action="copy-report">${localize("ui.supportReport.actions.copy")}</button>`,
+    `<button type="button" data-action="download-report">${localize("ui.supportReport.actions.download")}</button>`,
+    `<p>${localize("ui.editor.diagnosticPrivacy")}</p>`,
     `<button type="button" data-action="open-issue">${localize("ui.supportReport.actions.openIssue")}</button>`,
     `</div>`,
     `</div>`,
@@ -101,6 +103,7 @@ export class SupportReportApp extends foundry.applications.api.ApplicationV2 {
       const action = button.dataset.action;
       if (action === "refresh-report") await this.render(true);
       if (action === "copy-report") await this.copyReport();
+      if (action === "download-report") this.downloadReport();
       if (action === "open-issue") this.openIssuePage();
     });
   }
@@ -126,6 +129,10 @@ export class SupportReportApp extends foundry.applications.api.ApplicationV2 {
       });
       ui.notifications.error(localize("ui.supportReport.notifications.copyFailed"));
     }
+  }
+
+  downloadReport() {
+    saveDataToFile(this.reportText, "application/json", `${MODULE_ID}-diagnostic.json`);
   }
 
   openIssuePage() {

@@ -1,6 +1,6 @@
 # Charlemos Camera Layout
 
-> **3.3.0-beta.1 — testing only.** This branch is an opt-in prerelease, not the stable distribution. Use a separate Foundry data directory and a copy of your world. It uses the same module ID and therefore replaces stable Charlemos in that installation.
+> **3.3.0-beta.2 — testing only.** This branch is an opt-in prerelease, not the stable distribution. Use a separate Foundry data directory and a copy of your world. It uses the same module ID and therefore replaces stable Charlemos in that installation.
 
 Beta installation manifest: `https://raw.githubusercontent.com/HonzoNebro/Charlemos-Camera-Layout/preview/ux-editor/module.json`
 
@@ -49,6 +49,10 @@ Changing scenes suspends preview and prevents saving until you return to the edi
 
 ### Position cameras and add frames
 
+**Frame blending** controls how the complete frame blends with the content behind it, independently of the tint layer. **Normal** preserves artwork colors and alpha; **Screen** lightens the backdrop; **Soft light** blends light and shadow. **Automatic (legacy)** retains the previous path-based behavior. Selection changes the local draft with one-step Undo, without changing the video, asset or frame visibility. Apply shares the result. Existing configurations remain automatic unless explicitly changed. This does not add transparency to opaque artwork; use an alpha-enabled asset for a reliable silhouette.
+
+In **Cameras → Frame / overlay image**, quick frame presets load into the draft and turn on local preview: **Inside the camera** (no extension), **Outer frame** (10% on each side), and **Lower nameplate space** (25% below). The solid hatched rectangle represents the camera; the dashed outline represents the frame bounds, not the asset's alpha silhouette. Presets show the whole asset (`contain`), center it and reset frame offset, scale and rotation. They preserve the asset, visibility, opacity, tint and all camera geometry/effects. Disabled frames remain disabled. Choose a suitable transparent asset, enable it and fine-tune its opening; presets do not generate artwork or automatically match that opening to the video. Each preset is one Undo step. Apply shares the result; discard leaves the saved composition unchanged.
+
 Choose Charlemos positioning for the scene to position undocked cameras. Docked cameras retain Foundry's geometry. **Undock selected camera** acts immediately on Foundry; discarding the draft does not dock it again. Switching positioning control preserves dormant geometry.
 
 For artwork, select **Frame / overlay image**, choose an image or video and enable it. Use **Expanded** bounds to extend above, below or beside the camera without changing the video size. Extensions are percentages of the camera dimensions. The alpha channel defines the visible silhouette, while the dock reserves space for the transformed rectangle. Edge masks are dark bands over the video and frame, not source-video reframing.
@@ -74,6 +78,12 @@ The new editor is available as an opt-in beta. In-Foundry visual and multi-clien
 - The native scene background remains underneath for `contain` bands and immediate fallback. Turning off, losing or disconnecting the source removes only the runtime mesh and preserves the scene configuration for automatic recovery.
 - The renderer does not duplicate audio or control the source video, and scene profile macros do not change the background.
 - The public API supports `setSceneCamera(sceneId, playerId, { fit })`, the compatible two-argument form, and `resetSceneCamera(sceneId)`.
+
+## Saved compositions and support
+
+In **Tools → Saved scene compositions**, inspect camera counts, positioning control, missing users and scene IDs. Open an existing composition or duplicate it into another scene's draft. Duplication reviews added/replaced user IDs, preserves destination-only users and excludes the camera background. View the destination scene before Apply. Use selective copying to omit categories or unavailable users. Macro names now suggest the scene and saved/draft state, with a unique suffix; existing macros keep their immediate-apply behavior.
+
+**Tools → Download diagnostic JSON** captures the current local report in one click. You can also inspect and download a report from the Diagnostic window. Review names, IDs, file paths and configuration before sharing; no audio or camera frames are included. See the troubleshooting guides: [English](docs/TROUBLESHOOTING.md), [Español](docs/TROUBLESHOOTING.es.md), [Galego](docs/TROUBLESHOOTING.gl.md).
 
 ## Expanded camera overlays
 

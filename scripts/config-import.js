@@ -1,6 +1,7 @@
 import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
 import { cloneConfiguration, configurationChanges, configurationEqual, setConfigurationValue, writeConfigurationBlocks } from "./edit-session.js";
 import { normalizeOverlayConfiguration } from "./overlay-bounds.js";
+import { normalizeOverlayBlendMode } from "./overlay-blend.js";
 import { normalizeSceneCamera } from "./scene-camera.js";
 
 export const CONFIG_BLOCKS = [SETTINGS_KEYS.PLAYER_LAYOUTS, SETTINGS_KEYS.SCENE_PROFILES, SETTINGS_KEYS.SCENE_CAMERA];
@@ -24,6 +25,7 @@ function normalizedLayouts(layouts) {
     const result = cloneConfiguration(layout);
     if (result.overlay) {
       delete result.overlay.userId;
+      if (Object.hasOwn(result.overlay, "blendMode")) result.overlay.blendMode = normalizeOverlayBlendMode(result.overlay.blendMode);
       if (result.overlay.bounds) {
         const bounds = normalizeOverlayConfiguration(result.overlay).bounds;
         result.overlay.bounds = Object.fromEntries(Object.keys(result.overlay.bounds).filter((key) => Object.hasOwn(bounds, key)).map((key) => [key, bounds[key]]));

@@ -1,4 +1,5 @@
 import { expandedOverlayBounds, overlayBoundsInset } from "./overlay-bounds.js";
+import { normalizeOverlayBlendMode } from "./overlay-blend.js";
 
 function numeric(value, fallback) {
   const parsed = Number(value);
@@ -277,7 +278,8 @@ export function overlayStyle(layout) {
     backgroundPosition: "",
     backgroundRepeat: "",
     backgroundBlendMode: "normal",
-    mixBlendMode: overlayMixBlendMode(image),
+    mixBlendMode: normalizeOverlayBlendMode(layout?.overlay?.blendMode) === "auto"
+      ? overlayMixBlendMode(image) : normalizeOverlayBlendMode(layout.overlay.blendMode),
     opacity: String(clamp(opacityValue, 0, 1)),
     transform: overlayTransform(layout),
     transformOrigin: "center"

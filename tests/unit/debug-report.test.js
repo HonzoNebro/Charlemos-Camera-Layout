@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { clearLoadedSceneProfileDraft, setLoadedSceneProfileDraft } from "../../scripts/state.js";
-import { collectModuleDebugReport } from "../../scripts/debug-report.js";
+import { collectModuleDebugReport, downloadModuleDebugReport } from "../../scripts/debug-report.js";
 
 function installDebugEnv() {
   clearLoadedSceneProfileDraft();
@@ -107,4 +107,18 @@ test("collectModuleDebugReport summarizes current scene, target user and setting
   assert.equal(report.rendererSnapshot, null);
   assert.equal(report.sceneBackgroundSnapshot.state, "disabled");
   assert.equal(report.sceneBackgroundSnapshot.hasMesh, false);
+});
+
+test("one-click diagnostic download separates the edited scene from the viewed scene", () => {
+  installDebugEnv();
+  game.scenes = { get: (id) => id === "scene-b" ? { id, name: "Other scene" } : null };
+  let saved;
+  globalThis.saveDataToFile = (...args) => { saved = args; };
+  const report = downloadModuleDebugReport("u2", { sceneId: "scene-b", includeRendererSnapshot: false });
+  assert.equal(report.scene.id, "scene-b");
+  assert.equal(report.scene.name, "Other scene");
+  assert.equal(report.scene.viewedSceneId, "scene-a");
+  assert.deepEqual(JSON.parse(saved[0]), report);
+  assert.equal(saved[1], "application/json");
+  assert.match(saved[2], /^charlemos-camera-layout-diagnostic-.*\.json$/);
 });

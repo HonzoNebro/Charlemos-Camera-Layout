@@ -1,3 +1,5 @@
+import { normalizeOverlayBlendMode } from "./overlay-blend.js";
+
 export const OVERLAY_BOUNDS_MODES = new Set(["camera", "expanded"]);
 export const MAX_OVERLAY_BOUND_PERCENT = 500;
 
@@ -23,6 +25,7 @@ export function normalizeOverlayConfiguration(value) {
   const { userId: _userId, ...overlay } = value;
   return {
     ...overlay,
+    ...(Object.hasOwn(overlay, "blendMode") ? { blendMode: normalizeOverlayBlendMode(overlay.blendMode) } : {}),
     bounds: normalizeOverlayBounds(value.bounds)
   };
 }

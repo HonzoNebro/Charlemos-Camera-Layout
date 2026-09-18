@@ -1,5 +1,7 @@
 import { DEFAULT_CAMERA_BOUNDS, MODULE_ID, SETTINGS_KEYS } from "./constants.js";
 import { inferLayoutMode } from "./camera-config-model.js";
+import { normalizeOverlayBlendMode } from "./overlay-blend.js";
+import { restoreCameraContainerSize, syncCameraContainerSize } from "./camera-container-size.js";
 import { composeTransform, nameStyle, overlayMediaKind, overlayMediaStyle, overlayStyle, overlayTintStyle } from "./camera-layout-style.js";
 import { buildCameraViewStyle } from "./camera-style-service.js";
 import {
@@ -772,13 +774,29 @@ export function syncFoundryAvatarVisibility(viewElement, videoElement, forceShow
   });
 }
 
+const avatarBindings = new WeakMap();
+
+export function unbindReactiveAvatarVisibility(viewElement) {
+  const record = avatarBindings.get(viewElement);
+  if (!record) return;
+  for (const type of ["loadedmetadata", "playing", "resize"]) record.video.removeEventListener?.(type, record.handler);
+  delete record.video.__charlemosAvatarVisibilityBound;
+  avatarBindings.delete(viewElement);
+  syncFoundryAvatarVisibility(viewElement, null, true);
+}
+
 export function bindReactiveAvatarVisibility(viewElement, videoElement) {
-  if (!viewElement?.querySelectorAll || !videoElement?.addEventListener || videoElement.__charlemosAvatarVisibilityBound === "1") return;
+  if (!viewElement?.querySelectorAll) return;
+  if (avatarBindings.get(viewElement)?.video === videoElement) return;
+  unbindReactiveAvatarVisibility(viewElement);
+  if (!videoElement?.addEventListener) return;
   const handler = () => syncFoundryAvatarVisibility(viewElement, videoElement);
   ["loadedmetadata", "playing", "resize"].forEach((type) => {
     videoElement.addEventListener(type, handler);
   });
   videoElement.__charlemosAvatarVisibilityBound = "1";
+  avatarBindings.set(viewElement, { video: videoElement, handler });
+  handler();
 }
 
 export function videoStyle(layout) {
@@ -873,7 +891,7 @@ function applyOverlay(viewElement, layout, userId, sceneId) {
     const kind = overlayMediaKind(source);
     const mediaElement = getOverlayMediaElement(element, kind);
     if (mediaElement) {
-      assignStyle(mediaElement, overlayMediaStyle(layout));
+      assignStyle(mediaElement, { ...overlayMediaStyle(layout), mixBlendMode: normalizeOverlayBlendMode(layout.overlay.blendMode) === "auto" ? "" : "normal" });
       syncOverlayMediaSource(mediaElement, kind, source);
       applyFrameOverlayFallbackStyle(mediaElement, layout?.overlay);
     }
@@ -1164,6 +1182,7 @@ function applyViewStyle(viewElement, videoElement, layout, applyGeometry) {
     cursor: ""
   });
   syncManagedViewGeometry(viewElement, layout, applyGeometry);
+  syncCameraContainerSize(viewElement, applyGeometry);
 }
 
 function applyVideoStyle(videoElement, layout) {
@@ -1171,6 +1190,8 @@ function applyVideoStyle(videoElement, layout) {
 }
 
 function resetViewStyle(viewElement, videoElement) {
+  unbindReactiveAvatarVisibility(viewElement);
+  restoreCameraContainerSize(viewElement);
   resetNameplateControlAvoidance(viewElement);
   viewElement.classList?.remove?.("charlemos-camera-view");
   viewElement.classList?.remove?.("charlemos-direct-edit");

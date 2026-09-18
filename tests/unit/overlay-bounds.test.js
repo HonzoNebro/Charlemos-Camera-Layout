@@ -45,6 +45,16 @@ test("normalizeOverlayBounds accepts decimals and clamps every outset", () => {
   );
 });
 
+test("frame blend normalization preserves omitted legacy fields and restricts explicit values", () => {
+  assert.equal(Object.hasOwn(normalizeOverlayConfiguration({}), "blendMode"), false);
+  for (const mode of ["auto", "normal", "screen", "soft-light"]) {
+    assert.equal(normalizeOverlayConfiguration({ blendMode: mode }).blendMode, mode);
+  }
+  for (const mode of [null, "multiply", "", {}, "screen; display:none"]) {
+    assert.equal(normalizeOverlayConfiguration({ blendMode: mode }).blendMode, "auto");
+  }
+});
+
 test("normalizeOverlayConfiguration preserves overlay fields and normalizes bounds", () => {
   const overlay = {
     enabled: true,

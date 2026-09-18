@@ -2,6 +2,21 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { composeTransform, nameStyle, overlayMediaKind, overlayMediaStyle, overlayStyle, overlayTintStyle } from "../../scripts/camera-layout-style.js";
 
+test("explicit frame blending overrides legacy paths without altering tint or geometry", () => {
+  for (const imageUrl of ["/frames/art.png", "/art.webm"]) {
+    const overlay = { enabled: true, imageUrl, tint: { enabled: true, color: "#ffffff", opacity: 0.5, blendMode: "multiply" } };
+    const legacy = overlayStyle({ overlay });
+    for (const blendMode of ["normal", "screen", "soft-light"]) {
+      const layout = { overlay: { ...overlay, blendMode } };
+      assert.deepEqual(overlayStyle(layout), { ...legacy, mixBlendMode: blendMode });
+      assert.equal(overlayTintStyle(layout).mixBlendMode, "multiply");
+    }
+    for (const blendMode of ["auto", "invalid", null]) {
+      assert.deepEqual(overlayStyle({ overlay: { ...overlay, blendMode } }), legacy);
+    }
+  }
+});
+
 test("composeTransform appends geometry skew", () => {
   const transform = composeTransform("rotate(2deg)", { skewX: 5, skewY: -3 });
   assert.equal(transform, "rotate(2deg) skew(5deg, -3deg)");

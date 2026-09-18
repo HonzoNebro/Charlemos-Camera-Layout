@@ -25,6 +25,10 @@ The implementation is not a substitute for visual validation in Foundry. Every i
 
 ## Visual editor and media
 
+- Compare Automatic, Normal, Screen and Soft light using PNG/WebM frames with and without tint, including paths containing `/frame`. Switch modes repeatedly and return to Automatic; confirm legacy appearance returns without stale media styles. Verify undo/redo, discard and shared state only after Apply. Check blending against bright/dark video and the area outside the camera.
+
+- Load each quick frame preset with enabled and disabled PNG/WebM frames. Check the bounds diagram, preserved asset/tint/opacity and unchanged camera/video geometry. Undo/redo must treat each preset as one step; another client must see nothing until Apply. Discard must restore the saved frame. Check all three languages and a narrow panel.
+
 - Test all four dock orientations, extremes, scrolling and camera-off avatar views.
 - Undock, move, resize, minimize, restore and dock again. In V14 also detach/reinsert the application window.
 - Use camera handles, aspect lock, guides, CSS-pixel tolerance and vw/vh/%/px values at different window sizes.
@@ -38,6 +42,9 @@ The implementation is not a substitute for visual validation in Foundry. Every i
 - Confirm the original A/V dock keeps playing throughout. Test canvas-disabled worlds and V14 Level switches for background fallback.
 
 ## Accessibility and release
+
+- Review saved scene compositions, duplicate into a different scene with existing users/background, decline a review and simulate source changes. Check destination scene binding, one-step undo, missing-user warnings and retained background.
+- Export saved/draft macros with duplicate names and verify active-scene execution remains unchanged. Download diagnostics both directly and from the report window; check privacy guidance and edited versus viewed scene IDs.
 
 - Navigate all sections and actions by keyboard; inspect focus, labels, errors and disabled-control explanations.
 - Test English, Spanish and Galician, long user names and resized panels.

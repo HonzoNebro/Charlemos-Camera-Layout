@@ -65,3 +65,13 @@ test("exportSceneProfileToMacro also supports profile-first signature", async ()
   assert.equal(created.command.includes('"mode": "expanded"'), true);
   assert.equal(created.command.includes('"right": 10'), true);
 });
+
+test("macro metadata retains source identity without changing active-scene execution", async () => {
+  const env = mockMacroEnv();
+  await exportSceneProfileToMacro("source", { layouts: { u1: { overlay: { blendMode: "soft-light" } } } }, "Source — Saved");
+  const data = env.getCreated();
+  assert.deepEqual(data.flags["charlemos-camera-layout"].composition, { sourceSceneId: "source", cameraCount: 1 });
+  assert.match(data.command, /canvas.scene\?\.id/);
+  assert.match(data.command, /"blendMode": "soft-light"/);
+  assert.doesNotMatch(data.command, /"source"/);
+});

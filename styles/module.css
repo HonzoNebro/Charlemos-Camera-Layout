@@ -628,3 +628,24 @@
   padding: 2px 4px;
   font-size: 11px;
 }
+
+.charlemos-frame-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.charlemos-frame-preset-grid small { display: block; }
+.charlemos-frame-diagram {
+  position: relative;
+  height: 90px;
+  margin: 8px;
+  border: 3px dashed currentColor;
+}
+
+.charlemos-frame-diagram-camera {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid currentColor;
+  background: repeating-linear-gradient(45deg, transparent, transparent 6px, #8884 6px, #8884 8px);
+}

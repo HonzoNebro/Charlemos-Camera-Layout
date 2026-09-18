@@ -2,6 +2,16 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { inspectConfigurationImport, prepareConfigurationImport, remapConfigurationImport, importReferences, importEntries, selectImportEntries } from "../../scripts/config-import.js";
 
+test("frame blend survives JSON round trips and omitted fields remain omitted", () => {
+  for (const blendMode of ["normal", "screen", "soft-light", "auto", "invalid", undefined]) {
+    const payload = JSON.parse(JSON.stringify({ version: 2, settings: { sceneProfiles: { a: { layouts: { u: { overlay: { blendMode, imageUrl: "frame.webm", tint: { blendMode: "multiply" } } } } } } } }));
+    const result = inspectConfigurationImport(payload).settings.sceneProfiles.a.layouts.u.overlay;
+    assert.equal(result.blendMode, blendMode === "invalid" ? "auto" : blendMode);
+    assert.equal(result.tint.blendMode, "multiply");
+    assert.equal(Object.hasOwn(result, "blendMode"), blendMode !== undefined);
+  }
+});
+
 test("rejects unrelated, malformed, incompatible and unsafe imports", () => {
   for (const value of [{}, [], { settings: {} }, { moduleId: "other", playerLayouts: {} }, { version: 3, playerLayouts: {} }, { playerLayouts: [] }, { sceneProfiles: { a: [] } }, { playerLayouts: { u: 4 } }, JSON.parse('{"playerLayouts":{"__proto__":{}}}')]) {
     assert.equal(inspectConfigurationImport(value), null);

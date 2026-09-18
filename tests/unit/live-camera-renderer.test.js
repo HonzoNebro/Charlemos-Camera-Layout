@@ -5,6 +5,7 @@ import {
   applyGeometryDefaults,
   applyFrameOverlayFallbackStyle,
   bindReactiveAvatarVisibility,
+  unbindReactiveAvatarVisibility,
   dumpRendererDebugSnapshot,
   isFrameOverlayPath,
   isRendererDebugEnabled,
@@ -340,6 +341,24 @@ test("bindReactiveAvatarVisibility hides avatar when video metadata arrives", ()
   assert.equal(avatar.style.visibility, "hidden");
   assert.equal(avatar.style.opacity, "0");
   assert.equal(avatar.dataset.charlemosHidden, "1");
+});
+
+test("reactive avatar listeners detach on video replacement and view cleanup", () => {
+  const listeners = () => {
+    const active = new Map();
+    return { active, addEventListener: (type, handler) => active.set(type, handler), removeEventListener: (type, handler) => { if (active.get(type) === handler) active.delete(type); } };
+  };
+  const first = listeners();
+  const second = listeners();
+  const view = viewWith([]);
+  bindReactiveAvatarVisibility(view, first);
+  assert.equal(first.active.size, 3);
+  bindReactiveAvatarVisibility(view, second);
+  assert.equal(first.active.size, 0);
+  assert.equal(second.active.size, 3);
+  unbindReactiveAvatarVisibility(view);
+  assert.equal(second.active.size, 0);
+  assert.equal(second.__charlemosAvatarVisibilityBound, undefined);
 });
 
 test("bindReactiveAvatarVisibility does not duplicate video listeners", () => {
@@ -1298,6 +1317,35 @@ test("expanded overlays use the camera ownerDocument and survive an avatar-only 
   assert.equal(second.view.querySelector(".charlemos-camera-overlay"), null);
   assert.equal(second.viewport.classList.contains("charlemos-camera-viewport"), false);
   assert.equal(second.viewport.style.overflow, "auto");
+});
+
+test("frame blend changes reuse owned media and restore legacy fallback without stale styles", () => {
+  const doc = testDocument();
+  const { view } = cameraViewFixture(doc);
+  const overlay = { enabled: true, imageUrl: "modules/example/frames/art.png", tint: { enabled: true, color: "#ffffff", opacity: 0.5, blendMode: "multiply" } };
+  const profile = { enabled: true, cameraControlMode: "native", layouts: { u1: { overlay } } };
+  const app = { getUserCameraView: () => view, getUserVideoElement: () => null };
+  globalThis.Element = TestElement;
+  globalThis.document = { querySelectorAll: () => [] };
+  globalThis.window = doc.defaultView;
+  globalThis.canvas = { scene: { id: "blend-scene" } };
+  globalThis.ui = { webrtc: app };
+  globalThis.game = { users: { contents: [{ id: "u1", name: "Player" }] }, settings: { get: (_module, key) => key === "sceneProfiles" ? { "blend-scene": profile } : false } };
+  let originalMedia;
+  for (const blendMode of [undefined, "normal", "screen", "soft-light", "auto"]) {
+    overlay.blendMode = blendMode;
+    applyCameraLayoutsNow(app);
+    const node = view.querySelector(".charlemos-camera-overlay");
+    const media = node.querySelector(".charlemos-camera-overlay-media");
+    originalMedia ??= media;
+    assert.equal(media, originalMedia);
+    assert.equal(node.style.mixBlendMode, !blendMode || blendMode === "auto" ? "screen" : blendMode);
+    assert.equal(media.style.mixBlendMode, !blendMode || blendMode === "auto" ? "screen" : "normal");
+    assert.equal(node.querySelector(".charlemos-camera-overlay-tint").style.mixBlendMode, "multiply");
+  }
+  profile.enabled = false;
+  applyCameraLayoutsNow(app);
+  assert.equal(view.querySelector(".charlemos-camera-overlay"), null);
 });
 
 test("global reconciliation applies an active CameraPopout instead of its stale dock view", () => {

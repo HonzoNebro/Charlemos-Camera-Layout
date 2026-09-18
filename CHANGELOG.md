@@ -5,6 +5,26 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0-beta.2] - 2026-09-18
+
+### Prerelease
+- Completes the short-term roadmap implementation on `preview/ux-editor`; long-term proposals remain deferred.
+- Opt-in beta manifest and tag archive only. Stable `main`, module ID and Foundry listing remain unchanged.
+- Automated coverage is expanded; real Foundry 13/14 visual and multi-client acceptance remains pending. Use a separate data directory and backed-up test world.
+
+### Added
+- Quick frame presets for inside-camera, exterior and lower-nameplate space, with schematic bounds and local one-step undo.
+- Explicit Normal, Screen and Soft light frame blending, independent of tint, with legacy Automatic behavior preserved.
+- Saved scene composition listing by name and ID, destination-draft duplication, missing-user warnings and source/destination rechecks.
+- Scene/state-based unique macro name suggestions and duplicate-name confirmation without changing macro execution semantics.
+- One-click diagnostic JSON downloads, explicit edited/viewed scene context and privacy guidance.
+- English, Spanish and Galician controls and troubleshooting guides.
+
+### Fixed
+- Reactive avatar listeners detach when their video is replaced or their camera view is cleaned up.
+- Collapsed video containers get a reversible, module-geometry-only sizing fallback without modifying the A/V feed.
+- Switching frame blend modes clears stale media-layer blending while retaining existing automatic styling.
+
 ## [3.3.0-beta.1] - 2026-09-18
 
 ### Prerelease
