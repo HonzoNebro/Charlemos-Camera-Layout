@@ -21,6 +21,7 @@ import { applyFramePreset, framePresetsHtml, applyFrameBlend, frameBlendHtml } f
 import { sceneProfileEntries, duplicateSceneComposition, uniqueCompositionMacroName } from "./editor-profiles.js";
 import { downloadModuleDebugReport } from "./debug-report.js";
 import { configurationEqual } from "./edit-session.js";
+import { ProfileLibraryPanel } from "./profile-library-panel.js";
 
 function refreshPreview() {
   applyCameraLayoutsNow();
@@ -82,6 +83,7 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
     this.message = "";
     this.copyCategories = ["effects", "overlay", "name"];
     this.copyTargets = [];
+    this.library = new ProfileLibraryPanel((profile) => sessionErrors({ draft: { profile } }, usersForConfig()));
   }
 
   get session() { return getEditSession(); }
@@ -97,7 +99,7 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
   async _renderHTML(context) {
     const { session, users, problem, errors } = context;
     const scene = game.scenes?.get?.(session?.sceneId);
-    const disabled = !session || session.busy ? "disabled" : "";
+    const disabled = !session || session.busy || this.library.busy ? "disabled" : "";
     return `<div class="charlemos-editor" data-editor-root>
       <header><h2>${esc(t("title"))}</h2><p>${esc(scene?.name ?? session?.sceneId ?? t("sceneRequired"))}</p><p>${esc(t("sharedScope"))}</p></header>
       <nav aria-label="${esc(t("navigation"))}">${["scene", "cameras", "tools"].map((area) => button("area", area, `data-area="${area}" aria-pressed="${this.area === area}"`)).join("")}</nav>
@@ -108,13 +110,13 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
       <div role="alert" data-editor-errors>${errors.map((error) => `<p>${esc(error)}</p>`).join("")}</div>
       ${conflictHtml(session)}
       ${this.closeRequested ? `<aside>${esc(t("unsaved"))}${button("save-close", "saveClose")}${button("discard-close", "discard")}${button("continue", "continueEditing")}</aside>` : ""}
-      <form data-editor-form><fieldset class="charlemos-editor-content" ${this.area === "tools" ? this.importBusy ? "disabled" : "" : disabled}>${this.area === "tools" ? this.toolsHtml() : session ? this.area === "scene" ? this.sceneHtml(users) : this.cameraHtml(users) : `<p>${esc(t("sceneRequired"))}</p>`}</fieldset></form>
+      <form data-editor-form><fieldset class="charlemos-editor-content" ${this.area === "tools" ? this.importBusy || this.library.busy ? "disabled" : "" : disabled}>${this.area === "tools" ? this.toolsHtml() : session ? this.area === "scene" ? this.sceneHtml(users) : this.cameraHtml(users) : `<p>${esc(t("sceneRequired"))}</p>`}</fieldset></form>
       </div>
       <footer><p aria-live="polite">${esc(pendingSummary(session))}</p>
       <label><input type="checkbox" name="preview"${session?.preview ? " checked" : ""} ${disabled}>${esc(t("preview"))}</label>
       ${button("undo", "undo", !session?.history.length ? "disabled" : "")}${button("redo", "redo", !session?.future.length ? "disabled" : "")}
-      ${button("apply", "apply", problem || errors.length || !session?.dirty || session?.busy ? "disabled" : "")}
-      ${button("save-close", "saveClose", problem || errors.length || session?.busy ? "disabled" : "")}${button("cancel", "cancel", session?.busy ? "disabled" : "")}
+      ${button("apply", "apply", problem || errors.length || !session?.dirty || session?.busy || this.library.busy ? "disabled" : "")}
+      ${button("save-close", "saveClose", problem || errors.length || session?.busy || this.library.busy ? "disabled" : "")}${button("cancel", "cancel", session?.busy || this.library.busy ? "disabled" : "")}
       </footer></div>`;
   }
 
@@ -152,6 +154,7 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
     const legacy = game.settings.get(MODULE_ID, SETTINGS_KEYS.PLAYER_LAYOUTS) ?? {};
     return `${button("backup", "backup")}${button("import", "import")}${button("macro", "macro", this.session ? "" : "disabled")}${button("diagnostic", "diagnostic")}${button("download-diagnostic", "downloadDiagnostic")}<p>${esc(t("diagnosticPrivacy"))}</p>
       ${this.profilesHtml()}
+      ${this.library.html(this.session, usersForConfig())}
       ${this.session && Object.keys(legacy).length ? button("legacy", "importLegacy") : ""}
       ${this.session ? this.copyHtml() : ""}
       ${this.importState ? this.importHtml() : ""}`;
@@ -246,6 +249,7 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
     const { inspection, plan } = this.importState;
     const summary = plan?.changes.map((change) => `<li>${esc(t(change.before === undefined ? "added" : change.after === undefined ? "deleted" : "modified"))} — ${esc(change.path.join(" / "))}: ${esc(JSON.stringify(change.before))} → ${esc(JSON.stringify(change.after))}</li>`).join("");
     return `<fieldset><legend>${esc(t("importReview"))}</legend>
+      <p>${esc(t("templateImportHelp"))}</p>
       ${labeledSelect("importMode", this.importState.mode, ["merge", "replace", ...(inspection.complete ? ["restore"] : [])].map((id) => ({ id, label: t(id) })), t("operation"))}
       ${this.importMappingHtml()}
       <fieldset><legend>${esc(t("includedConfigurations"))}</legend>${importEntries(inspection).map((path, index) => `<label><input name="import-entry-${index}" type="checkbox"${this.importState.mode !== "restore" && this.importState.excluded.includes(index) ? "" : " checked"}${this.importState.mode === "restore" ? " disabled" : ""}>${esc(path.join(" / "))}</label>`).join("")}</fieldset>
@@ -335,7 +339,7 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
   }
 
   change(event) {
-    if (this.session?.busy || this.importBusy) return;
+    if (this.session?.busy || this.importBusy || this.library.busy) return;
     const field = event.target;
     const name = field.name;
     if (field.checkValidity && !field.checkValidity()) { field.reportValidity(); return; }
@@ -343,6 +347,10 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
     else if (name === "basicShape") updateCameraField(this.session, this.selectedUserId, "clipPath", field.value);
     else if (name === "selectedUser") this.selectedUserId = field.value;
     else if (name === "duplicateSource" || name === "duplicateDestination") this[name] = field.value;
+    else if (name?.startsWith("template")) {
+      try { this.library.change(field, usersForConfig()); }
+      catch (error) { this.message = t(error.message); }
+    }
     else if (name?.startsWith("preset-")) this.preset[name.slice(7)] = field.value;
     else if (name?.startsWith("slot-")) this.preset.users[Number(name.slice(5))] = field.value;
     else if (name?.startsWith("copy-category-")) this.copyCategories = field.checked ? [...this.copyCategories, name.slice(14)] : this.copyCategories.filter((id) => id !== name.slice(14));
@@ -406,7 +414,7 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
 
   syncFooter() {
     const root = this.element;
-    const blocked = editSessionProblem(this.session) || sessionErrors(this.session, usersForConfig()).length || this.session?.busy;
+    const blocked = editSessionProblem(this.session) || sessionErrors(this.session, usersForConfig()).length || this.session?.busy || this.library.busy;
     const apply = root?.querySelector?.('[data-editor-action="apply"]');
     const save = root?.querySelector?.('[data-editor-action="save-close"]');
     if (apply) apply.disabled = Boolean(blocked || !this.session?.dirty);
@@ -446,8 +454,16 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
   }
 
   async action(action, target) {
-    if (this.session?.busy || this.importBusy) return;
+    if (this.session?.busy || this.importBusy || this.library.busy) return;
     this.message = "";
+    if (action.startsWith("template-")) {
+      const operation = this.library.handle(action, this.session, usersForConfig(), (message) => window.confirm(message));
+      if (this.library.busy) { this.message = t("saving"); await this.render(true); }
+      this.message = await operation;
+      refreshPreview();
+      await this.render(true);
+      return;
+    }
     if (action === "area") this.area = target.dataset.area;
     if (action === "section") this.section = target.dataset.section;
     if (action === "visual-toggle") this.toggleVisual();
@@ -726,14 +742,14 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
   }
 
   async refreshIfOpen() {
-    if (!this.rendered || this.session?.busy || this.importBusy || this.visual?.gesture) return;
+    if (!this.rendered || this.session?.busy || this.importBusy || this.library.busy || this.visual?.gesture) return;
     if (this.session && editSessionProblem(this.session) !== "sceneDeleted") this.session.reconcile(readSceneConfiguration(this.session.sceneId));
     if (this.element?.ownerDocument?.activeElement?.closest?.("[data-editor-form]") && !editSessionProblem(this.session)) return;
     await this.render(true);
   }
 
   async close(options = {}) {
-    if (this.session?.busy || this.importBusy) return this;
+    if (this.session?.busy || this.importBusy || this.library.busy) return this;
     if (this.session?.dirty && !options.discard) {
       this.closeRequested = true;
       await this.render(true);

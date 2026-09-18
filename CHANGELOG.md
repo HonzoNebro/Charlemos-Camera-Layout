@@ -5,6 +5,15 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- World-shared composition library with named template snapshots saved from persisted configuration or a valid local draft.
+- Explicit create/replace/rename/delete operations, stale-entry protection and write verification/recovery.
+- Template loading into scene drafts with explicit user-ID assignments, preserved relative references and one-step undo, without changing camera backgrounds or updating scenes automatically.
+- Optional JSON v2 `profileLibrary` backup/import block; older backups leave the library unchanged.
+- English, Spanish and Galician library UI/help and automated regression coverage. Manual Foundry validation remains pending.
+
 ## [3.3.0-beta.2] - 2026-09-18
 
 ### Prerelease

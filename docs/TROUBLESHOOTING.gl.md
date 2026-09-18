@@ -28,6 +28,8 @@ Con vídeo apagado, desconectado ou sen dimensións útiles consérvase a fonte 
 
 ## Copias e conflitos
 
+A Biblioteca de composicións garda modelos compartidos polo mundo. Gardar, renomear ou eliminar require confirmación e non se reverte con Cancelar escena. Cargar si entra no borrador: asigna os IDs ausentes, revisa os destinos e preme Aplicar só cando queiras compartir a escena. Un modelo modificado por outro GM debe actualizarse antes de usalo; as escenas que xa o usaron non cambian automaticamente. As copias antigas que non inclúen biblioteca non borran os modelos actuais.
+
 Ferramentas lista composicións gardadas por nome e ID de escena. Duplicar carga un borrador destino: substitúe as cámaras da orixe, conserva os demais usuarios e exclúe o fondo. Revisa os IDs afectados. Resolve ou exclúe usuarios eliminados mediante copia selectiva; non se fan coincidencias por nome.
 
 Se outro GM ou unha macro cambia o mesmo campo, resolve explicitamente o valor gardado ou o do borrador. Non premas Aplicar repetidamente. Ante recuperación incompleta, descarga diagnóstico e copia de seguridade antes de seguir cambiando axustes.

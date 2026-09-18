@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { inspectConfigurationImport, prepareConfigurationImport, remapConfigurationImport, importReferences, importEntries, selectImportEntries } from "../../scripts/config-import.js";
+import { inspectConfigurationImport, prepareConfigurationImport, remapConfigurationImport, importReferences, importEntries, selectImportEntries, configurationBackup } from "../../scripts/config-import.js";
+import { templateFromProfile } from "../../scripts/profile-library.js";
 
 test("frame blend survives JSON round trips and omitted fields remain omitted", () => {
   for (const blendMode of ["normal", "screen", "soft-light", "auto", "invalid", undefined]) {
@@ -73,4 +74,45 @@ test("partial background imports preserve omitted fit while explicit null delete
   const plan = prepareConfigurationImport(inspection, current);
   assert.deepEqual(plan.writes[0].after, { a: { playerId: "v", fit: "contain" } });
   assert.deepEqual(importReferences(inspection).users, ["v"]);
+});
+
+test("v2 backups include library snapshots; templates retain source IDs until explicitly loaded", () => {
+  const entry = templateFromProfile("Reusable", { cameraControlMode: "native", layouts: { oldUser: { left: "3vw", overlay: { blendMode: "normal" } } } });
+  const store = { playerLayouts: {}, sceneProfiles: {}, sceneCamera: {}, profileLibrary: { template: entry } };
+  globalThis.game = { settings: { get: (_module, key) => store[key] } };
+  const backup = configurationBackup();
+  assert.equal(backup.version, 2);
+  const inspection = inspectConfigurationImport(JSON.parse(JSON.stringify(backup)));
+  assert.equal(inspection.complete, true);
+  assert.deepEqual(inspection.settings.profileLibrary, store.profileLibrary);
+  assert.deepEqual(importReferences(inspection), { scenes: [], users: [] });
+  const mapped = remapConfigurationImport(inspection, { scenes: {}, users: {} });
+  assert.deepEqual(mapped.settings.profileLibrary, store.profileLibrary);
+  assert.ok(importEntries(inspection).some((path) => path[0] === "profileLibrary" && path[1] === "template"));
+  const selected = selectImportEntries(inspection, [["profileLibrary", "template"]]);
+  assert.deepEqual(selected.settings.profileLibrary, {});
+});
+
+test("old complete backups never erase a library absent from the file", () => {
+  const entry = templateFromProfile("Reusable", { layouts: { u: {} } });
+  const current = { playerLayouts: {}, sceneProfiles: {}, sceneCamera: {}, profileLibrary: { template: entry } };
+  const legacy = inspectConfigurationImport({ playerLayouts: {}, sceneProfiles: {}, sceneCamera: {} });
+  assert.equal(legacy.complete, true);
+  assert.equal(prepareConfigurationImport(legacy, current, { mode: "restore" }).writes.length, 0);
+  const fullEmpty = inspectConfigurationImport({ playerLayouts: {}, sceneProfiles: {}, sceneCamera: {}, profileLibrary: {} });
+  assert.deepEqual(prepareConfigurationImport(fullEmpty, current, { mode: "restore" }).writes[0].after, {});
+  const partial = inspectConfigurationImport({ profileLibrary: {} });
+  assert.equal(partial.complete, false);
+  assert.throws(() => prepareConfigurationImport(partial, current, { mode: "restore" }));
+  assert.equal(prepareConfigurationImport(partial, current).writes.length, 0);
+});
+
+test("template imports replace only included template IDs and reject invalid library blocks", () => {
+  const entry = templateFromProfile("First", { layouts: { u: {}, removed: {} } });
+  const replacement = templateFromProfile("New", { layouts: { v: {} } }, 2);
+  const current = { profileLibrary: { template: entry, keep: entry } };
+  const inspection = inspectConfigurationImport({ profileLibrary: { template: replacement } });
+  const plan = prepareConfigurationImport(inspection, current);
+  assert.deepEqual(plan.writes[0].after, { template: replacement, keep: entry });
+  for (const profileLibrary of [[], { t: null }, { t: { name: "Bad", profile: { layouts: {} } } }]) assert.equal(inspectConfigurationImport({ profileLibrary }), null);
 });

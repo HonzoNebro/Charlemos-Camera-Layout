@@ -11,11 +11,12 @@ globalThis.foundry = {
     render() { return this; }
     async close() { this.closed = true; return this; }
   } } },
-  utils: { escapeHTML: (value) => String(value ?? ""), deepClone: structuredClone }
+  utils: { escapeHTML: (value) => String(value ?? ""), deepClone: structuredClone, randomID: () => "test-template" }
 };
 const { CameraEditorApp } = await import("../../scripts/camera-editor-app.js");
 const { updateCameraField, fieldDisabled } = await import("../../scripts/editor-fields.js");
 const { FRAME_PRESETS, applyFramePreset } = await import("../../scripts/editor-frame-presets.js");
+const { templateFromProfile } = await import("../../scripts/profile-library.js");
 
 function environment() {
   endEditSession(); setApp(null);
@@ -255,4 +256,161 @@ test("declining duplication and source changes during review preserve the curren
   assert.equal(app.message, dictionary["charlemos-camera-layout.ui.editor.profilesChanged"]);
   assert.equal(app.session.sceneId, "a");
   assert.deepEqual(app.session.draft, before);
+});
+
+test("saving a library template explicitly distinguishes saved state from the draft", async () => {
+  for (const source of ["saved", "draft"]) {
+    const store = environment();
+    const persisted = structuredClone(store.sceneProfiles);
+    const app = new CameraEditorApp();
+    await app._prepareContext();
+    updateCameraField(app.session, "u", "left", "35vw");
+    const before = structuredClone(app.session.draft);
+    app.library.name = "Reusable";
+    app.library.source = source;
+    await app.action("template-create", { dataset: {} });
+    const entry = store.profileLibrary[app.library.selectedId];
+    assert.equal(entry.name, "Reusable");
+    assert.equal(entry.profile.layouts.u.left, source === "saved" ? "12vw" : "35vw");
+    assert.equal(entry.profile.layouts.u.geometry.custom, 42);
+    assert.deepEqual(app.session.draft, before);
+    assert.deepEqual(store.sceneProfiles, persisted);
+    await app.close({ discard: true });
+    assert.ok(store.profileLibrary[app.library.selectedId]);
+  }
+});
+
+test("template loading maps IDs and is one reversible scene-draft operation", async () => {
+  const store = environment();
+  store.sceneCamera.a = { playerId: "u", fit: "contain" };
+  store.profileLibrary = { template: templateFromProfile("Reusable", { cameraControlMode: "native", layouts: { old: { width: "20vw", overlay: { enabled: false, imageUrl: "art.png" } } } }) };
+  const saved = structuredClone(store);
+  const app = new CameraEditorApp();
+  await app._prepareContext();
+  const before = structuredClone(app.session.draft);
+  app.library.selectTemplate("template", game.users.contents);
+  assert.equal(app.library.mappings.old, "__unresolved__");
+  await app.action("template-load", { dataset: {} });
+  assert.deepEqual(app.session.draft, before);
+  app.library.mappings.old = "v";
+  await app.action("template-load", { dataset: {} });
+  assert.equal(app.session.draft.profile.layouts.v.width, "20vw");
+  assert.deepEqual(app.session.draft.profile.layouts.u, before.profile.layouts.u);
+  assert.deepEqual(app.session.draft.background, before.background);
+  assert.equal(app.session.history.length, 1);
+  assert.equal(app.session.preview, true);
+  assert.deepEqual(store, saved);
+  app.session.undo();
+  assert.deepEqual(app.session.draft, before);
+  app.session.redo();
+  assert.equal(app.session.draft.profile.layouts.v.width, "20vw");
+  await app.close({ discard: true });
+  assert.deepEqual(store, saved);
+});
+
+test("changed templates require refresh, and rename/delete never mutate scenes", async () => {
+  const store = environment();
+  store.profileLibrary = { template: templateFromProfile("First", store.sceneProfiles.a) };
+  const scenes = structuredClone(store.sceneProfiles);
+  const app = new CameraEditorApp();
+  await app._prepareContext();
+  app.library.selectTemplate("template", game.users.contents);
+  store.profileLibrary.template.name = "Other GM";
+  await app.action("template-delete", { dataset: {} });
+  assert.ok(store.profileLibrary.template);
+  assert.equal(app.message, dictionary["charlemos-camera-layout.ui.editor.templateChanged"]);
+  await app.action("template-refresh", { dataset: {} });
+  app.library.name = "Renamed";
+  await app.action("template-rename", { dataset: {} });
+  assert.equal(store.profileLibrary.template.name, "Renamed");
+  assert.equal(store.profileLibrary.template.revision, 2);
+  await app.action("template-delete", { dataset: {} });
+  assert.deepEqual(store.profileLibrary, {});
+  assert.deepEqual(store.sceneProfiles, scenes);
+});
+
+test("template writes respect scene changes, GM permission, cancellation and write failures", async () => {
+  const store = environment();
+  const app = new CameraEditorApp();
+  await app._prepareContext();
+  app.library.name = "Reusable";
+  const before = structuredClone(app.session.draft);
+  canvas.scene.id = "b";
+  await app.action("template-create", { dataset: {} });
+  assert.equal(store.profileLibrary, undefined);
+  canvas.scene.id = "a";
+  game.user.isGM = false;
+  await app.action("template-create", { dataset: {} });
+  assert.equal(store.profileLibrary, undefined);
+  game.user.isGM = true;
+  window.confirm = () => false;
+  await app.action("template-create", { dataset: {} });
+  assert.equal(store.profileLibrary, undefined);
+  window.confirm = () => true;
+  game.settings.set = async () => { throw new Error("offline"); };
+  await app.action("template-create", { dataset: {} });
+  assert.equal(store.profileLibrary, undefined);
+  assert.equal(app.library.busy, false);
+  assert.deepEqual(app.session.draft, before);
+  assert.equal(app.message, dictionary["charlemos-camera-layout.ui.editor.recoveryComplete"]);
+});
+
+test("library management remains accessible without a scene and translates all controls", async () => {
+  const store = environment();
+  store.profileLibrary = { template: templateFromProfile("Reusable", store.sceneProfiles.a) };
+  canvas.scene = null;
+  const app = new CameraEditorApp();
+  app.area = "tools";
+  const context = await app._prepareContext();
+  app.library.selectTemplate("template", game.users.contents);
+  for (const lang of ["en", "es", "gl"]) {
+    const labels = JSON.parse(readFileSync(new URL(`../../lang/${lang}.json`, import.meta.url)));
+    game.i18n.localize = (key) => labels[key] ?? key;
+    const html = await app._renderHTML(context);
+    assert.doesNotMatch(html, /charlemos-camera-layout\.ui\./);
+    assert.match(html, /data-editor-action="template-create" disabled/);
+    assert.match(html, /data-editor-action="template-load" disabled/);
+  }
+  await app.action("template-delete", { dataset: {} });
+  assert.deepEqual(store.profileLibrary, {});
+});
+
+test("template loading rechecks deleted users and changed templates after confirmation", async () => {
+  const store = environment();
+  store.profileLibrary = { template: templateFromProfile("Reusable", { layouts: { u: { left: "40px" } } }) };
+  const app = new CameraEditorApp();
+  await app._prepareContext();
+  app.library.selectTemplate("template", game.users.contents);
+  const before = structuredClone(app.session.draft);
+  window.confirm = () => { store.profileLibrary.template.revision++; return true; };
+  await app.action("template-load", { dataset: {} });
+  assert.deepEqual(app.session.draft, before);
+  app.library.selectTemplate("template", game.users.contents);
+  window.confirm = () => { game.users.contents.splice(0, 1); return true; };
+  await app.action("template-load", { dataset: {} });
+  assert.deepEqual(app.session.draft, before);
+});
+
+test("library saves prevent duplicate submissions and closing while a write is pending", async () => {
+  const store = environment();
+  const app = new CameraEditorApp();
+  await app._prepareContext();
+  app.library.name = "Reusable";
+  let finish;
+  let writes = 0;
+  game.settings.set = async (_module, key, data) => {
+    writes++;
+    await new Promise((resolve) => { finish = resolve; });
+    store[key] = data;
+  };
+  const saving = app.action("template-create", { dataset: {} });
+  assert.equal(app.library.busy, true);
+  await app.action("template-create", { dataset: {} });
+  await app.close({ discard: true });
+  assert.notEqual(app.closed, true);
+  assert.equal(writes, 1);
+  finish();
+  await saving;
+  assert.equal(app.library.busy, false);
+  assert.equal(Object.keys(store.profileLibrary).length, 1);
 });

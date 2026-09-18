@@ -28,6 +28,8 @@ Con vídeo apagado, desconectado o sin dimensiones útiles se conserva la fuente
 
 ## Copias y conflictos
 
+La Biblioteca de composiciones guarda plantillas compartidas por el mundo. Guardar, renombrar o eliminar requiere confirmación y no se revierte con Cancelar escena. Cargar sí entra en el borrador: asigna los IDs ausentes, revisa los destinos y pulsa Aplicar solo cuando quieras compartir la escena. Una plantilla modificada por otro GM debe actualizarse antes de usarla; las escenas que ya la usaron no cambian automáticamente. Las copias antiguas que no incluyen biblioteca no borran las plantillas actuales.
+
 Herramientas lista composiciones guardadas por nombre e ID de escena. Duplicar carga un borrador destino: sustituye las cámaras del origen, conserva los demás usuarios y excluye el fondo. Revisa los IDs afectados. Resuelve o excluye usuarios eliminados mediante copia selectiva; no se hacen coincidencias por nombre.
 
 Si otro GM o una macro cambia el mismo campo, resuelve explícitamente el valor guardado o el del borrador. No pulses Aplicar repetidamente. Ante recuperación incompleta, descarga diagnóstico y copia de seguridad antes de seguir cambiando ajustes.

@@ -64,6 +64,15 @@ function registerHideControlsSetting() {
   });
 }
 
+function registerProfileLibrarySetting() {
+  game.settings.register(MODULE_ID, SETTINGS_KEYS.PROFILE_LIBRARY, {
+    name: `${MODULE_ID}.settings.profileLibrary.name`,
+    hint: `${MODULE_ID}.settings.profileLibrary.hint`,
+    scope: "world", config: false, type: Object, default: {},
+    onChange: () => getApp()?.refreshIfOpen?.()
+  });
+}
+
 function registerDebugRendererSetting() {
   game.settings.register(MODULE_ID, SETTINGS_KEYS.DEBUG_RENDERER, {
     name: `${MODULE_ID}.settings.debugRenderer.name`,
@@ -91,6 +100,7 @@ export function registerSettings() {
   registerPlayerLayoutsSetting();
   registerSceneCameraSetting();
   registerSceneProfilesSetting();
+  registerProfileLibrarySetting();
   registerHideControlsSetting();
   registerDebugRendererSetting();
   console.debug(`${MODULE_ID} | settings registered`);

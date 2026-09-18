@@ -16,6 +16,11 @@ The implementation is not a substitute for visual validation in Foundry. Every i
 
 ## Import and recovery
 
+- Create library templates from saved state and a valid draft; verify only the library changes and scene Cancel does not undo an explicitly confirmed library write. Rename/delete without a scene, and reload after reconnecting as another GM.
+- Load a template into two different scenes, assign/exclude missing user IDs and relative targets, undo/redo and Apply. Verify backgrounds and destination-only cameras stay unchanged. Changing or deleting a template must not modify already configured scenes.
+- Have two GMs replace/delete the same selected template; ensure stale actions require refresh. Simulate a failed library write and verify recovery reporting and absence of duplicated submissions.
+- Export/import the optional JSON v2 library block, exclude a template, replace matching IDs, restore a complete empty library and restore an old three-block backup. The old backup must not clear templates. Template user IDs must be assigned on load, not guessed by name on import.
+
 - Export v2, then round-trip frames, dormant native-mode geometry and custom CSS.
 - Import legacy and v1 fixtures; reject unrelated JSON, empty objects, malformed blocks and unsupported versions.
 - Map missing scene/user IDs and explicitly exclude entries. Test duplicate destinations and excluded relative targets.

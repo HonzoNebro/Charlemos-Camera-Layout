@@ -81,6 +81,16 @@ The new editor is available as an opt-in beta. In-Foundry visual and multi-clien
 
 ## Saved compositions and support
 
+### Composition library (unreleased)
+
+**Tools → Composition library** stores reusable templates independently of scenes in a world-shared setting. Only a GM can create, replace, rename or delete them. Choose **Saved value** or **Draft value**, enter a name and confirm the library write. This saves the template immediately but does not apply the composition to a scene; closing or cancelling the scene editor does not undo library operations.
+
+Select a template, review its camera IDs and explicitly assign or exclude them, then **Load into scene draft**. Existing IDs are proposed only when that same user still exists; names are never matched. Relative-camera targets must also have valid destinations. Loading replaces the included camera layouts, keeps other destination cameras and scene properties, switches positioning control and leaves the live background unchanged. It is one Undo step with local preview; **Apply** publishes the destination scene. Templates are snapshots, not live links: subsequent template changes or deletion never update scenes automatically. Custom CSS, inactive native-mode geometry, expanded frames and frame blending remain intact.
+
+JSON v2 backups include the optional `profileLibrary` block. Legacy/unversioned/v1/v2 backups without it remain valid and never clear the library. Merge/replace imports update whole included template IDs, not individual template fields; other templates remain. A confirmed full restore replaces the library only if the file includes that block. Imported templates keep their source camera IDs until you assign them at load time. Use a library-aware version to restore templates; older versions may ignore this optional block. Backups always contain persisted world settings, not the scene's pending draft.
+
+If another GM changes a selected template, refresh it and review again before replacing, deleting or loading it. Library writes use the same conflict checks, verification and recovery mechanism as configuration writes, not a distributed transaction. Keep a backup before deleting templates or importing replacements.
+
 In **Tools → Saved scene compositions**, inspect camera counts, positioning control, missing users and scene IDs. Open an existing composition or duplicate it into another scene's draft. Duplication reviews added/replaced user IDs, preserves destination-only users and excludes the camera background. View the destination scene before Apply. Use selective copying to omit categories or unavailable users. Macro names now suggest the scene and saved/draft state, with a unique suffix; existing macros keep their immediate-apply behavior.
 
 **Tools → Download diagnostic JSON** captures the current local report in one click. You can also inspect and download a report from the Diagnostic window. Review names, IDs, file paths and configuration before sharing; no audio or camera frames are included. See the troubleshooting guides: [English](docs/TROUBLESHOOTING.md), [Español](docs/TROUBLESHOOTING.es.md), [Galego](docs/TROUBLESHOOTING.gl.md).

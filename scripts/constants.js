@@ -9,6 +9,7 @@ export const SETTINGS_KEYS = {
   PLAYER_LAYOUTS: "playerLayouts",
   SCENE_CAMERA: "sceneCamera",
   SCENE_PROFILES: "sceneProfiles",
+  PROFILE_LIBRARY: "profileLibrary",
   HIDE_CONTROLS: "hideControls",
   DEBUG_RENDERER: "debugRenderer"
 };

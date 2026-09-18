@@ -42,19 +42,21 @@ Automated coverage is supplemented by the required [Foundry acceptance checklist
 5. Release discipline
 - The beta uses a matching changelog, package/module version, immutable tag archive and GitHub prerelease without Latest. Stable manifests remain on main; beta manifests remain on preview/ux-editor.
 
-## Long Term (deferred by user decision; not part of this beta)
+## Long Term
 
 1. Profile library
-- Global reusable profile templates, then bind templates to scenes.
+- Implemented locally, unreleased: world-shared named template snapshots, save from persisted/draft configuration, replace/rename/delete with explicit confirmation and conflict protection.
+- Load into a scene-bound draft with explicit user-ID mapping, relative-target checks, one-step undo and unchanged background. Reuse is copy-on-load, not automatic propagation to previously configured scenes.
+- Optional JSON v2 library backup/import support preserves compatibility with older backups; manual Foundry acceptance remains pending.
 
 2. Per-user profile variants
-- Optional role-based variants (GM vs players) while keeping a shared scene baseline.
+- Pending: optional role-based variants (GM vs players) while keeping a shared scene baseline.
 
 3. Visual editor improvements
-- Guided controls for clip-path presets and advanced overlay alignment tools.
+- Pending: guided controls for clip-path presets and advanced overlay alignment tools.
 
 4. Foundry integration depth
-- Evaluate optional positioned pseudo-tiles that reuse the live camera background renderer.
+- Pending evaluation: optional positioned pseudo-tiles that reuse the live camera background renderer.
 
 5. Automated quality gates
-- Expand automated tests around renderer/layout edge cases and regression snapshots.
+- Pending: expand automated tests around renderer/layout edge cases and regression snapshots.

@@ -32,6 +32,8 @@ The live background waits for the configured user's usable video. With the camer
 
 ## Copying and conflicts
 
+The Composition library stores world-shared templates. Save, rename and delete require confirmation and are not undone by scene Cancel. Loading enters the draft: assign missing IDs, review destinations and Apply only when ready to share the scene. Refresh a template changed by another GM before using it. Previously configured scenes never update automatically. Older backups that omit the library leave current templates untouched.
+
 Saved compositions are listed by scene name and ID in Tools. Duplication replaces complete source-user layouts in a destination draft, keeps other destination users and excludes the camera background. Review the affected IDs before confirming. Deleted users must be resolved or excluded with selective copy; names are never automatically matched.
 
 If another GM or macro changes the same fields, resolve the editor's saved/draft conflict explicitly. Do not repeatedly click Apply. When a save reports partial recovery, download diagnostics and a backup before making more changes.

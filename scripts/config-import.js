@@ -3,8 +3,10 @@ import { cloneConfiguration, configurationChanges, configurationEqual, setConfig
 import { normalizeOverlayConfiguration } from "./overlay-bounds.js";
 import { normalizeOverlayBlendMode } from "./overlay-blend.js";
 import { normalizeSceneCamera } from "./scene-camera.js";
+import { normalizeProfileLibrary } from "./profile-library.js";
 
 export const CONFIG_BLOCKS = [SETTINGS_KEYS.PLAYER_LAYOUTS, SETTINGS_KEYS.SCENE_PROFILES, SETTINGS_KEYS.SCENE_CAMERA];
+const OPTIONAL_CONFIG_BLOCKS = [SETTINGS_KEYS.PROFILE_LIBRARY];
 
 function record(value) {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));
@@ -56,6 +58,7 @@ export function importEntries(inspection) {
     for (const userId of Object.keys(profile.layouts ?? {})) entries.push(["sceneProfiles", sceneId, "layouts", userId]);
   }
   for (const sceneId of Object.keys(inspection.settings.sceneCamera ?? {})) entries.push(["sceneCamera", sceneId]);
+  for (const id of Object.keys(inspection.settings.profileLibrary ?? {})) entries.push(["profileLibrary", id]);
   return entries;
 }
 
@@ -85,6 +88,7 @@ export function remapConfigurationImport(inspection, mappings) {
     return [[target, layout]];
   }));
   const settings = {};
+  if (inspection.present.includes("profileLibrary")) settings.profileLibrary = cloneConfiguration(inspection.settings.profileLibrary);
   if (inspection.present.includes("playerLayouts")) settings.playerLayouts = mapLayouts(inspection.settings.playerLayouts);
   if (inspection.present.includes("sceneProfiles")) settings.sceneProfiles = Object.fromEntries(Object.entries(inspection.settings.sceneProfiles).flatMap(([id, profile]) => {
     const target = mappings.scenes[id];
@@ -105,7 +109,7 @@ export function inspectConfigurationImport(json) {
   if (![1, 2].includes(Number(json.version ?? 1))) return null;
   const source = Object.hasOwn(json, "settings") ? json.settings : json;
   if (!record(source)) return null;
-  const present = CONFIG_BLOCKS.filter((key) => Object.hasOwn(source, key));
+  const present = [...CONFIG_BLOCKS, ...OPTIONAL_CONFIG_BLOCKS].filter((key) => Object.hasOwn(source, key));
   if (!present.length || present.some((key) => !record(source[key]))) return null;
   if (source.playerLayouts && !layoutsValid(source.playerLayouts)) return null;
   if (source.sceneProfiles && !Object.values(source.sceneProfiles).every((profile) =>
@@ -117,6 +121,10 @@ export function inspectConfigurationImport(json) {
     camera === null || (record(camera) && typeof camera.playerId === "string" && camera.playerId.trim())
   )) return null;
   const settings = cloneConfiguration(source);
+  if (settings.profileLibrary) {
+    try { settings.profileLibrary = normalizeProfileLibrary(settings.profileLibrary); }
+    catch { return null; }
+  }
   if (settings.playerLayouts) settings.playerLayouts = normalizedLayouts(settings.playerLayouts);
   if (settings.sceneProfiles) {
     settings.sceneProfiles = Object.fromEntries(Object.entries(settings.sceneProfiles).map(([id, profile]) => [id, {
@@ -129,7 +137,7 @@ export function inspectConfigurationImport(json) {
     if (!Object.hasOwn(camera, "fit")) delete normalized.fit;
     return [id, normalized];
   }));
-  return { settings, present, complete: present.length === CONFIG_BLOCKS.length };
+  return { settings, present, complete: CONFIG_BLOCKS.every((key) => present.includes(key)) };
 }
 
 export function configurationBackup() {
@@ -137,7 +145,7 @@ export function configurationBackup() {
     moduleId: MODULE_ID,
     version: 2,
     exportedAt: new Date().toISOString(),
-    settings: Object.fromEntries(CONFIG_BLOCKS.map((key) => [key, cloneConfiguration(game.settings.get(MODULE_ID, key) ?? {})]))
+    settings: Object.fromEntries([...CONFIG_BLOCKS, ...OPTIONAL_CONFIG_BLOCKS].map((key) => [key, cloneConfiguration(game.settings.get(MODULE_ID, key) ?? {})]))
   };
 }
 
@@ -160,7 +168,7 @@ export function prepareConfigurationImport(inspection, current, { mode = "merge"
       for (const [id, value] of Object.entries(inspection.settings[key])) {
         if (selection && !selection[key]?.includes(id)) continue;
         if (value === null) { delete after[id]; continue; }
-        after[id] = mode === "merge" ? combine(before[id], value) : cloneConfiguration(value);
+        after[id] = mode === "merge" && key !== SETTINGS_KEYS.PROFILE_LIBRARY ? combine(before[id], value) : cloneConfiguration(value);
         if (mode === "replace" && key === "sceneProfiles") {
           after[id] = { ...cloneConfiguration(before[id] ?? {}), ...after[id], layouts: { ...cloneConfiguration(before[id]?.layouts ?? {}), ...after[id].layouts } };
         }

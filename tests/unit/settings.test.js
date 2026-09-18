@@ -79,6 +79,9 @@ test("registerSettings wires shared world settings through onChange", async () =
   assert.equal(typeof registered.get(SETTINGS_KEYS.PLAYER_LAYOUTS)?.onChange, "function");
   assert.equal(typeof registered.get(SETTINGS_KEYS.SCENE_CAMERA)?.onChange, "function");
   assert.equal(typeof registered.get(SETTINGS_KEYS.SCENE_PROFILES)?.onChange, "function");
+  assert.equal(registered.get(SETTINGS_KEYS.PROFILE_LIBRARY)?.scope, "world");
+  assert.deepEqual(registered.get(SETTINGS_KEYS.PROFILE_LIBRARY)?.default, {});
+  assert.equal(typeof registered.get(SETTINGS_KEYS.PROFILE_LIBRARY)?.onChange, "function");
   assert.match(String(registered.get(SETTINGS_KEYS.PLAYER_LAYOUTS)?.onChange), /handleSharedLayoutSettingChange/);
   assert.match(String(registered.get(SETTINGS_KEYS.SCENE_CAMERA)?.onChange), /handleSceneCameraSettingChange/);
   assert.match(String(registered.get(SETTINGS_KEYS.SCENE_PROFILES)?.onChange), /handleSharedLayoutSettingChange/);

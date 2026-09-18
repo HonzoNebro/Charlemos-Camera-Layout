@@ -101,7 +101,8 @@ export function collectModuleDebugReport(userId, options = {}) {
     settingsSummary: {
       globalLayoutCount: Object.keys(globalLayouts ?? {}).length,
       sceneProfileCount: Object.keys(sceneProfiles ?? {}).length,
-      sceneCameraCount: Object.keys(sceneCamera ?? {}).length
+      sceneCameraCount: Object.keys(sceneCamera ?? {}).length,
+      profileTemplateCount: Object.keys(safeSetting(SETTINGS_KEYS.PROFILE_LIBRARY)).length
     },
     editor: getEditSession() ? {
       sceneId: getEditSession().sceneId,
