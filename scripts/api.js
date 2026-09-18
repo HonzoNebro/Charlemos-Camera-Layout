@@ -3,7 +3,6 @@ import { getPlayerLayout, updatePlayerLayout, buildVideoStyle } from "./camera-s
 import { setPlayerOverlay, setPlayerNameStyle, setPlayerVideoFilter, setPlayerGeometry } from "./overlay-service.js";
 import { exportLayoutToMacro, exportSceneProfileToMacro } from "./macro-exporter.js";
 import { applySceneProfile, getSceneCamera, getSceneProfile, resetSceneCamera, resetSceneProfile, setSceneCamera } from "./scene-camera.js";
-import { sanitizeLayouts } from "./camera-config-shared.js";
 import { setControlsVisibility } from "./ui-controls.js";
 import { getApp, setLoadedSceneProfileDraft } from "./state.js";
 import { applyCameraLayoutsNow, dumpRendererDebugSnapshot, prepareModuleGeometryForLayouts } from "./live-camera-renderer.js";
@@ -16,6 +15,8 @@ function openConfig() {
 }
 
 function loadSceneProfileDraft(sceneId, payload) {
+  const app = getApp();
+  if (typeof app?.loadDraft === "function") return app.loadDraft(sceneId, payload);
   setLoadedSceneProfileDraft(sceneId, payload);
   openConfig();
   ui.notifications.info(game.i18n.localize(`${MODULE_ID}.ui.config.notifications.macroLoaded`));
@@ -23,7 +24,7 @@ function loadSceneProfileDraft(sceneId, payload) {
 
 async function applySceneProfileDraft(sceneId, payload) {
   const cameraControlMode = String(payload?.cameraControlMode ?? "native").trim() || "native";
-  const layouts = sanitizeLayouts(payload?.layouts ?? {}, cameraControlMode);
+  const layouts = foundry.utils.deepClone(payload?.layouts ?? {});
   if (cameraControlMode === "module") {
     const geometryResult = await prepareModuleGeometryForLayouts(layouts);
     if (geometryResult.missing.length > 0) {

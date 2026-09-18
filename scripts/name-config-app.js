@@ -157,7 +157,7 @@ function foundryFontOptions() {
   return deduped;
 }
 
-function nameFontSelect(value) {
+export function nameFontSelect(value) {
   const options = [{ css: "", label: localize("ui.config.font.inherit") }, ...foundryFontOptions()];
   const known = options.find((item) => item.css === (value ?? ""));
   const dynamic = !known && value ? [{ css: value, label: `${localize("ui.config.font.custom")} (${value})` }] : [];

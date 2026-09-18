@@ -496,3 +496,135 @@
     -webkit-backdrop-filter: blur(4px);
   }
 }
+.charlemos-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  gap: 0.6rem;
+}
+
+.charlemos-editor nav,
+.charlemos-editor footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.charlemos-editor nav button,
+.charlemos-editor footer button {
+  width: auto;
+}
+
+.charlemos-editor [aria-pressed="true"] {
+  outline: 2px solid var(--color-border-highlight, #b98a42);
+}
+
+.charlemos-editor :focus-visible {
+  outline: 2px solid var(--color-border-highlight, #b98a42);
+  outline-offset: 2px;
+}
+
+.charlemos-editor-scroll {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  padding: 0.4rem;
+}
+
+.charlemos-editor fieldset {
+  min-width: 0;
+  margin-block: 0.5rem;
+}
+
+.charlemos-editor .charlemos-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.8rem;
+}
+
+.charlemos-editor small {
+  opacity: 0.85;
+}
+
+.charlemos-editor .charlemos-length {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.charlemos-editor-content {
+  border: 0;
+  padding: 0;
+}
+.charlemos-visual-editor {
+  position: absolute;
+  inset: 0;
+  border: 2px dashed #63dcff;
+  pointer-events: none;
+  z-index: 20;
+  overflow: visible;
+}
+
+.charlemos-visual-handle {
+  position: absolute;
+  pointer-events: auto;
+  touch-action: none;
+  width: auto;
+  max-width: 10rem;
+  height: auto;
+  padding: 2px 5px;
+  color: #fff;
+  background: #203742;
+  border: 1px solid #63dcff;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.charlemos-handle-move { left: 30%; top: 35%; cursor: move; }
+.charlemos-handle-n, .charlemos-handle-bounds-top { left: 35%; top: 0; cursor: n-resize; }
+.charlemos-handle-ne { right: 0; top: 0; cursor: ne-resize; }
+.charlemos-handle-e, .charlemos-handle-bounds-right { right: 0; top: 45%; cursor: e-resize; }
+.charlemos-handle-se, .charlemos-handle-scale { right: 0; bottom: 0; cursor: se-resize; }
+.charlemos-handle-s, .charlemos-handle-bounds-bottom { left: 35%; bottom: 0; cursor: s-resize; }
+.charlemos-handle-sw { left: 0; bottom: 0; cursor: sw-resize; }
+.charlemos-handle-w, .charlemos-handle-bounds-left { left: 0; top: 45%; cursor: w-resize; }
+.charlemos-handle-nw { left: 0; top: 0; cursor: nw-resize; }
+.charlemos-handle-rotate { right: 0; top: 0; cursor: ew-resize; }
+.charlemos-handle-offset { left: 30%; top: 45%; cursor: ns-resize; }
+
+.charlemos-editor-outline {
+  position: absolute;
+  border: 1px dashed #f4c46c;
+  pointer-events: none;
+}
+
+.charlemos-guide { position: fixed; pointer-events: none; background: #63dcff; }
+.charlemos-guide-x { top: 0; height: 100vh; width: 1px; }
+.charlemos-guide-y { left: 0; width: 100vw; height: 1px; }
+
+.charlemos-preset-preview {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  background: #20252b;
+  overflow: hidden;
+}
+
+.charlemos-preset-preview span {
+  position: absolute;
+  border: 1px solid #63dcff;
+  overflow: hidden;
+  color: white;
+  font-size: 10px;
+}
+.charlemos-editor-caption {
+  position: absolute;
+  top: 1.6rem;
+  left: 0.3rem;
+  color: white;
+  background: #203742;
+  padding: 2px 4px;
+  font-size: 11px;
+}

@@ -10,7 +10,18 @@
 - Anchor one transparent overlay to each player camera without resizing its video.
 - Support independent top, right, bottom and left extensions in dock and popout views.
 
-## Short Term (1.0.x)
+## UX renewal (implemented, release validation pending)
+
+1. Scene-bound editing and protected imports with reviewed destinations and recovery.
+2. Shared draft model with local preview, conflict resolution and 100-step undo/redo.
+3. Unified Scene / Cameras / Tools navigation and English, Spanish and Galician labels.
+4. Basic effect controls, explicit units, preserved custom CSS and local resource status.
+5. Preset previews and selective camera/scene copying without implicit background changes.
+6. Visual camera, frame and name editing with owned controls and teardown cleanup.
+
+Automated coverage is supplemented by the required [Foundry acceptance checklist](UX_ACCEPTANCE.md). The opt-in `3.3.0-beta.1` prerelease uses the `preview/ux-editor` manifest; stable distribution remains unchanged.
+
+## Short Term
 
 1. Renderer stability and compatibility
 - Keep camera visibility stable across Foundry `CameraViews` updates and Falemos overlays.
@@ -31,7 +42,7 @@
 5. Release discipline
 - Tag semver releases and keep manifest/download links aligned with release artifacts.
 
-## Long Term (1.1+)
+## Long Term
 
 1. Profile library
 - Global reusable profile templates, then bind templates to scenes.

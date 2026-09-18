@@ -15,7 +15,7 @@ function nullableText(value) {
 function nullableCss(value) {
   const text = nullableText(value);
   if (text === null) return null;
-  return text.trim();
+  return String(text).trim();
 }
 
 function normalizeLayoutLength(value) {

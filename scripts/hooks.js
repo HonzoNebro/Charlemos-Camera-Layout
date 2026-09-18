@@ -2,7 +2,7 @@ import { HOOKS, MODULE_ID } from "./constants.js";
 import { registerSettings } from "./settings.js";
 import { initializeUiControls } from "./ui-controls.js";
 import { createApi } from "./api.js";
-import { CameraConfigApp } from "./camera-config-app.js";
+import { CameraEditorApp } from "./camera-editor-app.js";
 import { clearLoadedSceneProfileDraft, getApp, setApp } from "./state.js";
 import { initializeLiveCameraRenderer } from "./live-camera-renderer.js";
 import { initializeSceneBackgroundRenderer } from "./scene-background-renderer.js";
@@ -29,7 +29,7 @@ async function maintainSceneState() {
 function registerReadyHook() {
   Hooks.once(HOOKS.READY, async () => {
     await maintainSceneState();
-    const app = new CameraConfigApp();
+    const app = new CameraEditorApp();
     setApp(app);
     game.modules.get(MODULE_ID).api = createApi();
     initializeUiControls();

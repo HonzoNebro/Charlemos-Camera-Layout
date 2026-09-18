@@ -1,5 +1,5 @@
 import { HOOKS, MODULE_ID } from "./constants.js";
-import { getSceneCamera } from "./scene-camera.js";
+import { getSceneCamera } from "./effective-camera-state.js";
 import {
   isCameraViewsApp,
   isLiveCameraVideo,

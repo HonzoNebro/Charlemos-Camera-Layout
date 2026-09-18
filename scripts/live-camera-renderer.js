@@ -10,7 +10,7 @@ import {
   resolveCameraViewElement,
   resolveCameraViewsApp
 } from "./camera-video-source.js";
-import { getSceneCameraControlMode, getSceneProfile, getSceneProfileLayout, sceneProfileEnabled } from "./scene-camera.js";
+import { getSceneCameraControlMode, getSceneProfile, getSceneProfileLayout, sceneProfileEnabled } from "./effective-camera-state.js";
 import { expandedOverlayBounds } from "./overlay-bounds.js";
 import {
   anchoredOverlaySnapshot,

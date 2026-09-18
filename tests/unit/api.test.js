@@ -212,3 +212,14 @@ test("setPlayerOverlay keeps the legacy global fallback when no scene is active"
   assert.deepEqual(env.settings.get("charlemos-camera-layout.playerLayouts").u1, result);
   assert.equal(result.overlay.bounds.mode, "camera");
 });
+test("scene macros preserve dormant native geometry and custom layout fields", async () => {
+  const env = mockApiEnv();
+  const api = createApi();
+  await api.applySceneProfileDraft("scene-a", {
+    cameraControlMode: "native",
+    layouts: { u1: { left: "15vw", width: "25vw", geometry: { borderRadius: "10px", custom: 7 } } }
+  });
+  const layout = env.settings.get("charlemos-camera-layout.sceneProfiles")["scene-a"].layouts.u1;
+  assert.equal(layout.left, "15vw");
+  assert.equal(layout.geometry.custom, 7);
+});

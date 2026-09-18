@@ -561,3 +561,10 @@ test("validateLayoutFormData detects dependency cycles and offline targets", () 
   assert.deepEqual(validation.errors, ["relativeCycle"]);
   assert.deepEqual(validation.warnings, ["relativeTargetOffline"]);
 });
+test("numeric imported CSS lengths can be edited without throwing", () => {
+  const patch = buildLayoutPatch({ top: 20, width: 320, nameFontSize: 18, overlayOffsetX: 5 });
+  assert.equal(patch.top, "20px");
+  assert.equal(patch.width, "320px");
+  assert.equal(patch.nameStyle.fontSize, "18px");
+  assert.equal(patch.overlay.offset.x, "5px");
+});

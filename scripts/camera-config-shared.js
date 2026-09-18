@@ -158,11 +158,15 @@ export async function saveLayoutPatchForUser(selectedUserId, patch) {
 
 export function normalizeImportPayload(json) {
   if (!json || typeof json !== "object" || Array.isArray(json)) return null;
+  if (json.moduleId !== undefined && json.moduleId !== MODULE_ID) return null;
   const hasSettingsEnvelope = Object.prototype.hasOwnProperty.call(json, "settings");
   const version = Number(json.version ?? 1);
   if (![1, 2].includes(version)) return null;
   const settings = hasSettingsEnvelope ? json.settings : json;
   if (!settings || typeof settings !== "object" || Array.isArray(settings)) return null;
+  const blocks = ["playerLayouts", "sceneProfiles", "sceneCamera"];
+  if (!blocks.some((key) => Object.hasOwn(settings, key))) return null;
+  if (blocks.some((key) => Object.hasOwn(settings, key) && (!settings[key] || typeof settings[key] !== "object" || Array.isArray(settings[key])))) return null;
   const playerLayouts = sanitizeLayouts(settings.playerLayouts ?? {}, "module");
   const sceneProfiles =
     settings.sceneProfiles && typeof settings.sceneProfiles === "object"

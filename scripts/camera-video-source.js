@@ -122,6 +122,12 @@ export function resolveCameraViewElement(userId, app) {
   return findCameraViewInDocument(userId);
 }
 
+export function resolveEditorCameraView(userId) {
+  const app = resolveCameraViewsApp();
+  const popout = Array.from(app?.popouts ?? []).find((item) => item?.user?.id === userId && item.rendered !== false);
+  return resolveCameraViewElement(userId, popout ?? app);
+}
+
 export function resolveCameraVideoElement(userId, app, viewElement) {
   if (isCameraPopoutApp(app) && cameraPopoutMatchesUser(app, userId)) {
     const view = viewElement ?? resolveCameraPopoutViewElement(userId, app);

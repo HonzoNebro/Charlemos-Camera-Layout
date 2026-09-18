@@ -5,6 +5,24 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0-beta.1] - 2026-09-18
+
+### Prerelease
+- Opt-in UX editor preview, distributed from `preview/ux-editor` with a separate manifest and the `v3.3.0-beta.1` tag archive.
+- Keeps the existing module ID: installing this beta replaces stable Charlemos in that Foundry installation. Use a separate data directory and a backed-up test world.
+- Stable `main` metadata and the Foundry package listing remain unchanged. Manual Foundry 13/14 and multi-client acceptance testing is pending.
+
+### Added
+- Unified Scene, Cameras and Tools editor with a scene-bound draft, local preview, explicit Apply, conflict resolution and undo/redo.
+- Reviewed JSON import, explicit destination mapping, selective copying, backups and write-failure recovery.
+- Preset previews, basic effect controls and visual editing of camera geometry, frame artwork and name offsets.
+- Editor diagnostics, English/Spanish/Galician interface text and a manual acceptance checklist.
+
+### Fixed
+- New editor writes cannot follow an unintended scene switch or silently overwrite detected conflicting edits.
+- Dormant native-mode geometry and custom CSS are preserved by the new editing and composition workflows.
+- Unrelated JSON objects are rejected instead of being interpreted as empty configuration.
+
 ## [3.2.0] - 2026-09-02
 
 ### Added

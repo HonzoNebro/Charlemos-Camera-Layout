@@ -2,6 +2,7 @@ import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
 import { dumpRendererDebugSnapshot, isRendererDebugEnabled } from "./live-camera-renderer.js";
 import { dumpSceneBackgroundSnapshot } from "./scene-background-renderer.js";
 import { getLoadedSceneProfileDraft } from "./state.js";
+import { getEditSession, previewConfiguration } from "./edit-runtime.js";
 
 function cloneValue(value) {
   if (typeof foundry !== "undefined" && foundry?.utils?.deepClone) return foundry.utils.deepClone(value ?? {});
@@ -101,6 +102,13 @@ export function collectModuleDebugReport(userId, options = {}) {
       sceneProfileCount: Object.keys(sceneProfiles ?? {}).length,
       sceneCameraCount: Object.keys(sceneCamera ?? {}).length
     },
+    editor: getEditSession() ? {
+      sceneId: getEditSession().sceneId,
+      previewActive: Boolean(previewConfiguration(sceneId)),
+      changes: cloneValue(getEditSession().changes),
+      conflicts: cloneValue(getEditSession().conflicts),
+      draft: cloneValue(getEditSession().draft)
+    } : null,
     users,
     targetUser: targetUserSection(targetUserId, currentSceneProfile, globalLayouts, sceneDraft),
     rendererSnapshot: options.includeRendererSnapshot === false ? null : dumpRendererDebugSnapshot(targetUserId, options.app),

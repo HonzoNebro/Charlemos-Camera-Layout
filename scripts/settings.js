@@ -1,5 +1,5 @@
 import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
-import { CameraConfigApp } from "./camera-config-app.js";
+import { CameraEditorApp } from "./camera-editor-app.js";
 import { requestCameraLayoutsApply } from "./live-camera-renderer.js";
 import { requestSceneBackgroundApply } from "./scene-background-renderer.js";
 import { getApp } from "./state.js";
@@ -81,7 +81,7 @@ function registerConfigMenu() {
     label: `${MODULE_ID}.settings.configMenu.label`,
     hint: `${MODULE_ID}.settings.configMenu.hint`,
     icon: "fa-solid fa-video",
-    type: CameraConfigApp,
+    type: CameraEditorApp,
     restricted: true
   });
 }
