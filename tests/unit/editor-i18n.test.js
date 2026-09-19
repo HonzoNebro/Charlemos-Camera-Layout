@@ -10,3 +10,12 @@ test("new editor labels have translations in all supported languages", () => {
     for (const key of keys) assert.ok(dictionary[`charlemos-camera-layout.ui.editor.${key}`], `${lang}: ${key}`);
   }
 });
+
+test("configuration menu describes the unified editor in every language", () => {
+  for (const lang of ["en", "es", "gl"]) {
+    const dictionary = JSON.parse(readFileSync(new URL(`../../lang/${lang}.json`, import.meta.url)));
+    const hint = dictionary["charlemos-camera-layout.settings.configMenu.hint"];
+    assert.ok(hint);
+    assert.doesNotMatch(hint, /dedicated windows|ventanas dedicadas|ventás dedicadas/i);
+  }
+});

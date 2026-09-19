@@ -5,6 +5,15 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0-beta.5] - 2026-09-19
+
+### Fixed
+- The module settings hint now correctly describes the unified editor instead of the retired dedicated-window workflow in English, Spanish and Galician.
+
+### Prerelease
+- Opt-in correction on `preview/ux-editor`, with matching `v3.3.0-beta.5` archive. Stable distribution remains unchanged.
+- The Foundry 14.362 smoke validation confirmed the unified editor opens and role-scoped local crop preview creates a draft without applying it. Full two-client, A/V and real-rendering acceptance remains pending.
+
 ## [3.3.0-beta.4] - 2026-09-19
 
 ### Prerelease

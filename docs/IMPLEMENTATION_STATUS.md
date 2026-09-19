@@ -19,10 +19,10 @@ Scope: the six UX phases, short-term roadmap, composition library, viewer-role v
 | Positioned pseudo-tiles | `LIVE_CAMERA_TILES_EVALUATION.md` | Evaluation only, as specified by the roadmap; no claim of a working Tile feature |
 | Automated quality gates | `tools/check-quality.mjs`, `.github/workflows/quality.yml`, layout fixture | Metadata/assets/languages/syntax, deterministic style snapshots and repeated renderer lifecycle tests |
 
-Local verification for beta.4: all 44 test files pass, including direct execution of each file; 312 test cases. The quality command and whitespace checks pass. The CI workflow also runs on Node 20 and 22; its remote result must be checked after pushing.
+Local verification for beta.5: all 44 test files pass. The quality command and whitespace checks pass. The CI workflow also runs on Node 20 and 22; its remote result must be checked after pushing.
 
 ## What remains to validate in Foundry
 
-No live Foundry session is available in the implementation environment. Real 13.351/14.361 rendering, V14 detached windows/Levels, two-client/two-GM operation, native A/V controls, keyboard focus, screen-reader behavior, real texture upload performance and memory/GPU trends are **not verified here**. Synthetic style snapshots are not pixel screenshots, and mock 720p/1080p dimensions are not camera hardware benchmarks.
+The Foundry 14.362 smoke validation confirmed the unified editor opens and that a player-view circular crop remains local until Apply. It had one GM/user and no live video feed. Real 13.351/14.361 rendering, V14 detached windows/Levels, two-client/two-GM operation, native A/V controls, keyboard focus, screen-reader behavior, real texture upload performance and memory/GPU trends are **not verified here**. Synthetic style snapshots are not pixel screenshots, and mock 720p/1080p dimensions are not camera hardware benchmarks.
 
 Use `UX_ACCEPTANCE.md` in a backed-up test installation before approving stable promotion. A prerelease may be used to carry out these checks; it must not be described as having passed them. No stable manifest, stable tag or Foundry listing is updated by the beta workflow.

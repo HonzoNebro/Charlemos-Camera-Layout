@@ -106,7 +106,7 @@
   "charlemos-camera-layout.settings.debugRenderer.hint": "Activa diagnósticos detallados del renderer de cámara en la consola del navegador.",
   "charlemos-camera-layout.settings.configMenu.name": "Diseño de cámaras",
   "charlemos-camera-layout.settings.configMenu.label": "Abrir configuración de cámara",
-  "charlemos-camera-layout.settings.configMenu.hint": "Selecciona un jugador y abre ventanas dedicadas para layout, effects, overlay, estilo de nombre y el fondo de cámara de la escena.",
+  "charlemos-camera-layout.settings.configMenu.hint": "Abre un único editor para posición de escena, fondo en vivo, layout de cámara, efectos de vídeo, marco, estilo de nombre, copias, respaldos y diagnóstico.",
   "charlemos-camera-layout.macro.defaultName": "Aplicar diseño de cámara",
   "charlemos-camera-layout.macro.sceneDefaultName": "Aplicar perfil de cámaras a la escena activa",
   "charlemos-camera-layout.ui.config.title": "Configuración de diseño de cámaras",

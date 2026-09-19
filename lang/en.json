@@ -106,7 +106,7 @@
   "charlemos-camera-layout.settings.debugRenderer.hint": "Enable verbose camera renderer diagnostics in browser console.",
   "charlemos-camera-layout.settings.configMenu.name": "Camera layout",
   "charlemos-camera-layout.settings.configMenu.label": "Open camera config",
-  "charlemos-camera-layout.settings.configMenu.hint": "Select a player and open dedicated windows for layout, effects, overlay, name style and the scene camera background.",
+  "charlemos-camera-layout.settings.configMenu.hint": "Open one editor for scene positioning, live background, camera layout, video effects, frame artwork, name style, copying, backups and diagnostics.",
   "charlemos-camera-layout.macro.defaultName": "Apply camera layout",
   "charlemos-camera-layout.macro.sceneDefaultName": "Apply camera profile to active scene",
   "charlemos-camera-layout.ui.config.title": "Camera Layout Config",
