@@ -27,6 +27,14 @@ test("transparent frame mode removes native camera chrome", () => {
   assert.match(css, /\.charlemos-camera-view\.charlemos-transparent-frame \.notification-bar/);
 });
 
+test("video shape mode removes native viewport surfaces behind a clip", () => {
+  assert.match(css, /\.charlemos-camera-view\.charlemos-video-shaped video[\s\S]*background:\s*transparent\s*!important;/);
+  assert.match(css, /\.charlemos-camera-view\.charlemos-video-shaped \.video-container::before/);
+  assert.match(css, /\.charlemos-camera-view\.charlemos-video-shaped \.video-container::after/);
+  assert.match(css, /\.charlemos-camera-view\.charlemos-video-shaped \.camera-container-popout::before/);
+  assert.match(css, /\.charlemos-camera-view\.charlemos-video-shaped \.camera-container::after/);
+});
+
 test("expanded overlays overflow while the native camera viewport remains clipped", () => {
   assert.match(css, /\.charlemos-camera-view\.charlemos-overlay-expanded\s*\{[\s\S]*?overflow:\s*visible;/);
   assert.match(css, /\.charlemos-camera-view \.charlemos-camera-viewport\s*\{[\s\S]*?overflow:\s*hidden\s*!important;/);

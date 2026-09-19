@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0-beta.11] - 2026-09-20
+
+### Fixed
+- Video-shape mode now also removes native pseudo-elements and surface styling from Foundry's video viewport, eliminating the grey rectangle exposed around an inset crop.
+
+### Prerelease
+- Opt-in renderer correction on `preview/ux-editor`, with matching `v3.3.0-beta.11` archive. Stable distribution remains unchanged.
+
 ## [3.3.0-beta.10] - 2026-09-20
 
 ### Fixed

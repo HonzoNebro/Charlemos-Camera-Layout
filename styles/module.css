@@ -399,6 +399,7 @@
 .charlemos-camera-view.charlemos-video-shaped .video-container,
 .charlemos-camera-view.charlemos-video-shaped .camera-container-popout,
 .charlemos-camera-view.charlemos-video-shaped .camera-container,
+.charlemos-camera-view.charlemos-video-shaped video,
 .charlemos-camera-view.charlemos-video-shaped .user-avatar,
 .charlemos-camera-view.charlemos-video-shaped img.user-avatar,
 .charlemos-camera-view.charlemos-video-shaped img.avatar,
@@ -422,6 +423,21 @@
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
+}
+
+.charlemos-camera-view.charlemos-video-shaped .video-container::before,
+.charlemos-camera-view.charlemos-video-shaped .video-container::after,
+.charlemos-camera-view.charlemos-video-shaped .camera-container-popout::before,
+.charlemos-camera-view.charlemos-video-shaped .camera-container-popout::after,
+.charlemos-camera-view.charlemos-video-shaped .camera-container::before,
+.charlemos-camera-view.charlemos-video-shaped .camera-container::after {
+  display: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  filter: none !important;
 }
 
 .charlemos-camera-view.charlemos-direct-edit {
