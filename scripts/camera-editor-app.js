@@ -285,7 +285,7 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
   }
 
   visualHtml() {
-    const element = { layout: "camera", overlay: "overlay", name: "name" }[this.section];
+    const element = this.visualElement();
     const active = this.visual?.element === element;
     const cameraControls = element === "camera" ? `<label><input name="visualSnap" type="checkbox"${this.visual?.snap !== false ? " checked" : ""}>${esc(t("snap"))}</label>
       <label><input name="visualRatio" type="checkbox"${this.visual?.lockRatio ? " checked" : ""}>${esc(t("lockRatio"))}</label>
@@ -293,6 +293,10 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
       <p>${esc(t("visualConvertHelp"))}</p><p>${esc(t("undockHelp"))}</p>` : "";
     return `<fieldset><legend>${esc(t(`visual${element[0].toUpperCase()}${element.slice(1)}`))}</legend>
       ${button("visual-toggle", active ? "stopVisual" : "startVisual", `data-element="${element}"`)}${cameraControls}</fieldset>`;
+  }
+
+  visualElement() {
+    return { layout: "camera", overlay: "overlay", name: "name" }[this.section] ?? "camera";
   }
 
   copyHtml() {
@@ -552,7 +556,7 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
       this.visual = null;
       this.section = target.dataset.section;
     }
-    if (action === "visual-toggle") this.toggleVisual(target.dataset.element);
+    if (action === "visual-toggle") this.toggleVisual();
     if (action === "convert-absolute" || action === "convert-pixels") this.convertGeometry(action === "convert-absolute");
     if (action === "undock") {
       const { prepareModuleGeometryForLayouts } = await import("./live-camera-renderer.js");
@@ -659,7 +663,8 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
     refreshPreview();
   }
 
-  toggleVisual(element = "camera") {
+  toggleVisual() {
+    const element = this.visualElement();
     if (this.visual?.element === element) { this.visual.destroy(); this.visual = null; return; }
     if (this.visual) {
       this.visual.element = element;

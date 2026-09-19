@@ -56,9 +56,15 @@ test("visual controls appear only with the camera, frame or name they edit", asy
   app.section = "effects";
   assert.doesNotMatch(await app._renderHTML(context), /Edit camera on screen|Edit frame on screen|Edit name on screen/);
   app.section = "overlay";
-  assert.match(await app._renderHTML(context), /Edit frame on screen/);
+  const overlay = await app._renderHTML(context);
+  assert.match(overlay, /Edit frame on screen/);
+  assert.match(overlay, /data-element="overlay"/);
+  assert.equal(app.visualElement(), "overlay");
   app.section = "name";
-  assert.match(await app._renderHTML(context), /Edit name on screen/);
+  const name = await app._renderHTML(context);
+  assert.match(name, /Edit name on screen/);
+  assert.match(name, /data-element="name"/);
+  assert.equal(app.visualElement(), "name");
 });
 
 test("basic effect removal is an inline disabled hint at the default value", async () => {
