@@ -1,6 +1,6 @@
 # Charlemos Camera Layout
 
-> **3.3.0-beta.2 — testing only.** This branch is an opt-in prerelease, not the stable distribution. Use a separate Foundry data directory and a copy of your world. It uses the same module ID and therefore replaces stable Charlemos in that installation.
+> **3.3.0-beta.3 — testing only.** This branch is an opt-in prerelease, not the stable distribution. Use a separate Foundry data directory and a copy of your world. It uses the same module ID and therefore replaces stable Charlemos in that installation.
 
 Beta installation manifest: `https://raw.githubusercontent.com/HonzoNebro/Charlemos-Camera-Layout/preview/ux-editor/module.json`
 
@@ -81,7 +81,7 @@ The new editor is available as an opt-in beta. In-Foundry visual and multi-clien
 
 ## Saved compositions and support
 
-### Composition library (unreleased)
+### Composition library (beta.3)
 
 **Tools → Composition library** stores reusable templates independently of scenes in a world-shared setting. Only a GM can create, replace, rename or delete them. Choose **Saved value** or **Draft value**, enter a name and confirm the library write. This saves the template immediately but does not apply the composition to a scene; closing or cancelling the scene editor does not undo library operations.
 

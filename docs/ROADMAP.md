@@ -19,7 +19,7 @@
 5. Preset previews and selective camera/scene copying without implicit background changes.
 6. Visual camera, frame and name editing with owned controls and teardown cleanup.
 
-Automated coverage is supplemented by the required [Foundry acceptance checklist](UX_ACCEPTANCE.md). The opt-in `3.3.0-beta.2` prerelease uses the `preview/ux-editor` manifest; stable distribution remains unchanged.
+Automated coverage is supplemented by the required [Foundry acceptance checklist](UX_ACCEPTANCE.md). The opt-in `3.3.0-beta.3` prerelease uses the `preview/ux-editor` manifest; stable distribution remains unchanged.
 
 ## Short Term (implemented for 3.3.0-beta.2; Foundry acceptance pending)
 
@@ -45,7 +45,7 @@ Automated coverage is supplemented by the required [Foundry acceptance checklist
 ## Long Term
 
 1. Profile library
-- Implemented locally, unreleased: world-shared named template snapshots, save from persisted/draft configuration, replace/rename/delete with explicit confirmation and conflict protection.
+- Implemented in beta.3: world-shared named template snapshots, save from persisted/draft configuration, replace/rename/delete with explicit confirmation and conflict protection.
 - Load into a scene-bound draft with explicit user-ID mapping, relative-target checks, one-step undo and unchanged background. Reuse is copy-on-load, not automatic propagation to previously configured scenes.
 - Optional JSON v2 library backup/import support preserves compatibility with older backups; manual Foundry acceptance remains pending.
 
