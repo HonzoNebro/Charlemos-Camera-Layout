@@ -36,10 +36,27 @@ test("guided shape controls preserve custom CSS until explicit replacement and u
   change("shape-radius", "10");
   assert.equal(app.cameraSession.draft.profile.layouts.u.clipPath, "url(#custom)");
   assert.doesNotMatch(app.guidedShapeHtml("url(#custom)"), /name="shape-radius"/);
+  assert.match(app.guidedShapeHtml("url(#custom)"), /charlemos-shape-preview/);
   assert.match(app.guidedShapeHtml("circle(45%)"), /name="shape-radius"/);
+  assert.match(app.guidedShapeHtml("polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)"), /name="shape-x1"/);
   assert.match(app.frameAlignmentHtml(), /data-alignment="middle"/);
   app.session.undo();
   assert.equal(app.cameraSession.draft.profile.layouts.u.clipPath, "circle(30% at 50% 50%)");
+});
+
+test("visual controls appear only with the camera, frame or name they edit", async () => {
+  environment();
+  const app = new CameraEditorApp();
+  const context = await app._prepareContext();
+  app.area = "cameras";
+  app.section = "layout";
+  assert.match(await app._renderHTML(context), /Edit camera on screen/);
+  app.section = "effects";
+  assert.doesNotMatch(await app._renderHTML(context), /Edit camera on screen|Edit frame on screen|Edit name on screen/);
+  app.section = "overlay";
+  assert.match(await app._renderHTML(context), /Edit frame on screen/);
+  app.section = "name";
+  assert.match(await app._renderHTML(context), /Edit name on screen/);
 });
 
 function environment() {

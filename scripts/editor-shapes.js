@@ -1,7 +1,11 @@
 export const SHAPE_FIELDS = {
   circle: { radius: [0, 100, 45, "%"], x: [0, 100, 50, "%"], y: [0, 100, 50, "%"] },
   ellipse: { rx: [0, 100, 40, "%"], ry: [0, 100, 30, "%"], x: [0, 100, 50, "%"], y: [0, 100, 50, "%"] },
-  inset: { top: [0, 100, 8, "%"], right: [0, 100, 8, "%"], bottom: [0, 100, 8, "%"], left: [0, 100, 8, "%"], round: [0, 500, 10, "px"] }
+  inset: { top: [0, 100, 8, "%"], right: [0, 100, 8, "%"], bottom: [0, 100, 8, "%"], left: [0, 100, 8, "%"], round: [0, 500, 10, "px"] },
+  polygon: {
+    x1: [0, 100, 50, "%"], y1: [0, 100, 0, "%"], x2: [0, 100, 100, "%"], y2: [0, 100, 50, "%"],
+    x3: [0, 100, 50, "%"], y3: [0, 100, 100, "%"], x4: [0, 100, 0, "%"], y4: [0, 100, 50, "%"]
+  }
 };
 
 const number = "(\\d+(?:\\.\\d+)?|\\.\\d+)";
@@ -17,13 +21,18 @@ export function parseGuidedShape(css) {
     return guidedShapeCss(kind, values) ? { kind, values } : null;
   }
   const match = value.match(/^inset\(([^()]+)% round (\d+(?:\.\d+)?|\.\d+)px\)$/);
-  if (!match) return null;
-  const tokens = `${match[1]}%`.split(/\s+/);
-  if (tokens.length > 4 || !tokens.every((token) => /^\d*\.?\d+%$/.test(token))) return null;
-  const parts = tokens.map((token) => Number(token.slice(0, -1)));
-  const [top, right = top, bottom = top, left = right] = parts;
-  const values = { top, right, bottom, left, round: Number(match[2]) };
-  return guidedShapeCss("inset", values) ? { kind: "inset", values } : null;
+  if (match) {
+    const tokens = `${match[1]}%`.split(/\s+/);
+    if (tokens.length > 4 || !tokens.every((token) => /^\d*\.?\d+%$/.test(token))) return null;
+    const parts = tokens.map((token) => Number(token.slice(0, -1)));
+    const [top, right = top, bottom = top, left = right] = parts;
+    const values = { top, right, bottom, left, round: Number(match[2]) };
+    return guidedShapeCss("inset", values) ? { kind: "inset", values } : null;
+  }
+  const polygon = value.match(new RegExp(`^polygon\\(\\s*${number}%\\s+${number}%\\s*,\\s*${number}%\\s+${number}%\\s*,\\s*${number}%\\s+${number}%\\s*,\\s*${number}%\\s+${number}%\\s*\\)$`));
+  if (!polygon) return null;
+  const polygonValues = Object.fromEntries(["x1", "y1", "x2", "y2", "x3", "y3", "x4", "y4"].map((field, index) => [field, Number(polygon[index + 1])]));
+  return guidedShapeCss("polygon", polygonValues) ? { kind: "polygon", values: polygonValues } : null;
 }
 
 export function guidedShapeCss(kind, values) {
@@ -33,7 +42,8 @@ export function guidedShapeCss(kind, values) {
   if (kind === "circle") return `circle(${v.radius}% at ${v.x}% ${v.y}%)`;
   if (kind === "ellipse") return `ellipse(${v.rx}% ${v.ry}% at ${v.x}% ${v.y}%)`;
   if (v.top + v.bottom > 100 || v.left + v.right > 100) return null;
-  return `inset(${v.top}% ${v.right}% ${v.bottom}% ${v.left}% round ${v.round}px)`;
+  if (kind === "inset") return `inset(${v.top}% ${v.right}% ${v.bottom}% ${v.left}% round ${v.round}px)`;
+  return `polygon(${v.x1}% ${v.y1}%, ${v.x2}% ${v.y2}%, ${v.x3}% ${v.y3}%, ${v.x4}% ${v.y4}%)`;
 }
 
 export function updateGuidedShape(css, field, value) {

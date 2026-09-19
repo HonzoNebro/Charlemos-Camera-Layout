@@ -5,6 +5,15 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0-beta.6] - 2026-09-19
+
+### Changed
+- Visual editing is now scoped to its relevant section: camera geometry, frame and name each expose their own on-screen editor, while Video and effects does not.
+- The crop editor now previews every configured `clip-path`, including custom CSS. The bundled four-point polygon has editable point coordinates alongside circle, ellipse and inset controls.
+
+### Prerelease
+- Opt-in UX correction on `preview/ux-editor`, with matching `v3.3.0-beta.6` archive. Stable distribution remains unchanged.
+
 ## [3.3.0-beta.5] - 2026-09-19
 
 ### Fixed

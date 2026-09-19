@@ -11,6 +11,12 @@ test("guided shapes recognize legacy presets and explicitly edited parameters", 
     const shape = parseGuidedShape(css);
     assert.deepEqual(parseGuidedShape(guidedShapeCss(shape.kind, shape.values)), shape);
   }
+  const polygon = "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)";
+  assert.deepEqual(parseGuidedShape(polygon), {
+    kind: "polygon",
+    values: { x1: 50, y1: 0, x2: 100, y2: 50, x3: 50, y3: 100, x4: 0, y4: 50 }
+  });
+  assert.equal(updateGuidedShape(polygon, "x2", "90"), "polygon(50% 0%, 90% 50%, 50% 100%, 0% 50%)");
 });
 
 test("custom CSS is never reconstructed by guided controls", () => {

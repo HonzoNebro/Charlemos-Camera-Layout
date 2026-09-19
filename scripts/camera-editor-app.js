@@ -164,7 +164,7 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
       this.audienceHtml() +
       `<nav>${["layout", "effects", "overlay", "name"].map((section) => button("section", section, `data-section="${section}" aria-pressed="${this.section === section}"`)).join("")}</nav>` +
       (!user ? `<p>${esc(t("userDeleted"))}</p>` : `<fieldset ${this.session.busy ? "disabled" : ""}><legend>${esc(user.name)}</legend>
-      ${this.visualHtml()}
+      ${this.section === "effects" ? "" : this.visualHtml()}
       <p role="status">${esc(t("localState"))}: ${esc(t(!view ? "waitingCamera" : this.session.preview ? "preview" : layout && this.session.draft.profile.enabled ? "available" : "disabled"))}</p>
       ${this.section === "layout" ? `<p>${esc(t("dockHelp"))}</p>` : ""}
       ${this.section === "effects" ? this.basicEffectsHtml(layout) : ""}
@@ -210,10 +210,12 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
 
   guidedShapeHtml(css) {
     const shape = parseGuidedShape(css);
+    if (!String(css ?? "").trim()) return "";
     const fields = shape ? Object.entries(SHAPE_FIELDS[shape.kind]).map(([key, [min, max, , unit]]) =>
       `<label>${esc(t(`shape_${key}`))} (${unit})<input name="shape-${key}" type="number" min="${min}" max="${max}" step="0.1" value="${shape.values[key]}" aria-describedby="${this.id}-shape-help"></label>`).join("") : "";
-    const preview = shape ? `<div class="charlemos-shape-preview" aria-hidden="true"><span style="clip-path:${guidedShapeCss(shape.kind, shape.values)}"></span></div>` : "";
-    return `<fieldset><legend>${esc(t("guidedShape"))}</legend><p id="${this.id}-shape-help">${esc(t("guidedShapeHelp"))}</p>${preview}${fields}</fieldset>`;
+    const previewCss = shape ? guidedShapeCss(shape.kind, shape.values) : String(css).trim();
+    const preview = `<div class="charlemos-shape-preview" aria-hidden="true"><span style="clip-path:${esc(previewCss)}"></span></div>`;
+    return `<fieldset><legend>${esc(t("guidedShape"))}</legend><p id="${this.id}-shape-help">${esc(t(shape ? "guidedShapeHelp" : "guidedShapeCustomHelp"))}</p>${preview}${fields}</fieldset>`;
   }
 
   frameAlignmentHtml() {
@@ -282,13 +284,14 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
   }
 
   visualHtml() {
-    return `<fieldset><legend>${esc(t("visualEditor"))}</legend>
-      ${button("visual-toggle", this.visual ? "stopVisual" : "startVisual")}
-      ${labeledSelect("visualElement", this.visual?.element ?? "camera", ["camera", "overlay", "name"].map((id) => ({ id, label: t(id) })), t("element"))}
-      <label><input name="visualSnap" type="checkbox"${this.visual?.snap !== false ? " checked" : ""}>${esc(t("snap"))}</label>
+    const element = { layout: "camera", overlay: "overlay", name: "name" }[this.section];
+    const active = this.visual?.element === element;
+    const cameraControls = element === "camera" ? `<label><input name="visualSnap" type="checkbox"${this.visual?.snap !== false ? " checked" : ""}>${esc(t("snap"))}</label>
       <label><input name="visualRatio" type="checkbox"${this.visual?.lockRatio ? " checked" : ""}>${esc(t("lockRatio"))}</label>
       ${button("convert-absolute", "convertAbsolute")}${button("convert-pixels", "convertPixels")}${button("undock", "undock")}
-      <p>${esc(t("undockHelp"))}</p></fieldset>`;
+      <p>${esc(t("undockHelp"))}</p>` : "";
+    return `<fieldset><legend>${esc(t(`visual${element[0].toUpperCase()}${element.slice(1)}`))}</legend>
+      ${button("visual-toggle", active ? "stopVisual" : "startVisual", `data-element="${element}"`)}${cameraControls}</fieldset>`;
   }
 
   copyHtml() {
@@ -541,8 +544,12 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
       return;
     }
     if (action === "area") this.area = target.dataset.area;
-    if (action === "section") this.section = target.dataset.section;
-    if (action === "visual-toggle") this.toggleVisual();
+    if (action === "section") {
+      this.visual?.destroy();
+      this.visual = null;
+      this.section = target.dataset.section;
+    }
+    if (action === "visual-toggle") this.toggleVisual(target.dataset.element);
     if (action === "convert-absolute" || action === "convert-pixels") this.convertGeometry(action === "convert-absolute");
     if (action === "undock") {
       const { prepareModuleGeometryForLayouts } = await import("./live-camera-renderer.js");
@@ -649,12 +656,18 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
     refreshPreview();
   }
 
-  toggleVisual() {
-    if (this.visual) { this.visual.destroy(); this.visual = null; return; }
+  toggleVisual(element = "camera") {
+    if (this.visual?.element === element) { this.visual.destroy(); this.visual = null; return; }
+    if (this.visual) {
+      this.visual.element = element;
+      this.visual.reconcile(this.selectedUserId);
+      return;
+    }
     this.session.preview = true;
     this.session.previewAudience = this.cameraAudience;
     refreshPreview();
     this.visual = new VisualCameraEditor({ session: this.cameraSession, onUpdate: refreshPreview, onCommit: () => this.render(true), onProblem: (key) => { this.message = t(key); this.render(true); } });
+    this.visual.element = element;
   }
 
   convertGeometry(absolute) {
