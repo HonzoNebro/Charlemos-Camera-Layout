@@ -275,6 +275,7 @@ test("videoStyle enforces visible video element", () => {
   assert.equal(style.height, "100%");
   assert.equal(style.objectFit, "cover");
   assert.equal(style.backgroundColor, "transparent");
+  assert.equal(videoStyle({ transform: "translateX(12px)" }, "matrix(-1, 0, 0, 1, 0, 0)").transform, "translateX(12px) matrix(-1, 0, 0, 1, 0, 0)");
 });
 
 test("syncFoundryAvatarVisibility hides fallback wrapper without video", () => {

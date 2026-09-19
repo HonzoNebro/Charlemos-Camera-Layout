@@ -32,6 +32,7 @@ export function updateBasicEffect(css, id, value) {
   if (value !== null && (!Number.isFinite(number) || number < definition.min || number > definition.max)) return null;
   const index = tokens.findIndex((token) => token.id === id);
   if (value === null) return tokens.filter((token) => token.id !== id).map((token) => token.text).join(" ");
+  if (number === definition.default) return tokens.filter((token) => token.id !== id).map((token) => token.text).join(" ");
   const text = `${id}(${number}${definition.unit})`;
   if (index < 0) tokens.push({ id, text });
   else tokens[index].text = text;

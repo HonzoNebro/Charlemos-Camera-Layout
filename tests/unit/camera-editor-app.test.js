@@ -59,6 +59,16 @@ test("visual controls appear only with the camera, frame or name they edit", asy
   assert.match(await app._renderHTML(context), /Edit name on screen/);
 });
 
+test("basic effect removal is an inline disabled hint at the default value", async () => {
+  environment();
+  const app = new CameraEditorApp();
+  const defaults = app.basicEffectsHtml({});
+  assert.match(defaults, /data-effect="rotate"[^>]*disabled/);
+  const changed = app.basicEffectsHtml({ transform: "rotate(12deg)" });
+  assert.doesNotMatch(changed, /data-effect="rotate"[^>]*disabled/);
+  assert.match(changed, /charlemos-basic-effect/);
+});
+
 function environment() {
   endEditSession(); setApp(null);
   const store = { sceneProfiles: { a: { enabled: true, cameraControlMode: "module", layouts: { u: { left: "12vw", filter: "url(#custom)", geometry: { custom: 42 }, overlay: { enabled: false, extra: 7 } } } } }, sceneCamera: {}, playerLayouts: {} };

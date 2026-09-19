@@ -799,9 +799,9 @@ export function bindReactiveAvatarVisibility(viewElement, videoElement) {
   handler();
 }
 
-export function videoStyle(layout) {
+export function videoStyle(layout, baseTransform = "") {
   return {
-    transform: composeTransform(layout?.transform, layout?.geometry),
+    transform: [composeTransform(layout?.transform, layout?.geometry), baseTransform].filter(Boolean).join(" "),
     filter: layout?.filter ?? "",
     clipPath: layout?.clipPath ?? "",
     borderRadius: layout?.geometry?.borderRadius ?? "",
@@ -1185,8 +1185,27 @@ function applyViewStyle(viewElement, videoElement, layout, applyGeometry) {
   syncCameraContainerSize(viewElement, applyGeometry);
 }
 
+function rememberVideoTransform(videoElement) {
+  if (!videoElement?.dataset || videoElement.dataset.charlemosVideoTransformManaged === "1") return videoElement?.dataset?.charlemosVideoBaseTransform ?? "";
+  const inline = videoElement.style?.transform ?? "";
+  const win = videoElement.ownerDocument?.defaultView ?? globalThis.window;
+  const computed = win?.getComputedStyle?.(videoElement)?.transform;
+  videoElement.dataset.charlemosVideoTransformManaged = "1";
+  videoElement.dataset.charlemosVideoInlineTransform = inline;
+  videoElement.dataset.charlemosVideoBaseTransform = computed && computed !== "none" ? computed : inline;
+  return videoElement.dataset.charlemosVideoBaseTransform;
+}
+
+function restoreVideoTransform(videoElement) {
+  if (!videoElement?.dataset || videoElement.dataset.charlemosVideoTransformManaged !== "1") return;
+  if (videoElement.style) videoElement.style.transform = videoElement.dataset.charlemosVideoInlineTransform ?? "";
+  delete videoElement.dataset.charlemosVideoTransformManaged;
+  delete videoElement.dataset.charlemosVideoInlineTransform;
+  delete videoElement.dataset.charlemosVideoBaseTransform;
+}
+
 function applyVideoStyle(videoElement, layout) {
-  assignStyle(videoElement, videoStyle(layout));
+  assignStyle(videoElement, videoStyle(layout, rememberVideoTransform(videoElement)));
 }
 
 function resetViewStyle(viewElement, videoElement) {
@@ -1210,8 +1229,8 @@ function resetViewStyle(viewElement, videoElement) {
     cursor: ""
   });
   clearManagedViewGeometry(viewElement);
+  restoreVideoTransform(videoElement);
   assignStyle(videoElement, {
-    transform: "",
     filter: "",
     clipPath: "",
     borderRadius: "",

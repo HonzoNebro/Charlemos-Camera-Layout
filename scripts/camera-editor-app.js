@@ -200,7 +200,8 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
       const tokens = parseBasicEffects(layout?.[definition.kind], definition.kind);
       const value = tokens?.find((token) => token.id === id)?.value ?? definition.default;
       const label = game.i18n.localize(`${MODULE_ID}.ui.config.effect.${id}`);
-      return `<label>${esc(label)}<input data-basic-effect="${id}" type="range" min="${definition.min}" max="${definition.max}" step="${definition.step}" value="${value}"${tokens === null ? " disabled" : ""}><output>${value}${definition.unit}</output></label>${button("remove-basic-effect", "remove", `data-effect="${id}" aria-label="${esc(t("remove"))}: ${esc(label)}"${tokens === null ? " disabled" : ""}`)}`;
+      const disabled = tokens === null || Number(value) === definition.default;
+      return `<div class="charlemos-basic-effect"><label>${esc(label)}<input data-basic-effect="${id}" type="range" min="${definition.min}" max="${definition.max}" step="${definition.step}" value="${value}"${tokens === null ? " disabled" : ""}><output>${value}${definition.unit}</output></label>${button("remove-basic-effect", "remove", `data-effect="${id}" aria-label="${esc(t("remove"))}: ${esc(label)}"${disabled ? " disabled" : ""}`)}</div>`;
     }).join("");
     const custom = ["filter", "transform"].some((kind) => parseBasicEffects(layout?.[kind], kind) === null);
     return `<fieldset><legend>${esc(t("basicEffects"))}</legend>${custom ? `<p>${esc(t("customCss"))}</p>` : ""}${controls}
@@ -368,6 +369,8 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
       this.updateBasicEffect(event.target);
       const output = event.target.parentElement.querySelector("output");
       if (output) output.value = event.target.value;
+      const remove = event.target.closest(".charlemos-basic-effect")?.querySelector('[data-editor-action="remove-basic-effect"]');
+      if (remove) remove.disabled = Number(event.target.value) === BASIC_EFFECTS[event.target.dataset.basicEffect].default;
     });
     root.addEventListener("change", (event) => this.change(event));
     root.addEventListener("dragstart", (event) => {

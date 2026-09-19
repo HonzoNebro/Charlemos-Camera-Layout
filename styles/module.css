@@ -662,3 +662,14 @@
   height: 100%;
   background: #467fbd;
 }
+
+.charlemos-basic-effect {
+  display: flex;
+  align-items: end;
+  gap: 0.4rem;
+}
+
+.charlemos-basic-effect label {
+  flex: 1;
+  min-width: 0;
+}

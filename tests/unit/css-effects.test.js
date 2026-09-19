@@ -27,7 +27,7 @@ test("addEffect does not duplicate existing effect", () => {
 
 test("addEffect for clipPath replaces current value", () => {
   const next = addEffect("clipPath", "circle(45%)", "inset");
-  assert.equal(next, "inset(8% round 10px)");
+  assert.equal(next, "inset(0% 0% 0% 0% round 0px)");
 });
 
 test("removeEffect clears selected function token", () => {
@@ -43,5 +43,5 @@ test("availableEffectItems returns removed effect after manual clear", () => {
 
 test("effectDefaultValue returns configured default", () => {
   const value = effectDefaultValue("clipPath", "polygon");
-  assert.equal(value, "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)");
+  assert.equal(value, "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)");
 });

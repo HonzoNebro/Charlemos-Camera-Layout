@@ -18,8 +18,8 @@ const EFFECTS = {
   clipPath: [
     { id: "circle", value: "circle(45%)" },
     { id: "ellipse", value: "ellipse(40% 30%)" },
-    { id: "inset", value: "inset(8% round 10px)" },
-    { id: "polygon", value: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)" }
+    { id: "inset", value: "inset(0% 0% 0% 0% round 0px)" },
+    { id: "polygon", value: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)" }
   ]
 };
 

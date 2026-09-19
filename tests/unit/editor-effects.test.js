@@ -6,6 +6,7 @@ test("basic effects preserve ordering and unrelated effect values", () => {
   assert.equal(updateBasicEffect("scale(2) rotate(10deg)", "scale", 1.5), "scale(1.5) rotate(10deg)");
   assert.equal(updateBasicEffect("scale(2) rotate(10deg)", "scale", null), "rotate(10deg)");
   assert.equal(updateBasicEffect("blur(1px)", "brightness", 1.2), "blur(1px) brightness(1.2)");
+  assert.equal(updateBasicEffect("rotate(12deg) scale(1)", "scale", 1), "rotate(12deg)");
 });
 
 test("custom and repeated functions are not destructively interpreted", () => {

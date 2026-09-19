@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0-beta.7] - 2026-09-19
+
+### Fixed
+- New Inset and Polygon crops begin as an unclipped rectangle, so changing one inset side or polygon point does not retain a crop from the opposite side.
+- Video effects preserve and restore Foundry's existing video transform, including a native mirrored-camera transform.
+- Basic effect removal controls are inline and disabled at their default values; returning to the default removes the redundant effect token.
+
+### Prerelease
+- Opt-in correction on `preview/ux-editor`, with matching `v3.3.0-beta.7` archive. Stable distribution remains unchanged.
+
 ## [3.3.0-beta.6] - 2026-09-19
 
 ### Changed
