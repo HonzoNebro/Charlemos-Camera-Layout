@@ -566,3 +566,26 @@ test("cleanup is idempotent and reports an empty runtime snapshot", () => {
   assert.equal(snapshot.hasTicker, false);
   assert.equal(environment.ticker.callbacks.size, 0);
 });
+
+test("repeated HD and full-HD source replacements never accumulate resources or stop A/V", () => {
+  for (let cycle = 0; cycle < 40; cycle++) {
+    currentVideo = createVideo(...(cycle % 2 ? [1920, 1080] : [1280, 720]));
+    configuration = { playerId: "u1", fit: ["cover", "contain", "fill"][cycle % 3] };
+    assert.equal(applySceneBackgroundNow(app).state, "active");
+    const mesh = environment.primary.children[0];
+    for (let repeat = 0; repeat < 3; repeat++) applySceneBackgroundNow(app);
+    assert.equal(environment.primary.children.length, 1);
+    assert.equal(environment.primary.children[0], mesh);
+    assert.equal(environment.ticker.callbacks.size, 1);
+    environment.advance(34);
+    environment.ticker.tick();
+    cleanupSceneBackground();
+    assert.equal(environment.primary.children.length, 0);
+    assert.equal(environment.ticker.callbacks.size, 0);
+    assert.equal(currentVideo.listenerCount(), 0);
+    assert.equal(currentVideo.track.listenerCount(), 0);
+    assert.equal(currentVideo.srcObject.listenerCount(), 0);
+    assert.equal(mesh.destroyed, true);
+    assert.deepEqual([currentVideo.playCalls, currentVideo.pauseCalls, currentVideo.loadCalls, currentVideo.track.stopCalls], [0, 0, 0, 0]);
+  }
+});

@@ -4,6 +4,10 @@ The implementation is not a substitute for visual validation in Foundry. Every i
 
 ## Safe editing
 
+- Configure the same camera with shared base, GM and player overrides. Use a GM, player and second GM to verify actual viewer-role selection, local audience preview and publication only after Apply. Change the viewer's role while connected.
+- Edit inherited fields through forms, frame presets and visual handles; untouched fields must continue inheriting later base edits. Reset a section/camera/whole role, undo/redo, switch scopes mid-gesture and Cancel. Verify background and A/V remain unchanged and native dock constraints still apply.
+- Copy/duplicate/template-load and JSON-round-trip profiles with role-only cameras and relative targets. Test old macros without variants, new macros with explicit variants, stale same-field edits and user deletion during role editing. Confirm no role settings are treated as a privacy boundary.
+
 - Open scene A, edit two cameras, switch sections and users, and confirm pending values remain.
 - Switch to B: preview disappears and Apply is blocked. Return to A and confirm the draft remains.
 - Delete A while editing: retain the draft for inspection without allowing writes.
@@ -29,6 +33,9 @@ The implementation is not a substitute for visual validation in Foundry. Every i
 - Inject a setting-write failure in a test environment; verify rollback and incomplete-recovery reporting without overwriting another GM's changes.
 
 ## Visual editor and media
+
+- Choose circle, ellipse and inset crop presets; edit every guided parameter, try crossed insets, undo/redo and switch base/GM/player scopes. Verify custom polygon/URL/calc-based CSS remains unchanged unless a preset is explicitly selected. The illustrative preview must not be mistaken for the camera's actual aspect ratio.
+- Align every frame edge/center with asymmetric extensions, rotations including 90 degrees, and scales below/above 1. Check px/%/vw/vh preservation, dock/popout resizing, no geometry change to the video, and refusal when the camera has no measurable size or the affected offset is custom CSS. Verify transparent padding counts as part of the rectangle.
 
 - Compare Automatic, Normal, Screen and Soft light using PNG/WebM frames with and without tint, including paths containing `/frame`. Switch modes repeatedly and return to Automatic; confirm legacy appearance returns without stale media styles. Verify undo/redo, discard and shared state only after Apply. Check blending against bright/dark video and the area outside the camera.
 

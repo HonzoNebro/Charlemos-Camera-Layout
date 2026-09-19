@@ -113,6 +113,27 @@ test("calculateOverlayDockSpacing delegates visual overflow geometry", () => {
   );
 });
 
+test("repeated dock, popout and scene replacement restores native spacing and observers", () => {
+  for (let cycle = 0; cycle < 40; cycle++) {
+    const view = element({ top: 100, right: 300, bottom: 300, left: 100 }, { marginLeft: "auto", flexShrink: "1" });
+    const original = { ...view.style };
+    const overlay = element({ top: 60, right: 350, bottom: 330, left: 80 });
+    const options = { sceneId: `s${cycle}`, userId: "u", viewElement: view, overlayElement: overlay, expanded: true, popout: false };
+    reconcileAnchoredOverlay(options);
+    reconcileAnchoredOverlay(options);
+    assert.equal(observerInstances.length, 1);
+    assert.equal(observerInstances[0].targets.size, 1);
+    reconcileAnchoredOverlay({ ...options, popout: true });
+    assert.deepEqual(view.style, original);
+    assert.equal(observerInstances[0].targets.size, 0);
+    reconcileAnchoredOverlay(options);
+    removeAnchoredOverlay(options.sceneId, options.userId);
+    assert.deepEqual(view.style, original);
+    assert.equal(observerInstances[0].targets.size, 0);
+    assert.equal(anchoredOverlaySnapshot(options.sceneId, options.userId), null);
+  }
+});
+
 test("reconcileAnchoredOverlay associates scene and user and reserves dock space", () => {
   const view = element(
     { top: 100, right: 300, bottom: 300, left: 100 },

@@ -18,6 +18,30 @@ const { updateCameraField, fieldDisabled } = await import("../../scripts/editor-
 const { FRAME_PRESETS, applyFramePreset } = await import("../../scripts/editor-frame-presets.js");
 const { templateFromProfile } = await import("../../scripts/profile-library.js");
 
+test("guided shape controls preserve custom CSS until explicit replacement and use role drafts", async () => {
+  const store = environment();
+  const app = new CameraEditorApp();
+  await app._prepareContext();
+  app.cameraAudience = "player";
+  const change = (name, value) => app.change({ target: { name, value, dataset: {}, tagName: "SELECT", checkValidity: () => true } });
+  change("basicShape", "circle(45%)");
+  change("shape-radius", "30");
+  assert.equal(app.cameraSession.draft.profile.layouts.u.clipPath, "circle(30% at 50% 50%)");
+  assert.equal(app.session.draft.profile.layouts.u.clipPath, undefined);
+  assert.equal(store.sceneProfiles.a.layouts.u.clipPath, undefined);
+  change("shape-radius", "101");
+  assert.equal(app.cameraSession.draft.profile.layouts.u.clipPath, "circle(30% at 50% 50%)");
+  assert.ok(app.message);
+  change("basicShape", "url(#custom)");
+  change("shape-radius", "10");
+  assert.equal(app.cameraSession.draft.profile.layouts.u.clipPath, "url(#custom)");
+  assert.doesNotMatch(app.guidedShapeHtml("url(#custom)"), /name="shape-radius"/);
+  assert.match(app.guidedShapeHtml("circle(45%)"), /name="shape-radius"/);
+  assert.match(app.frameAlignmentHtml(), /data-alignment="middle"/);
+  app.session.undo();
+  assert.equal(app.cameraSession.draft.profile.layouts.u.clipPath, "circle(30% at 50% 50%)");
+});
+
 function environment() {
   endEditSession(); setApp(null);
   const store = { sceneProfiles: { a: { enabled: true, cameraControlMode: "module", layouts: { u: { left: "12vw", filter: "url(#custom)", geometry: { custom: 42 }, overlay: { enabled: false, extra: 7 } } } } }, sceneCamera: {}, playerLayouts: {} };
@@ -413,4 +437,67 @@ test("library saves prevent duplicate submissions and closing while a write is p
   await saving;
   assert.equal(app.library.busy, false);
   assert.equal(Object.keys(store.profileLibrary).length, 1);
+});
+
+test("camera audience controls route forms, frame presets and visual edits into the chosen role", async () => {
+  const store = environment();
+  const app = new CameraEditorApp();
+  await app._prepareContext();
+  const base = structuredClone(app.session.draft.profile.layouts);
+  const change = (name, value, tagName = "SELECT") => app.change({ target: { name, value, tagName, type: "text", dataset: {}, checkValidity: () => true } });
+  change("cameraAudience", "player");
+  assert.equal(app.session.previewAudience, "player");
+  change("overlayOpacity", "0.6", "INPUT");
+  assert.equal(app.session.draft.profile.roleVariants.player.layouts.u.overlay.opacity, 0.6);
+  await app.action("frame-preset", { dataset: { preset: "outside" } });
+  assert.equal(app.session.draft.profile.roleVariants.player.layouts.u.overlay.bounds.top, 10);
+  app.toggleVisual();
+  app.visual.session.edit(["profile", "layouts", "u", "left"], "28vw");
+  assert.equal(app.session.draft.profile.roleVariants.player.layouts.u.left, "28vw");
+  assert.deepEqual(app.session.draft.profile.layouts, base);
+  assert.equal(store.sceneProfiles.a.roleVariants, undefined);
+  change("cameraAudience", "gm");
+  assert.equal(app.visual, null);
+  change("nameText", "GM only", "INPUT");
+  assert.equal(app.session.draft.profile.roleVariants.gm.layouts.u.nameStyle.text, "GM only");
+  assert.equal(app.session.draft.profile.roleVariants.player.layouts.u.nameStyle, undefined);
+  await app.action("inherit-role", { dataset: {} });
+  assert.equal(app.session.draft.profile.roleVariants.gm, undefined);
+  app.session.undo();
+  assert.equal(app.session.draft.profile.roleVariants.gm.layouts.u.nameStyle.text, "GM only");
+});
+
+test("role form sections render translated effective values and inheritance controls", async () => {
+  const store = environment();
+  store.sceneProfiles.a.roleVariants = { gm: { layouts: { u: { left: "75vw" } } } };
+  const app = new CameraEditorApp();
+  app.area = "cameras";
+  app.cameraAudience = "gm";
+  const context = await app._prepareContext();
+  for (const lang of ["en", "es", "gl"]) {
+    const labels = JSON.parse(readFileSync(new URL(`../../lang/${lang}.json`, import.meta.url)));
+    game.i18n.localize = (key) => labels[key] ?? key;
+    for (const section of ["layout", "effects", "overlay", "name"]) {
+      app.section = section;
+      const html = await app._renderHTML(context);
+      assert.doesNotMatch(html, /charlemos-camera-layout\.ui\./);
+      assert.match(html, /data-editor-action="inherit-camera"/);
+      assert.match(html, /name="previewAudience"/);
+    }
+  }
+  app.section = "layout";
+  app.resetSection();
+  assert.equal(app.cameraSession.draft.profile.layouts.u.left, "12vw");
+  assert.equal(app.session.draft.profile.layouts.u.left, "12vw");
+});
+
+test("invalid macro role payloads do not replace a pending editor draft", async () => {
+  environment();
+  const app = new CameraEditorApp();
+  await app._prepareContext();
+  updateCameraField(app.session, "u", "left", "33vw");
+  const before = structuredClone(app.session.draft);
+  assert.equal(await app.loadDraft("b", { layouts: {}, roleVariants: { unknown: {} } }), false);
+  assert.equal(app.session.sceneId, "a");
+  assert.deepEqual(app.session.draft, before);
 });

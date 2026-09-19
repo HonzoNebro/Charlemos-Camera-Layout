@@ -1,6 +1,7 @@
 import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
 import { cloneConfiguration, configurationEqual, writeConfigurationBlocks } from "./edit-session.js";
 import { normalizeOverlayConfiguration } from "./overlay-bounds.js";
+import { normalizeRoleVariants, roleVariantUserIds, remapRoleVariants } from "./role-variants.js";
 
 function record(value) {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));
@@ -28,8 +29,9 @@ export function templateFromProfile(name, profile, revision = 1) {
     if (next.relative?.targetUserId && !safeId(next.relative.targetUserId)) throw new Error("templateInvalid");
     return [id, next];
   }));
-  if (!Object.keys(layouts).length) throw new Error("profileEmpty");
-  return { name: name.trim(), revision, profile: { cameraControlMode: mode, layouts } };
+  const roleVariants = Object.hasOwn(profile, "roleVariants") ? normalizeRoleVariants(profile.roleVariants) : undefined;
+  if (!Object.keys(layouts).length && !Object.values(roleVariants ?? {}).some((variant) => Object.keys(variant.layouts ?? {}).length)) throw new Error("profileEmpty");
+  return { name: name.trim(), revision, profile: { cameraControlMode: mode, layouts, ...(roleVariants ? { roleVariants } : {}) } };
 }
 
 export function normalizeProfileLibrary(value) {
@@ -47,6 +49,7 @@ export function readProfileLibrary() {
 export function templateUserIds(template) {
   const ids = new Set(Object.keys(template.profile.layouts));
   for (const layout of Object.values(template.profile.layouts)) if (layout.relative?.targetUserId) ids.add(layout.relative.targetUserId);
+  for (const id of roleVariantUserIds(template.profile)) ids.add(id);
   return [...ids];
 }
 
@@ -57,7 +60,7 @@ export function profileWithTemplate(template, destination, mappings, users) {
   if (targets.some((id) => id !== "" && (!safeId(id) || !available.has(id)))) throw new Error("unknownReferences");
   const included = targets.filter(Boolean);
   if (new Set(included).size !== included.length) throw new Error("duplicateDestination");
-  const layouts = Object.fromEntries(Object.entries(entry.profile.layouts).flatMap(([id, source]) => {
+  const mapLayouts = (values) => Object.fromEntries(Object.entries(values).flatMap(([id, source]) => {
     const target = mappings[id];
     if (!target) return [];
     const layout = cloneConfiguration(source);
@@ -68,8 +71,12 @@ export function profileWithTemplate(template, destination, mappings, users) {
     }
     return [[target, layout]];
   }));
-  if (!Object.keys(layouts).length) throw new Error("profileEmpty");
-  return { ...cloneConfiguration(destination), enabled: true, cameraControlMode: entry.profile.cameraControlMode, layouts: { ...cloneConfiguration(destination?.layouts ?? {}), ...layouts } };
+  const layouts = mapLayouts(entry.profile.layouts);
+  const roleVariants = cloneConfiguration(destination?.roleVariants ?? {});
+  const incoming = entry.profile.roleVariants ? remapRoleVariants(entry.profile.roleVariants, mapLayouts) : {};
+  if (!Object.keys(layouts).length && !Object.values(incoming).some((variant) => Object.keys(variant.layouts ?? {}).length)) throw new Error("profileEmpty");
+  for (const [role, variant] of Object.entries(incoming)) roleVariants[role] = { ...roleVariants[role], ...variant, layouts: { ...roleVariants[role]?.layouts, ...variant.layouts } };
+  return { ...cloneConfiguration(destination), enabled: true, cameraControlMode: entry.profile.cameraControlMode, layouts: { ...cloneConfiguration(destination?.layouts ?? {}), ...layouts }, ...(Object.keys(roleVariants).length ? { roleVariants } : {}) };
 }
 
 export async function writeProfileTemplate(id, entry, expected) {

@@ -1,0 +1,25 @@
+name: Quality
+
+on:
+  push:
+    branches: [main, preview/ux-editor]
+  pull_request:
+    branches: [main, preview/ux-editor]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm run check
+      - run: npm test

@@ -1,5 +1,6 @@
 import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
 import { normalizeOverlayConfiguration } from "./overlay-bounds.js";
+import { normalizeRoleVariants } from "./role-variants.js";
 
 const CAMERA_CONTROL_MODE_VALUES = new Set(["native", "module"]);
 const SCENE_CAMERA_FIT_VALUES = new Set(["cover", "contain", "fill"]);
@@ -131,6 +132,7 @@ export async function applySceneProfile(sceneId, layouts, options = {}) {
   const current = sceneData[sceneId] ?? {};
   sceneData[sceneId] = {
     enabled: true,
+    ...(Object.hasOwn(options, "roleVariants") ? { roleVariants: normalizeRoleVariants(options.roleVariants) } : current.roleVariants ? { roleVariants: current.roleVariants } : {}),
     cameraControlMode: normalizeCameraControlMode(options.cameraControlMode ?? current.cameraControlMode),
     layouts: normalizeProfileLayouts(layouts)
   };

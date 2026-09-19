@@ -32,3 +32,11 @@ test("macro names describe scene and saved/draft state and avoid existing names"
   assert.equal(uniqueCompositionMacroName("Tavern", "Draft", ["Tavern — Draft", "Tavern — Draft (2)"], "Composition"), "Tavern — Draft (3)");
   assert.equal(uniqueCompositionMacroName("", "Saved", [], "Composition"), "Composition — Saved");
 });
+test("duplication review recognizes cameras already present only in a destination role", () => {
+  const source = { layouts: {}, roleVariants: { player: { layouts: { u: { left: "10px" } } } } };
+  const destination = { layouts: {}, roleVariants: { gm: { layouts: { u: { width: "30vw" } } } } };
+  const result = duplicateSceneComposition(source, destination, [{ id: "u" }]);
+  assert.deepEqual(result.replaced, ["u"]);
+  assert.deepEqual(result.added, []);
+  assert.deepEqual(result.profile.roleVariants.gm, destination.roleVariants.gm);
+});

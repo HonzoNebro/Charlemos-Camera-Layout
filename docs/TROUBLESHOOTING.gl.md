@@ -6,6 +6,8 @@ Traballa nunha copia do mundo. Non reinstales sobre produción nin borres os axu
 
 ## Un axuste non se ve
 
+Con variantes de rol, comproba «Editar os axustes de cámara para» e o destinatario da previsualización local. GM/xogadores refírese a quen mira, non ao dono da cámara. Un axuste de rol pode ocultar un cambio posterior da base: restablece a herdanza para retiralo. Sen previsualización móstrase o gardado para o teu rol real. Isto non restrinxe o acceso a feeds nin aos axustes compartidos.
+
 Comproba a escena da cabeceira: o borrador pertence a esa escena e debes volver a ela para aplicar. A previsualización é local; os demais clientes só ven o gardado tras Aplicar. Un marco necesita estar activado e ter un recurso válido: os preaxustes e a mestura conservan a súa visibilidade.
 
 Para posición e tamaño, selecciona o control de Charlemos e desacopla a cámara explicitamente. O dock mantén as restricións nativas; Cancelar non reverte o desacoplamento. Revisa erros, referencias relativas e conflitos. Que un usuario estea desconectado non impide editalo.
@@ -17,6 +19,10 @@ Comproba primeiro permisos, dispositivo de entrada e recepción do vídeo cos co
 Proba só con Charlemos e o provedor A/V necesario e reactiva os demais módulos de cámara un a un. Reutilizar ficheiros de Falemos non equivale a poder executar dous xestores de posición sobre o mesmo DOM. O fallback de tamaño só corrixe contedores internos colapsados con xeometría de Charlemos e unha vista de tamaño útil; non forza elementos ocultos ou minimizados.
 
 ## O marco recórtase ou cambia de cor
+
+En Vídeo e efectos, escolle explicitamente unha forma para substituír o recorte actual. Círculos, elipses e marxes compatibles ofrecen parámetros e un diagrama orientativo; o CSS personalizado consérvase en Avanzado. As marxes opostas non poden superar o 100 %.
+
+As seis accións de aliñación do marco usan o seu rectángulo completo despois de extensións, escala e xiro, non a silueta opaca. Só cambian un desprazamento, conservando a súa unidade simple. Requiren unha cámara cun tamaño medible; as expresións CSS deben converterse explicitamente. As porcentaxes de desprazamento refírense ao marco expandido. Podes desfacer; non se comparte nada ata Aplicar.
 
 Usa límites Expandidos para sobresaír; Dentro da cámara conserva o recorte. A silueta depende da canle alfa do PNG/WebM. Os preaxustes son puntos de partida: axusta o oco transparente mediante encadre, extensións, desprazamento e escala. O vídeo conserva as súas dimensións.
 

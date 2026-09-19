@@ -3,6 +3,27 @@ import assert from "node:assert/strict";
 import { createApi } from "../../scripts/api.js";
 import { setApp } from "../../scripts/state.js";
 
+test("composition macros preserve omitted role variants and accept explicit role payloads", async () => {
+  const env = mockApiEnv();
+  const api = createApi();
+  const roleVariants = { player: { layouts: { u1: { left: "25vw" } } } };
+  await api.applySceneProfileDraft("scene-a", { layouts: { u1: { left: "10vw" } }, roleVariants });
+  assert.deepEqual(env.settings.get("charlemos-camera-layout.sceneProfiles")["scene-a"].roleVariants, roleVariants);
+  await api.applySceneProfileDraft("scene-a", { layouts: { u1: { left: "15vw" } } });
+  assert.deepEqual(env.settings.get("charlemos-camera-layout.sceneProfiles")["scene-a"].roleVariants, roleVariants);
+  await api.applySceneProfileDraft("scene-a", { layouts: { u1: {} }, roleVariants: {} });
+  assert.deepEqual(env.settings.get("charlemos-camera-layout.sceneProfiles")["scene-a"].roleVariants, {});
+});
+
+test("empty legacy macro payloads keep the previous optional-payload behavior", async () => {
+  const env = mockApiEnv();
+  const api = createApi();
+  for (const payload of [undefined, null]) {
+    await api.applySceneProfileDraft("scene-a", payload);
+    assert.deepEqual(env.settings.get("charlemos-camera-layout.sceneProfiles")["scene-a"].layouts, {});
+  }
+});
+
 function mockApiEnv({ toggleTarget = true } = {}) {
   const settings = new Map();
   settings.set("charlemos-camera-layout.sceneProfiles", {});

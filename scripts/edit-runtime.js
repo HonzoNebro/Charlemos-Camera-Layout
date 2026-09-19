@@ -1,5 +1,6 @@
 import { MODULE_ID, SETTINGS_KEYS } from "./constants.js";
 import { EditSession, cloneConfiguration, configurationEqual, writeConfigurationBlocks } from "./edit-session.js";
+import { normalizeRoleVariants } from "./role-variants.js";
 
 let session = null;
 
@@ -38,6 +39,14 @@ export function editSessionProblem(value = session) {
   if (!game.user?.isGM) return "permission";
   if (value.conflicts.length) return "conflicts";
   const changedUsers = new Set(value.changes.filter((change) => change.path[1] === "layouts").map((change) => change.path[2]));
+  for (const change of value.changes) {
+    if (change.path[1] !== "roleVariants") continue;
+    if (change.path[3] === "layouts" && change.path[4]) changedUsers.add(change.path[4]);
+    else {
+      const variants = change.path[2] ? { [change.path[2]]: value.draft.profile.roleVariants?.[change.path[2]] } : value.draft.profile.roleVariants;
+      for (const variant of Object.values(variants ?? {})) for (const id of Object.keys(variant?.layouts ?? {})) changedUsers.add(id);
+    }
+  }
   if (game.users?.get && [...changedUsers].some((id) => id && !game.users.get(id))) return "userDeleted";
   return null;
 }
@@ -49,6 +58,8 @@ export async function applyEditSession(value = session) {
   value.reconcile(readSceneConfiguration(value.sceneId));
   const reason = editSessionProblem(value);
   if (reason) return { ok: false, reason };
+  try { if (Object.hasOwn(value.draft.profile, "roleVariants")) normalizeRoleVariants(value.draft.profile.roleVariants); }
+  catch { return { ok: false, reason: "roleVariantsInvalid" }; }
   const writes = [];
   for (const [field, key] of [["profile", SETTINGS_KEYS.SCENE_PROFILES], ["background", SETTINGS_KEYS.SCENE_CAMERA]]) {
     if (configurationEqual(value.base[field], value.draft[field])) continue;

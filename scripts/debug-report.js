@@ -107,11 +107,13 @@ export function collectModuleDebugReport(userId, options = {}) {
     editor: getEditSession() ? {
       sceneId: getEditSession().sceneId,
       previewActive: Boolean(previewConfiguration(sceneId)),
+      previewAudience: getEditSession().previewAudience ?? "base",
       changes: cloneValue(getEditSession().changes),
       conflicts: cloneValue(getEditSession().conflicts),
       draft: cloneValue(getEditSession().draft)
     } : null,
     users,
+    viewerAudience: game.user?.isGM ? "gm" : "player",
     targetUser: targetUserSection(targetUserId, currentSceneProfile, globalLayouts, sceneDraft),
     rendererSnapshot: options.includeRendererSnapshot === false ? null : dumpRendererDebugSnapshot(targetUserId, options.app),
     sceneBackgroundSnapshot: options.includeSceneBackgroundSnapshot === false ? null : dumpSceneBackgroundSnapshot()

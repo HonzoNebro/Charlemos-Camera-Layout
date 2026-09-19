@@ -1,9 +1,11 @@
 import { getSceneCamera as storedCamera, getSceneProfile as storedProfile } from "./scene-camera.js";
-import { previewConfiguration } from "./edit-runtime.js";
+import { previewConfiguration, getEditSession } from "./edit-runtime.js";
+import { profileForAudience } from "./role-variants.js";
 
 export function getSceneProfile(scene) {
   const preview = previewConfiguration(scene?.id ?? globalThis.canvas?.scene?.id);
-  return preview ? preview.profile : storedProfile(scene);
+  const audience = preview ? getEditSession()?.previewAudience ?? "base" : globalThis.game?.user?.isGM ? "gm" : "player";
+  return profileForAudience(preview ? preview.profile : storedProfile(scene), audience);
 }
 
 export function getSceneCamera(scene) {

@@ -6,6 +6,8 @@ Use a backed-up test world. Do not diagnose A/V problems by reinstalling over yo
 
 ## A change is not visible
 
+With viewer-role variants, check both **Edit camera settings for** and **Local preview audience**. GM/player refers to the viewer, not the owner of the camera. A role override can hide a later base edit; use inheritance reset to remove it. With preview disabled, the saved configuration for your actual role is displayed. Role styling does not restrict access to feeds or shared settings.
+
 1. Check the scene shown in the editor header. A draft belongs to that scene, not whichever scene you subsequently view. Return to it before applying.
 2. Check whether local preview is enabled. Other clients see only the saved configuration until Apply succeeds.
 3. Check whether the frame is enabled and has a valid resource. Presets and blend controls preserve its visibility; they do not enable an empty frame.
@@ -20,6 +22,10 @@ Use a backed-up test world. Do not diagnose A/V problems by reinstalling over yo
 - A collapsed internal video container has a targeted fallback only when Charlemos controls geometry and the camera view has a usable size. Intentionally hidden or minimized elements are not forced visible. Report recurring sizing failures with dock orientation, window size and diagnostics.
 
 ## A frame is clipped or looks washed out
+
+In Video and effects, explicitly select a shape to replace the current crop. Compatible circles, ellipses and insets expose parameters and an illustrative diagram; custom CSS remains in Advanced. Opposite insets cannot exceed 100%.
+
+The six frame alignment actions use the complete rectangle after extensions, scale and rotation, not its opaque silhouette. Only one offset changes, preserving its simple unit. A measurable camera is required; CSS expressions need explicit conversion. Offset percentages refer to the expanded frame. Undo is available, and nothing is shared until Apply.
 
 - Use Expanded bounds for artwork outside the video; Inside camera retains clipping. The PNG/WebM alpha channel determines its silhouette, not the bounds rectangle.
 - Quick presets are starting points, not automatic opening detection. Match the artwork's transparent opening with fit, extensions, offset and scale. The camera video keeps its own dimensions.

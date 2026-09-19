@@ -1497,6 +1497,7 @@ function registerRtcHook() {
 }
 
 function registerUserHook() {
+  Hooks.on("updateUser", () => queueApply());
   Hooks.on("userConnected", () => {
     queueApply();
   });

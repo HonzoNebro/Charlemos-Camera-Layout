@@ -4,6 +4,7 @@ import { normalizeOverlayConfiguration } from "./overlay-bounds.js";
 import { normalizeOverlayBlendMode } from "./overlay-blend.js";
 import { normalizeSceneCamera } from "./scene-camera.js";
 import { normalizeProfileLibrary } from "./profile-library.js";
+import { normalizeRoleVariants, roleVariantUserIds, remapRoleVariants } from "./role-variants.js";
 
 export const CONFIG_BLOCKS = [SETTINGS_KEYS.PLAYER_LAYOUTS, SETTINGS_KEYS.SCENE_PROFILES, SETTINGS_KEYS.SCENE_CAMERA];
 const OPTIONAL_CONFIG_BLOCKS = [SETTINGS_KEYS.PROFILE_LIBRARY];
@@ -42,6 +43,7 @@ export function importReferences(inspection) {
   const scenes = new Set([...Object.keys(settings.sceneProfiles ?? {}), ...Object.keys(settings.sceneCamera ?? {})]);
   const users = new Set(Object.keys(settings.playerLayouts ?? {}));
   for (const profile of Object.values(settings.sceneProfiles ?? {})) {
+    for (const id of roleVariantUserIds(profile)) users.add(id);
     for (const [id, layout] of Object.entries(profile.layouts ?? {})) {
       users.add(id);
       if (layout.relative?.targetUserId) users.add(layout.relative.targetUserId);
@@ -56,6 +58,9 @@ export function importEntries(inspection) {
   for (const id of Object.keys(inspection.settings.playerLayouts ?? {})) entries.push(["playerLayouts", id]);
   for (const [sceneId, profile] of Object.entries(inspection.settings.sceneProfiles ?? {})) {
     for (const userId of Object.keys(profile.layouts ?? {})) entries.push(["sceneProfiles", sceneId, "layouts", userId]);
+    for (const [role, variant] of Object.entries(profile.roleVariants ?? {})) {
+      for (const userId of Object.keys(variant.layouts ?? {})) entries.push(["sceneProfiles", sceneId, "roleVariants", role, "layouts", userId]);
+    }
   }
   for (const sceneId of Object.keys(inspection.settings.sceneCamera ?? {})) entries.push(["sceneCamera", sceneId]);
   for (const id of Object.keys(inspection.settings.profileLibrary ?? {})) entries.push(["profileLibrary", id]);
@@ -92,7 +97,7 @@ export function remapConfigurationImport(inspection, mappings) {
   if (inspection.present.includes("playerLayouts")) settings.playerLayouts = mapLayouts(inspection.settings.playerLayouts);
   if (inspection.present.includes("sceneProfiles")) settings.sceneProfiles = Object.fromEntries(Object.entries(inspection.settings.sceneProfiles).flatMap(([id, profile]) => {
     const target = mappings.scenes[id];
-    return target ? [[target, { ...cloneConfiguration(profile), layouts: mapLayouts(profile.layouts) }]] : [];
+    return target ? [[target, { ...cloneConfiguration(profile), layouts: mapLayouts(profile.layouts), ...(profile.roleVariants ? { roleVariants: remapRoleVariants(profile.roleVariants, mapLayouts) } : {}) }]] : [];
   }));
   if (inspection.present.includes("sceneCamera")) settings.sceneCamera = Object.fromEntries(Object.entries(inspection.settings.sceneCamera).flatMap(([id, camera]) => {
     const target = mappings.scenes[id];
@@ -121,6 +126,9 @@ export function inspectConfigurationImport(json) {
     camera === null || (record(camera) && typeof camera.playerId === "string" && camera.playerId.trim())
   )) return null;
   const settings = cloneConfiguration(source);
+  try {
+    for (const profile of Object.values(settings.sceneProfiles ?? {})) if (Object.hasOwn(profile, "roleVariants")) profile.roleVariants = normalizeRoleVariants(profile.roleVariants);
+  } catch { return null; }
   if (settings.profileLibrary) {
     try { settings.profileLibrary = normalizeProfileLibrary(settings.profileLibrary); }
     catch { return null; }
@@ -171,6 +179,13 @@ export function prepareConfigurationImport(inspection, current, { mode = "merge"
         after[id] = mode === "merge" && key !== SETTINGS_KEYS.PROFILE_LIBRARY ? combine(before[id], value) : cloneConfiguration(value);
         if (mode === "replace" && key === "sceneProfiles") {
           after[id] = { ...cloneConfiguration(before[id] ?? {}), ...after[id], layouts: { ...cloneConfiguration(before[id]?.layouts ?? {}), ...after[id].layouts } };
+          if (value.roleVariants) {
+            after[id].roleVariants = cloneConfiguration(before[id]?.roleVariants ?? {});
+            for (const [role, variant] of Object.entries(value.roleVariants)) {
+              const previous = before[id]?.roleVariants?.[role] ?? {};
+              after[id].roleVariants[role] = { ...cloneConfiguration(previous), ...variant, layouts: { ...cloneConfiguration(previous.layouts ?? {}), ...variant.layouts } };
+            }
+          }
         }
       }
     }

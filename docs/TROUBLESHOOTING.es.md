@@ -6,6 +6,8 @@ Trabaja en una copia del mundo. No reinstales sobre producción ni borres los aj
 
 ## Un ajuste no se ve
 
+Con variantes de rol, comprueba «Editar los ajustes de cámara para» y el destinatario de la previsualización local. GM/jugadores se refiere a quien mira, no al dueño de la cámara. Un ajuste de rol puede ocultar un cambio posterior de la base: restablece la herencia para retirarlo. Sin previsualización se muestra lo guardado para tu rol real. Esto no restringe el acceso a feeds ni a los ajustes compartidos.
+
 Comprueba la escena de la cabecera: el borrador pertenece a esa escena y debes volver a ella para aplicar. La previsualización es local; los demás clientes solo ven lo guardado tras Aplicar. Un marco necesita estar activado y tener un recurso válido: los presets y la mezcla conservan su visibilidad.
 
 Para posición y tamaño, selecciona el control de Charlemos y desacopla la cámara explícitamente. El dock mantiene las restricciones nativas; Cancelar no revierte el desacoplamiento. Revisa errores, referencias relativas y conflictos. Que un usuario esté desconectado no impide editarlo.
@@ -17,6 +19,10 @@ Comprueba primero permisos, dispositivo de entrada y recepción del vídeo con l
 Prueba solo con Charlemos y el proveedor A/V necesario y reactiva los demás módulos de cámara uno a uno. Reutilizar archivos de Falemos no equivale a poder ejecutar dos gestores de posición sobre el mismo DOM. El fallback de tamaño solo corrige contenedores internos colapsados con geometría de Charlemos y una vista de tamaño útil; no fuerza elementos ocultos o minimizados.
 
 ## El marco se recorta o cambia de color
+
+En Vídeo y efectos, elige explícitamente una forma para sustituir el recorte actual. Círculos, elipses y márgenes compatibles ofrecen parámetros y un diagrama orientativo; el CSS personalizado se conserva en Avanzado. Los márgenes opuestos no pueden superar el 100 %.
+
+Las seis acciones de alineación del marco usan su rectángulo completo después de extensiones, escala y giro, no la silueta opaca. Solo cambian un desplazamiento, conservando su unidad simple. Requieren una cámara con tamaño medible; las expresiones CSS deben convertirse explícitamente. Los porcentajes de desplazamiento se refieren al marco expandido. Puedes deshacer; no se comparte nada hasta Aplicar.
 
 Usa límites Expandidos para sobresalir; Dentro de la cámara conserva el recorte. La silueta depende del canal alfa del PNG/WebM. Los presets son puntos de partida: ajusta el hueco transparente mediante encuadre, extensiones, desplazamiento y escala. El vídeo conserva sus dimensiones.
 

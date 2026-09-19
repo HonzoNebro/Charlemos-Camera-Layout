@@ -75,3 +75,11 @@ test("macro metadata retains source identity without changing active-scene execu
   assert.match(data.command, /"blendMode": "soft-light"/);
   assert.doesNotMatch(data.command, /"source"/);
 });
+
+test("new composition macros carry sparse role overrides without a background", async () => {
+  const env = mockMacroEnv();
+  await exportSceneProfileToMacro({ layouts: { u1: {} }, roleVariants: { gm: { layouts: { u1: { overlay: { opacity: 0.4 } } } } } }, "Roles");
+  assert.match(env.getCreated().command, /"roleVariants"/);
+  assert.match(env.getCreated().command, /"opacity": 0.4/);
+  assert.doesNotMatch(env.getCreated().command, /sceneCamera/);
+});

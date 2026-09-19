@@ -1,9 +1,11 @@
 {
   "name": "charlemos-camera-layout",
-  "version": "3.3.0-beta.3",
+  "version": "3.3.0-beta.4",
   "private": true,
   "type": "module",
   "scripts": {
+    "check": "node tools/check-quality.mjs",
+    "test:quality": "npm run check && npm test",
     "test": "node --test tests/unit/*.test.js"
   }
 }

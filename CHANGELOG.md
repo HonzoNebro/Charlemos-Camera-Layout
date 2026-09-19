@@ -5,6 +5,24 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0-beta.4] - 2026-09-19
+
+### Prerelease
+- Opt-in roadmap preview on `preview/ux-editor`, with matching `v3.3.0-beta.4` archive. Stable distribution is unchanged.
+- Use a separate Foundry data directory and backed-up test world. Real Foundry 13.351/14.361 visual, multi-client and GPU acceptance remains pending.
+
+### Added
+- Optional GM/player viewer-role variants with sparse per-camera overrides and inherited base positioning control.
+- Shared form and visual editing scopes, local audience preview and section/camera/role inheritance resets in the existing draft history.
+- Role-aware renderer configuration without changing A/V feeds or the shared scene background.
+- Variant preservation/remapping in templates, scene duplication, new macros and JSON v2 backups/imports; old macros preserve variants when omitted.
+- Validation of role references and settings, deleted-user protection, role-change reconciliation and audience diagnostics.
+- English, Spanish and Galician scope/help text and automated coverage. Manual multi-client Foundry validation remains pending.
+- Guided circle, ellipse and inset crop controls with illustrative previews, explicit preset replacement and preservation of unsupported custom CSS.
+- Six frame rectangle alignment actions accounting for exterior bounds, rotation and scale, preserving simple offset units and video geometry with one-step undo.
+- Non-publishing quality CI for stable/preview branches on Node 20/22, metadata/language/syntax checks, viewer-layout regression snapshots and repeated renderer cleanup tests.
+- Completed positioned live-camera pseudo-tile feasibility evaluation; no pseudo-tile implementation is included in this UX release.
+
 ## [3.3.0-beta.3] - 2026-09-19
 
 ### Prerelease

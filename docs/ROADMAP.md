@@ -1,5 +1,7 @@
 # Roadmap
 
+Development evidence and remaining runtime validation are recorded in [Implementation status](IMPLEMENTATION_STATUS.md). All implementation blocks below are delivered in the preview channel; the pseudo-tile block is a completed evaluation, not a shipped feature. Stable promotion still requires Foundry acceptance.
+
 ## Current (3.x)
 
 1. Live camera scene backgrounds
@@ -19,7 +21,7 @@
 5. Preset previews and selective camera/scene copying without implicit background changes.
 6. Visual camera, frame and name editing with owned controls and teardown cleanup.
 
-Automated coverage is supplemented by the required [Foundry acceptance checklist](UX_ACCEPTANCE.md). The opt-in `3.3.0-beta.3` prerelease uses the `preview/ux-editor` manifest; stable distribution remains unchanged.
+Automated coverage is supplemented by the required [Foundry acceptance checklist](UX_ACCEPTANCE.md). The opt-in `3.3.0-beta.4` prerelease uses the `preview/ux-editor` manifest; stable distribution remains unchanged.
 
 ## Short Term (implemented for 3.3.0-beta.2; Foundry acceptance pending)
 
@@ -50,13 +52,18 @@ Automated coverage is supplemented by the required [Foundry acceptance checklist
 - Optional JSON v2 library backup/import support preserves compatibility with older backups; manual Foundry acceptance remains pending.
 
 2. Per-user profile variants
-- Pending: optional role-based variants (GM vs players) while keeping a shared scene baseline.
+- Implemented in beta.4: optional variants by viewer role (GM vs players), layered over the shared base with per-field inheritance.
+- Existing camera forms, frame tools and visual editor target a selected base/role scope. Local audience preview, undo/redo and explicit Apply remain shared across the editing session; background and composition activation remain common.
+- Templates, duplication, macros and JSON v2 preserve role overrides and explicit ID mapping. This is presentation, not an access-control boundary. Manual Foundry/multi-client acceptance remains pending.
 
 3. Visual editor improvements
-- Pending: guided controls for clip-path presets and advanced overlay alignment tools.
+- Implemented in beta.4: parameter controls and schematic previews for compatible circles, ellipses and inset crops. Custom CSS is preserved until explicit preset replacement.
+- Six frame rectangle alignment actions include expanded bounds, scale and rotation, preserve simple offset units and camera geometry, and use the same role-aware draft and undo history. Manual Foundry acceptance remains pending.
 
 4. Foundry integration depth
-- Pending evaluation: optional positioned pseudo-tiles that reuse the live camera background renderer.
+- [Evaluation completed](LIVE_CAMERA_TILES_EVALUATION.md): positioned runtime meshes are a feasible candidate, but need separate placement state and resource ownership rather than reusing the background singleton unchanged. No pseudo-tile feature is shipped; implementation was outside the agreed live-background/UX scope.
 
 5. Automated quality gates
-- Pending: expand automated tests around renderer/layout edge cases and regression snapshots.
+- Implemented in beta.4: deterministic viewer-layout style snapshots, shape/alignment edge cases, and repeated background/overlay cleanup cycles.
+- `npm run test:quality` checks release-channel metadata, manifest assets, language-key/placeholder parity, script syntax and the full regression suite. The Quality workflow runs on stable/preview pushes and pull requests with Node 20 and 22; it never publishes releases.
+- These checks do not replace the pending real Foundry, A/V, accessibility and GPU acceptance checklist.

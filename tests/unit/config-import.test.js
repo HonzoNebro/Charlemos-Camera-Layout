@@ -116,3 +116,27 @@ test("template imports replace only included template IDs and reject invalid lib
   assert.deepEqual(plan.writes[0].after, { template: replacement, keep: entry });
   for (const profileLibrary of [[], { t: null }, { t: { name: "Bad", profile: { layouts: {} } } }]) assert.equal(inspectConfigurationImport({ profileLibrary }), null);
 });
+
+test("role variant imports map all users, preserve sparse overrides and allow per-camera exclusion", () => {
+  const override = { relative: { targetUserId: "base" }, overlay: { bounds: { top: 30 } } };
+  const payload = { sceneProfiles: { a: { layouts: { base: {} }, roleVariants: { player: { layouts: { old: override } } } } } };
+  const inspection = inspectConfigurationImport(payload);
+  assert.ok(importReferences(inspection).users.includes("old"));
+  const mapped = remapConfigurationImport(inspection, { scenes: { a: "b" }, users: { old: "u", base: "v" } });
+  assert.equal(mapped.settings.sceneProfiles.b.roleVariants.player.layouts.u.relative.targetUserId, "v");
+  assert.deepEqual(mapped.settings.sceneProfiles.b.roleVariants.player.layouts.u.overlay.bounds, { top: 30 });
+  const path = ["sceneProfiles", "a", "roleVariants", "player", "layouts", "old"];
+  assert.ok(importEntries(inspection).some((entry) => JSON.stringify(entry) === JSON.stringify(path)));
+  assert.deepEqual(selectImportEntries(inspection, [path]).settings.sceneProfiles.a.roleVariants.player.layouts, {});
+  assert.equal(inspectConfigurationImport({ sceneProfiles: { a: { roleVariants: { invalid: {} } } } }), null);
+});
+
+test("replace selection keeps unselected roles and destination role cameras", () => {
+  const variants = { gm: { layouts: { u: { left: "2px" } } }, player: { layouts: { u: { left: "4px" }, keep: { left: "8px" } } } };
+  const current = { sceneProfiles: { a: { layouts: { u: {} }, roleVariants: variants } } };
+  const inspection = inspectConfigurationImport({ sceneProfiles: { a: { roleVariants: { player: { layouts: { u: { left: "10px" } } } } } } });
+  const next = prepareConfigurationImport(inspection, current, { mode: "replace" }).writes[0].after.a;
+  assert.deepEqual(next.roleVariants.gm, current.sceneProfiles.a.roleVariants.gm);
+  assert.equal(next.roleVariants.player.layouts.keep.left, "8px");
+  assert.equal(next.roleVariants.player.layouts.u.left, "10px");
+});

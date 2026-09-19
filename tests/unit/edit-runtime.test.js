@@ -67,3 +67,34 @@ test("duplicate apply is rejected while a write is pending", async () => {
   release();
   assert.equal((await pending).ok, true);
 });
+
+test("viewer roles are local until Apply and the GM may preview the player audience", async () => {
+  const { store, writes } = environment();
+  const session = beginEditSession("a");
+  session.edit(["profile", "roleVariants", "player", "layouts", "u", "left"], "60vw");
+  session.preview = true;
+  session.previewAudience = "player";
+  assert.equal(getSceneProfile().layouts.u.left, "60vw");
+  game.user.isGM = false;
+  assert.equal(getSceneProfile().layouts.u.left, "20vw");
+  assert.equal(writes.length, 0);
+  game.user.isGM = true;
+  assert.equal((await applyEditSession()).ok, true);
+  endEditSession();
+  assert.equal(getSceneProfile().layouts.u.left, "20vw");
+  game.user.isGM = false;
+  assert.equal(getSceneProfile().layouts.u.left, "60vw");
+  assert.equal(store.sceneProfiles.a.layouts.u.left, "20vw");
+});
+
+test("deleted role-variant users and concurrent overrides block applying", async () => {
+  const { store } = environment();
+  store.sceneProfiles.a.roleVariants = { gm: { layouts: { u: { left: "30vw" } } } };
+  const session = beginEditSession("a");
+  session.edit(["profile", "roleVariants", "gm", "layouts", "u", "left"], "60vw");
+  store.sceneProfiles.a.roleVariants.gm.layouts.u.left = "80vw";
+  assert.equal((await applyEditSession()).reason, "conflicts");
+  session.resolve(["profile", "roleVariants", "gm", "layouts", "u", "left"], true);
+  game.users.get = () => null;
+  assert.equal((await applyEditSession()).reason, "userDeleted");
+});

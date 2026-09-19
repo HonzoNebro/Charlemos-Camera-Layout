@@ -2,6 +2,7 @@ import { editorText as t, escapeEditorHtml as esc, editorButton as button, selec
 import { readProfileLibrary, normalizeProfileLibrary, templateFromProfile, templateUserIds, profileWithTemplate, writeProfileTemplate } from "./profile-library.js";
 import { cloneConfiguration, configurationEqual } from "./edit-session.js";
 import { editSessionProblem, readSceneConfiguration, getEditSession } from "./edit-runtime.js";
+import { profileCameraIds } from "./role-variants.js";
 
 function select(name, value, choices, label) {
   return `<label class="charlemos-field">${esc(label)}${selectControl(name, value, choices)}</label>`;
@@ -34,7 +35,7 @@ export class ProfileLibraryPanel {
     const stale = this.snapshot && !configurationEqual(readProfileLibrary()[this.selectedId], this.snapshot);
     const blocked = !this.snapshot || stale || this.busy ? "disabled" : "";
     return `<fieldset ${this.busy ? "disabled" : ""}><legend>${esc(t("templateLibrary"))}</legend><p>${esc(t("templateLibraryHelp"))}</p>
-      ${select("templateSelection", this.selectedId, [{ id: "", label: t("templateChoose") }, ...entries.map(([id, entry]) => ({ id, label: `${entry.name} (${Object.keys(entry.profile.layouts).length}) · ${id}` }))], t("templateLibrary"))}
+      ${select("templateSelection", this.selectedId, [{ id: "", label: t("templateChoose") }, ...entries.map(([id, entry]) => ({ id, label: `${entry.name} (${profileCameraIds(entry.profile).length}) · ${id}` }))], t("templateLibrary"))}
       ${stale ? `<p role="alert">${esc(t("templateChanged"))}</p>` : ""}
       ${button("template-refresh", "templateRefresh")}
       <label class="charlemos-field">${esc(t("templateName"))}<input name="templateName" maxlength="120" value="${esc(this.name)}"></label>
@@ -83,7 +84,7 @@ export class ProfileLibraryPanel {
     const previous = cloneConfiguration(session.draft.profile);
     const next = profileWithTemplate(entry, previous, this.mappings, users);
     if (this.validateProfile(next).length) throw new Error("templateInvalidDraft");
-    const summary = Object.entries(entry.profile.layouts).map(([id]) => `${id} → ${this.mappings[id] || t("exclude")}`).join("\n");
+    const summary = templateUserIds(entry).map((id) => `${id} → ${this.mappings[id] || t("exclude")}`).join("\n");
     if (!confirm(`${t("templateLoadConfirm")}\n${entry.name} → ${game.scenes.get(session.sceneId).name} (${session.sceneId})\n${summary}`)) return false;
     this.currentEntry();
     if (session !== getEditSession() || editSessionProblem(session) || !configurationEqual(previous, session.draft.profile)) throw new Error("profilesChanged");

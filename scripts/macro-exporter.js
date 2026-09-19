@@ -1,4 +1,5 @@
 import { MODULE_ID } from "./constants.js";
+import { profileCameraIds } from "./role-variants.js";
 
 function buildCommand(layout, playerId) {
   const payload = JSON.stringify(layout, null, 2);
@@ -58,7 +59,7 @@ export async function exportSceneProfileToMacro(sceneIdOrProfile, profileOrMacro
   const name = macroName || game.i18n.localize(`${MODULE_ID}.macro.sceneDefaultName`);
   const command = buildSceneCommand(profile);
   const macroData = buildMacroData(name, command);
-  macroData.flags = { [MODULE_ID]: { composition: { sourceSceneId, cameraCount: Object.keys(profile?.layouts ?? {}).length } } };
+  macroData.flags = { [MODULE_ID]: { composition: { sourceSceneId, cameraCount: profileCameraIds(profile).length } } };
   const macro = await Macro.create(macroData);
   console.debug(`${MODULE_ID} | scene macro exported`, {
     sourceSceneId,

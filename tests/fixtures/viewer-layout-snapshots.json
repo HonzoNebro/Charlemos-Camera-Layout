@@ -1,0 +1,54 @@
+{
+  "profile": {
+    "enabled": true,
+    "cameraControlMode": "module",
+    "layouts": {
+      "camera": {
+        "left": "5vw", "width": "30vw", "height": "20vh",
+        "clipPath": "circle(45%)",
+        "overlay": {
+          "enabled": true, "imageUrl": "/frames/portrait.png",
+          "fitMode": "contain", "anchor": "bottom-right",
+          "bounds": { "mode": "expanded", "left": 25, "right": 10, "top": 5, "bottom": 50 },
+          "offset": { "x": "10%", "y": "-3vh" }, "scale": 1.5, "rotate": 30
+        }
+      }
+    },
+    "roleVariants": {
+      "gm": { "layouts": { "camera": { "overlay": { "bounds": { "left": 0 }, "blendMode": "normal" } } } },
+      "player": { "cameraControlMode": "native", "layouts": { "camera": { "clipPath": "inset(8% round 10px)", "overlay": { "bounds": { "mode": "camera" }, "fitMode": "cover", "anchor": "top-left", "offset": { "x": "0px", "y": "0px" }, "scale": 1, "rotate": 0 } } } }
+    }
+  },
+  "expected": {
+    "base": {
+      "cameraControlMode": "module", "geometry": ["5vw", "30vw", "20vh"], "clipPath": "circle(45%)",
+      "overlay": {
+        "display": "block", "inset": "-5% -10% -50% -25%", "overflow": "visible",
+        "backgroundImage": "", "backgroundSize": "", "backgroundPosition": "", "backgroundRepeat": "",
+        "backgroundBlendMode": "normal", "mixBlendMode": "screen", "opacity": "1",
+        "transform": "translate(10%, -3vh) scale(1.5) rotate(30deg)", "transformOrigin": "center"
+      },
+      "media": { "display": "block", "objectFit": "contain", "objectPosition": "right bottom" }
+    },
+    "gm": {
+      "cameraControlMode": "module", "geometry": ["5vw", "30vw", "20vh"], "clipPath": "circle(45%)",
+      "overlay": {
+        "display": "block", "inset": "-5% -10% -50% -0%", "overflow": "visible",
+        "backgroundImage": "", "backgroundSize": "", "backgroundPosition": "", "backgroundRepeat": "",
+        "backgroundBlendMode": "normal", "mixBlendMode": "normal", "opacity": "1",
+        "transform": "translate(10%, -3vh) scale(1.5) rotate(30deg)", "transformOrigin": "center"
+      },
+      "media": { "display": "block", "objectFit": "contain", "objectPosition": "right bottom" }
+    },
+    "player": {
+      "cameraControlMode": "native", "geometry": ["5vw", "30vw", "20vh"], "clipPath": "inset(8% round 10px)",
+      "overlay": {
+        "display": "block", "inset": "0", "overflow": "",
+        "backgroundImage": "", "backgroundSize": "", "backgroundPosition": "", "backgroundRepeat": "",
+        "backgroundBlendMode": "normal", "mixBlendMode": "screen", "opacity": "1",
+        "transform": "", "transformOrigin": "center"
+      },
+      "media": { "display": "block", "objectFit": "cover", "objectPosition": "left top" }
+    }
+  }
+}

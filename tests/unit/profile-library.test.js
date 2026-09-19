@@ -101,3 +101,21 @@ test("post-write concurrent changes are not overwritten by recovery", async () =
   assert.equal(result.recovery, "incomplete");
   assert.equal(store.profileLibrary.external.name, "Other GM");
 });
+
+test("library snapshots and mapping carry role variants without flattening inheritance", () => {
+  const source = composition();
+  source.roleVariants = { gm: { layouts: { a: { overlay: { opacity: 0.4 } } } }, player: { layouts: { extra: { relative: { targetUserId: "a" } } } } };
+  const entry = templateFromProfile("Roles", source);
+  assert.deepEqual(entry.profile.roleVariants.gm.layouts.a.overlay, { opacity: 0.4 });
+  assert.ok(templateUserIds(entry).includes("extra"));
+  const next = profileWithTemplate(entry, { layouts: {} }, { a: "u", b: "v", extra: "w" }, [{ id: "u" }, { id: "v" }, { id: "w" }]);
+  assert.equal(next.roleVariants.player.layouts.w.relative.targetUserId, "u");
+  assert.deepEqual(next.roleVariants.gm.layouts.u.overlay, { opacity: 0.4 });
+});
+
+test("role-only compositions can be saved and loaded without inventing base camera layouts", () => {
+  const entry = templateFromProfile("Players", { layouts: {}, roleVariants: { player: { layouts: { old: { left: "20vw" } } } } });
+  const next = profileWithTemplate(entry, { layouts: {} }, { old: "u" }, [{ id: "u" }]);
+  assert.deepEqual(next.layouts, {});
+  assert.equal(next.roleVariants.player.layouts.u.left, "20vw");
+});

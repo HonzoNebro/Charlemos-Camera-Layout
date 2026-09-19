@@ -28,6 +28,7 @@ export function setLoadedSceneProfileDraft(sceneId, draftLike) {
     cameraControlMode: source.cameraControlMode ?? "native",
     layouts: cloneValue(source.layouts ?? {})
   };
+  if (Object.hasOwn(source, "roleVariants")) draft.roleVariants = cloneValue(source.roleVariants);
   state.loadedSceneDrafts[sceneId] = draft;
   return draft;
 }

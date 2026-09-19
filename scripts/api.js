@@ -7,6 +7,7 @@ import { setControlsVisibility } from "./ui-controls.js";
 import { getApp, setLoadedSceneProfileDraft } from "./state.js";
 import { applyCameraLayoutsNow, dumpRendererDebugSnapshot, prepareModuleGeometryForLayouts } from "./live-camera-renderer.js";
 import { dumpModuleDebugReport } from "./debug-report.js";
+import { normalizeRoleVariants } from "./role-variants.js";
 
 function openConfig() {
   const app = getApp();
@@ -23,6 +24,7 @@ function loadSceneProfileDraft(sceneId, payload) {
 }
 
 async function applySceneProfileDraft(sceneId, payload) {
+  const variantOptions = Object.hasOwn(payload ?? {}, "roleVariants") ? { roleVariants: normalizeRoleVariants(payload.roleVariants) } : {};
   const cameraControlMode = String(payload?.cameraControlMode ?? "native").trim() || "native";
   const layouts = foundry.utils.deepClone(payload?.layouts ?? {});
   if (cameraControlMode === "module") {
@@ -32,10 +34,11 @@ async function applySceneProfileDraft(sceneId, payload) {
     }
   }
   setLoadedSceneProfileDraft(sceneId, {
+    ...variantOptions,
     cameraControlMode,
     layouts
   });
-  await applySceneProfile(sceneId, layouts, { cameraControlMode });
+  await applySceneProfile(sceneId, layouts, { cameraControlMode, ...variantOptions });
   applyCameraLayoutsNow();
   const app = getApp();
   await app?.refreshIfOpen?.();

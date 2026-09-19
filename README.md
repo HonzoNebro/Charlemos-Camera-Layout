@@ -1,6 +1,6 @@
 # Charlemos Camera Layout
 
-> **3.3.0-beta.3 — testing only.** This branch is an opt-in prerelease, not the stable distribution. Use a separate Foundry data directory and a copy of your world. It uses the same module ID and therefore replaces stable Charlemos in that installation.
+> **3.3.0-beta.4 — testing only.** This branch is an opt-in prerelease, not the stable distribution. Use a separate Foundry data directory and a copy of your world. It uses the same module ID and therefore replaces stable Charlemos in that installation.
 
 Beta installation manifest: `https://raw.githubusercontent.com/HonzoNebro/Charlemos-Camera-Layout/preview/ux-editor/module.json`
 
@@ -81,6 +81,16 @@ The new editor is available as an opt-in beta. In-Foundry visual and multi-clien
 
 ## Saved compositions and support
 
+### Viewer-role variants (beta.4)
+
+In **Cameras → Edit camera settings for**, select **Shared base**, **GM view** or **Player view**. The role belongs to the viewer, not the camera owner. Fields changed in a variant override the base; all omitted fields continue inheriting it. The same position, effects, frame, name and visual editor controls edit the selected scope. Positioning control can independently inherit the base or use Foundry/Charlemos for that role, with the usual dock restrictions.
+
+Use **Inherit this section/camera/entire role from base** to remove overrides in the draft. Undo/redo covers both base and role edits. Select **Local preview audience** to inspect the base, GM or player result on your client; turning preview off restores the latest saved result for your actual role. Starting the visual editor aligns preview with the editing audience. Changing the audience stops the current visual editor so later gestures cannot target the wrong scope. Apply publishes all pending scopes together; Cancel discards them. The camera background and composition enabled state remain shared.
+
+Scene distribution presets and selective copying act on the base. Duplication and templates also carry explicitly included role variants while retaining unspecified destination variants and destination-only users. New macros can carry role variants; older macros without them continue updating the base and preserve existing variants. Passing an explicit empty `roleVariants` object when applying a full composition clears them. JSON v2 imports and exports retain sparse overrides and map role-only users and relative targets explicitly. Old backups/macros/configurations remain usable without any automatic migration.
+
+Role variants are presentation settings, not access control. Shared world configuration can contain both audiences' values; no feed, audio or private information is secured by styling a role differently. Real GM/player and two-GM Foundry acceptance is still pending.
+
 ### Composition library (beta.3)
 
 **Tools → Composition library** stores reusable templates independently of scenes in a world-shared setting. Only a GM can create, replace, rename or delete them. Choose **Saved value** or **Draft value**, enter a name and confirm the library write. This saves the template immediately but does not apply the composition to a scene; closing or cancelling the scene editor does not undo library operations.
@@ -149,3 +159,17 @@ npm test
 - License: MIT (`LICENSE`)
 - AI usage notice: included in `LICENSE`
 - Asset provenance: `docs/ASSET_PROVENANCE.md`
+
+## Guided crops and frame alignment (beta.4)
+
+In **Cameras → Video and effects**, selecting a crop preset explicitly replaces the current clip path. Compatible circles, ellipses and insets expose their dimensions and center/corner parameters with an illustrative preview. Other CSS remains editable in Advanced and is not reconstructed by basic controls. Opposite inset percentages cannot exceed 100% in the guided controls.
+
+In **Cameras → Frame / overlay**, use the six rectangle-alignment actions to match an edge or center of the transformed frame to the camera. They account for exterior bounds, scale and rotation; only the selected axis offset changes. Percentage offsets remain relative to the expanded frame rectangle, not the camera. Simple px/%/vw/vh units are retained. Custom offset expressions require explicit conversion, and a visible, measurable camera is necessary. Transparent pixels belong to the rectangle; this does not detect the painted silhouette or change image alignment inside the frame. Neither action changes the video size.
+
+Both tools edit the selected base/GM/player scope, support undo and remain local until Apply. Real Foundry visual acceptance is still required.
+
+## Development verification
+
+Run `npm run test:quality` for metadata, translation, syntax and unit/regression checks. The same non-publishing Quality workflow runs for stable and preview changes on Node 20/22. Snapshot fixtures record expected configuration/style output; they are not browser screenshots and must not be blindly regenerated to accommodate regressions. Use [the Foundry checklist](docs/UX_ACCEPTANCE.md) for real rendering, accessibility, multi-client and GPU validation.
+
+The [pseudo-tile evaluation](docs/LIVE_CAMERA_TILES_EVALUATION.md) is complete. No positioned live-camera tile feature is included in this release.
