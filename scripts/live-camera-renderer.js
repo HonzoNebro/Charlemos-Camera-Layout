@@ -1172,6 +1172,10 @@ export function syncTransparentFrameMode(viewElement, enabled) {
   viewElement?.classList?.toggle?.("charlemos-transparent-frame", Boolean(enabled));
 }
 
+export function syncVideoShapeMode(viewElement, enabled) {
+  viewElement?.classList?.toggle?.("charlemos-video-shaped", Boolean(enabled));
+}
+
 export function syncTransparentFrameClipPath(viewElement, layout, enabled, includeOverlay = true) {
   const clipPath = enabled ? String(layout?.clipPath ?? "").trim() : "";
   transparentFrameClipTargets(viewElement, includeOverlay).forEach((element) => {
@@ -1188,6 +1192,7 @@ function applyViewStyle(viewElement, videoElement, layout, applyGeometry) {
   syncGeometryInteractionMode(viewElement, applyGeometry);
   const transparentFrameEnabled = applyGeometry && layout?.geometry?.transparentFrame;
   syncTransparentFrameMode(viewElement, transparentFrameEnabled);
+  syncVideoShapeMode(viewElement, Boolean(layout?.clipPath));
   if (!overlayIsExpanded) syncExpandedVideoViewport(viewElement, videoElement, layout, false);
   syncTransparentFrameClipPath(viewElement, layout, transparentFrameEnabled, !overlayIsExpanded);
   if (overlayIsExpanded) syncExpandedVideoViewport(viewElement, videoElement, layout, true);
@@ -1236,6 +1241,7 @@ function resetViewStyle(viewElement, videoElement) {
   viewElement.classList?.remove?.("charlemos-geometry-module");
   viewElement.classList?.remove?.("charlemos-geometry-native");
   viewElement.classList?.remove?.("charlemos-transparent-frame");
+  viewElement.classList?.remove?.("charlemos-video-shaped");
   viewElement.classList?.remove?.("charlemos-overlay-expanded");
   viewElement.classList?.remove?.("charlemos-overlay-dock-spaced");
   syncTransparentFrameClipPath(viewElement, null, false);

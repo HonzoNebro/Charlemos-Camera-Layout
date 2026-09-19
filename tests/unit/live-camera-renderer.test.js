@@ -23,6 +23,7 @@ import {
   syncManagedViewGeometry,
   syncTransparentFrameClipPath,
   syncTransparentFrameMode,
+  syncVideoShapeMode,
   syncFoundryAvatarVisibility,
   transformAwareClipPath,
   viewSupportsModuleGeometry,
@@ -718,6 +719,14 @@ test("transformAwareClipPath keeps guided crop coordinates stable for mirrored c
   assert.equal(transformAwareClipPath("inset(0% 10% 0% 0% round 0px)", mirror), "inset(0% 0% 0% 10% round 0px)");
   assert.equal(transformAwareClipPath("polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)", mirror), "polygon(100% 0%, 0% 0%, 0% 100%, 100% 100%)");
   assert.equal(transformAwareClipPath("url(#custom)", mirror), "url(#custom)");
+});
+
+test("syncVideoShapeMode removes the native camera shell only while a clip path is active", () => {
+  const view = new TestElement("div", testDocument());
+  syncVideoShapeMode(view, true);
+  assert.equal(view.classList.contains("charlemos-video-shaped"), true);
+  syncVideoShapeMode(view, false);
+  assert.equal(view.classList.contains("charlemos-video-shaped"), false);
 });
 
 test("resolveRelativeLayout places a camera below its target", () => {

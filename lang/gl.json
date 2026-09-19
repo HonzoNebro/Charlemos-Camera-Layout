@@ -612,6 +612,7 @@
   "charlemos-camera-layout.ui.editor.lockRatio": "Bloquear proporción",
   "charlemos-camera-layout.ui.editor.convertAbsolute": "Converter a posición absoluta conservando o rectángulo visible",
   "charlemos-camera-layout.ui.editor.convertPixels": "Converter xeometría a píxeles",
+  "charlemos-camera-layout.ui.editor.visualConvertHelp": "Converter a posición absoluta garda o rectángulo visible actual como arriba, esquerda, ancho e alto en píxeles e elimina a áncora relativa. Converter xeometría a píxeles garda ese mesmo rectángulo en píxeles, pero conserva o modo de layout e calquera áncora relativa.",
   "charlemos-camera-layout.ui.editor.undock": "Desacoplar cámara seleccionada",
   "charlemos-camera-layout.ui.editor.undockHelp": "Desacoplar cambia inmediatamente a xanela de Foundry. Cancelar o borrador non volve acoplala.",
   "charlemos-camera-layout.ui.editor.convertBeforeDrag": "Este elemento ten CSS complexo. Converte os seus valores explicitamente antes de arrastralo.",

@@ -50,7 +50,9 @@ test("visual controls appear only with the camera, frame or name they edit", asy
   const context = await app._prepareContext();
   app.area = "cameras";
   app.section = "layout";
-  assert.match(await app._renderHTML(context), /Edit camera on screen/);
+  const layout = await app._renderHTML(context);
+  assert.match(layout, /Edit camera on screen/);
+  assert.match(layout, /Convert to absolute records the current visible rectangle/);
   app.section = "effects";
   assert.doesNotMatch(await app._renderHTML(context), /Edit camera on screen|Edit frame on screen|Edit name on screen/);
   app.section = "overlay";

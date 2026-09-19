@@ -290,7 +290,7 @@ export class CameraEditorApp extends foundry.applications.api.ApplicationV2 {
     const cameraControls = element === "camera" ? `<label><input name="visualSnap" type="checkbox"${this.visual?.snap !== false ? " checked" : ""}>${esc(t("snap"))}</label>
       <label><input name="visualRatio" type="checkbox"${this.visual?.lockRatio ? " checked" : ""}>${esc(t("lockRatio"))}</label>
       ${button("convert-absolute", "convertAbsolute")}${button("convert-pixels", "convertPixels")}${button("undock", "undock")}
-      <p>${esc(t("undockHelp"))}</p>` : "";
+      <p>${esc(t("visualConvertHelp"))}</p><p>${esc(t("undockHelp"))}</p>` : "";
     return `<fieldset><legend>${esc(t(`visual${element[0].toUpperCase()}${element.slice(1)}`))}</legend>
       ${button("visual-toggle", active ? "stopVisual" : "startVisual", `data-element="${element}"`)}${cameraControls}</fieldset>`;
   }

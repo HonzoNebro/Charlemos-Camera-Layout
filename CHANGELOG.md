@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0-beta.9] - 2026-09-20
+
+### Fixed
+- Applying a video shape now removes the residual native camera shell, border, pseudo-elements and shadow around the clipped feed.
+
+### Changed
+- The visual editor now explains the difference between converting a visible camera rectangle to absolute positioning and converting its geometry to pixels while retaining its layout mode.
+
+### Prerelease
+- Opt-in renderer and UX correction on `preview/ux-editor`, with matching `v3.3.0-beta.9` archive. Stable distribution remains unchanged.
+
 ## [3.3.0-beta.8] - 2026-09-19
 
 ### Fixed

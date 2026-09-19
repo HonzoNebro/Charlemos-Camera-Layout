@@ -612,6 +612,7 @@
   "charlemos-camera-layout.ui.editor.lockRatio": "Lock aspect ratio",
   "charlemos-camera-layout.ui.editor.convertAbsolute": "Convert to absolute positioning, keeping the visible rectangle",
   "charlemos-camera-layout.ui.editor.convertPixels": "Convert geometry to pixels",
+  "charlemos-camera-layout.ui.editor.visualConvertHelp": "Convert to absolute records the current visible rectangle as pixel top/left/width/height and removes a relative anchor. Convert geometry to pixels records that same rectangle in pixels but keeps the current layout mode and any relative anchor.",
   "charlemos-camera-layout.ui.editor.undock": "Undock selected camera",
   "charlemos-camera-layout.ui.editor.undockHelp": "Undocking changes Foundry's camera window immediately. Canceling the draft does not dock it again.",
   "charlemos-camera-layout.ui.editor.convertBeforeDrag": "This element has complex CSS. Convert its values explicitly before dragging.",
