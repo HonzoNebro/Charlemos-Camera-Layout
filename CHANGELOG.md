@@ -5,6 +5,15 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0-beta.8] - 2026-09-19
+
+### Fixed
+- Guided `clip-path` shapes now compensate for Foundry's native horizontal video mirror, so a right inset or polygon coordinate remains on the right of the rendered feed.
+- The managed expanded-video viewport no longer applies a second clip path over the video crop.
+
+### Prerelease
+- Opt-in renderer correction on `preview/ux-editor`, with matching `v3.3.0-beta.8` archive. Stable distribution remains unchanged.
+
 ## [3.3.0-beta.7] - 2026-09-19
 
 ### Fixed

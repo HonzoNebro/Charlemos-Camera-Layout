@@ -14,6 +14,7 @@ import {
 } from "./camera-video-source.js";
 import { getSceneCameraControlMode, getSceneProfile, getSceneProfileLayout, sceneProfileEnabled } from "./effective-camera-state.js";
 import { expandedOverlayBounds } from "./overlay-bounds.js";
+import { guidedShapeCss, parseGuidedShape } from "./editor-shapes.js";
 import {
   anchoredOverlaySnapshot,
   cleanupAnchoredOverlays,
@@ -609,7 +610,7 @@ export function syncExpandedVideoViewport(viewElement, videoElement, layout, ena
   assignStyle(target, {
     overflow: "hidden",
     borderRadius: layout?.geometry?.borderRadius ?? "",
-    clipPath: layout?.clipPath ?? ""
+    clipPath: ""
   });
   return target;
 }
@@ -799,11 +800,29 @@ export function bindReactiveAvatarVisibility(viewElement, videoElement) {
   handler();
 }
 
+function hasHorizontalMirror(transform) {
+  const text = String(transform ?? "").trim();
+  const matrix = text.match(/^matrix(?:3d)?\(([^)]+)\)$/);
+  if (matrix) return Number(matrix[1].split(",")[0].trim()) < 0;
+  const scale = text.match(/scaleX\(\s*(-?(?:\d+(?:\.\d*)?|\.\d+))/);
+  return scale ? Number(scale[1]) < 0 : false;
+}
+
+export function transformAwareClipPath(clipPath, baseTransform = "") {
+  const shape = parseGuidedShape(clipPath);
+  if (!shape || !hasHorizontalMirror(baseTransform)) return clipPath ?? "";
+  const values = { ...shape.values };
+  if (shape.kind === "inset") [values.left, values.right] = [values.right, values.left];
+  else if (shape.kind === "polygon") ["x1", "x2", "x3", "x4"].forEach((key) => { values[key] = 100 - values[key]; });
+  else values.x = 100 - values.x;
+  return guidedShapeCss(shape.kind, values) ?? clipPath ?? "";
+}
+
 export function videoStyle(layout, baseTransform = "") {
   return {
     transform: [composeTransform(layout?.transform, layout?.geometry), baseTransform].filter(Boolean).join(" "),
     filter: layout?.filter ?? "",
-    clipPath: layout?.clipPath ?? "",
+    clipPath: transformAwareClipPath(layout?.clipPath, baseTransform),
     borderRadius: layout?.geometry?.borderRadius ?? "",
     display: "block",
     visibility: "visible",

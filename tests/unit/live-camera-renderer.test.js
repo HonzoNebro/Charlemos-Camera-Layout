@@ -24,6 +24,7 @@ import {
   syncTransparentFrameClipPath,
   syncTransparentFrameMode,
   syncFoundryAvatarVisibility,
+  transformAwareClipPath,
   viewSupportsModuleGeometry,
   videoStyle
 } from "../../scripts/live-camera-renderer.js";
@@ -702,7 +703,7 @@ test("syncExpandedVideoViewport preserves and restores the native viewport style
   assert.equal(viewport.classList.contains("charlemos-camera-viewport"), true);
   assert.equal(viewport.style.overflow, "hidden");
   assert.equal(viewport.style.borderRadius, "14px");
-  assert.equal(viewport.style.clipPath, "polygon(0 0, 100% 0, 100% 80%, 0 100%)");
+  assert.equal(viewport.style.clipPath, "");
 
   syncExpandedVideoViewport(view, null, null, false);
 
@@ -710,6 +711,13 @@ test("syncExpandedVideoViewport preserves and restores the native viewport style
   assert.equal(viewport.style.overflow, "auto");
   assert.equal(viewport.style.borderRadius, "3px");
   assert.equal(viewport.style.clipPath, "circle(50%)");
+});
+
+test("transformAwareClipPath keeps guided crop coordinates stable for mirrored cameras", () => {
+  const mirror = "matrix(-1, 0, 0, 1, 0, 0)";
+  assert.equal(transformAwareClipPath("inset(0% 10% 0% 0% round 0px)", mirror), "inset(0% 0% 0% 10% round 0px)");
+  assert.equal(transformAwareClipPath("polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)", mirror), "polygon(100% 0%, 0% 0%, 0% 100%, 100% 100%)");
+  assert.equal(transformAwareClipPath("url(#custom)", mirror), "url(#custom)");
 });
 
 test("resolveRelativeLayout places a camera below its target", () => {
